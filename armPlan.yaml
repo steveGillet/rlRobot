@@ -1,0 +1,4 @@
+start_state: [0.0, 0.0]
+goal_state: [0.5, -1.0]
+planner: RRT
+planning_time: 5.0

@@ -12,8 +12,8 @@ simTime = 5.0
 startTime = time.time()
 with mujoco.viewer.launch_passive(model, data) as viewer:
     while data.time < simTime:
-        data.ctrl[shoulderMotorId] = -np.sin(data.time)*5
-        data.ctrl[elbowMotorId] = np.cos(data.time)*3
+        data.qpos[shoulderMotorId] = -2
+        data.qpos[elbowMotorId] = -2
 
         mujoco.mj_step(model,data)
         print(f"Time step: {data.time}s, Position: {data.geom_xpos[-1]}")
