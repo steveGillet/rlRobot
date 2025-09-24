@@ -1,0 +1,62 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{array}
+
+\title{CSCI/ROBO 7000/4830: Deep Reinforcement Learning and Robotics \ Fall 2025 \ Homework \#1: The Wormhole Grid}
+\author{Steve Gillet}
+\begin{document}
+\maketitle
+\section*{Part 1: Policy and Value Analysis [40 Points]}
+
+\subsection*{1. Policy Evaluation [15/40 Points]}
+
+Consider the following simple, "go-up-and-right" policy, $\pi_{simple}$: in every state, the agent attempts to move North. If North is blocked, it tries to move East. If both are blocked, it moves South.
+
+\subsubsection*{A) Calculate the state-value function, $V^{\pi_{simple}}(s)$, for this policy for all states. Fill in your values on a 4x4 grid.}
+
+The state-value function is calculated using the Bellman expectation equation:
+
+\[
+v^\pi(s) = \sum_a \pi(a|s) \sum_{s',r} p(s',r|s,a) \left[ r + \gamma v^\pi(s') \right]
+\]
+
+Since the environment is deterministic and the policy selects a single action per state, this simplifies to:
+
+\[
+v^\pi(s) = r + \gamma v^\pi(s')
+\]
+
+where $s'$ is the next state and $r$ is the reward (with $\gamma = 0.9$).
+
+The values are as follows (grid with row 0 at the top):
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+ &  &  &  \\
+\hline
+ & N/A & N/A &  \\
+\hline
+ &  &  &  \\
+\hline
+ &  &  &  \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsubsection*{B) Show the setup for your calculations for at least two non-terminal states.}
+
+For state (0,0):
+
+\[
+v(0,0) = -1 + \gamma \left( -1 + \gamma \cdot 50 \right)
+\]
+
+For state (3,1):
+
+\[
+v(3,1) = -1 + \gamma \left( -1 + \gamma \left( -1 + \gamma \left( -1 + \gamma \cdot (-50) \right) \right) \right)
+\]
+\end{document}
