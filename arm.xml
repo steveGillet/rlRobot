@@ -8,13 +8,16 @@
       <geom type="box" size="0.1 0.1 0.05"/>
       <body name="upperArm" pos="0 0 0.05">
         <joint name="shoulder" type="hinge" axis="0 1 1" pos="0 0 0"/>
-        <geom type="capsule" fromto="0 0 0 0 0 0.3" size="0.04"/>
-        <body name="lowerArm" pos="0 0 0.3">
+        <geom type="capsule" fromto="0 0 0 0 0.3 0.3" size="0.04"/>
+        <body name="lowerArm" pos="0 0.3 0.3">
           <joint name="elbow" type="hinge" axis="0 1 1" pos="0 0 0"/>
-          <geom type="capsule" fromto="0 0 0 .1 0 0.25" size="0.03"/>
+          <geom type="capsule" fromto="0 0 0 0 -0.3 0.3" size="0.04"/>
+          <site name="endEffector" pos="0 -0.3 0.3" size="0.01" rgba="0 1 0 1"/>
         </body>
       </body>
-    </body>  
+    </body>
+    <site name="startPos" pos="0 1 0" size="0.02" rgba="0 0 1 1"/>
+    <site name="goalPos" pos="-2 0 1" size="0.02" rgba="1 0 0 1"/>
   </worldbody>
   <actuator>
     <motor name="shoulderMotor" joint="shoulder" ctrlrange="-10 10"/>
