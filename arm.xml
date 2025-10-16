@@ -7,12 +7,12 @@
     <body name="base" pos="0 0 0">
       <geom type="box" size="0.1 0.1 0.05"/>
       <body name="upperArm" pos="0 0 0.05">
-        <joint name="shoulder" type="hinge" axis="0 1 1" pos="0 0 0"/>
-        <geom type="capsule" fromto="0 0 0 0 0.3 0.3" size="0.04"/>
-        <body name="lowerArm" pos="0 0.3 0.3">
-          <joint name="elbow" type="hinge" axis="0 1 1" pos="0 0 0"/>
-          <geom type="capsule" fromto="0 0 0 0 -0.3 0.3" size="0.04"/>
-          <site name="endEffector" pos="0 -0.3 0.3" size="0.01" rgba="0 1 0 1"/>
+        <joint name="shoulder" type="hinge" axis="0 0 1" pos="0 0 0"/>
+        <geom type="capsule" fromto="0 0 0 0 0 0.3" size="0.04"/>
+        <body name="lowerArm" pos="0 0 0.3">
+          <joint name="elbow" type="hinge" axis="0 1 0" pos="0 0 0"/>
+          <geom type="capsule" fromto="0 0 0 0 0 0.3" size="0.04"/>
+          <site name="endEffector" pos="0 0 0.3" size="0.01" rgba="0 1 0 1"/>
         </body>
       </body>
     </body>

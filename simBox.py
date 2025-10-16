@@ -37,8 +37,71 @@ def ik(model, data, targetPos, initialQpos=None, tol=1e-4, maxIter=100, alpha=0.
     else:
         print(f"IK failed: {res.message}")
         return None
+    
+def generateXML(numJoints, lengths, jointTypes):
+    try:
+        xml = """
+<mujoco>
+    <compiler angle="radian"/>
+    <option gravity="0 0 -9.81"/>
+    <worldbody>
+        <light diffuse=".5 .5 .5" pos="0 0 3" dir="0 0 -1"/>
+        <geom type="plane" size="1 1 0.1" rgba=".9 0 0 1"/>
+        <body name="base" pos="0 0 0">
+            <geom type="box" size="0.1 0.1 0.05"/>
+        """
+        currentPos = "0 0 0.05"
+        for i in range(numJoints):
+            if jointTypes[i] == 0:
+                xml += f"""
+                <body name="link{i}" pos="{currentPos}">
+                    <joint name="joint{i}" type="hinge" axis="1 0 0" range="-1.57 1.57" damping="1.0"/>
+                    <geom type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                """
+                currentPos = f"0 0 {lengths[i]}"
+            elif jointTypes[i] == 1:
+                xml += f"""
+                <body name="link{i}" pos="{currentPos}">
+                    <joint name="joint{i}" type="hinge" axis="0 1 0" range="-1.57 1.57" damping="1.0"/>
+                    <geom type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                """
+                currentPos = f"0 0 {lengths[i]}"
+            elif jointTypes[i] == 2:
+                xml += f"""
+                <body name="link{i}" pos="{currentPos}">
+                    <joint name="joint{i}" type="hinge" axis="0 0 1" damping="1.0"/>
+                    <geom type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                """
+                currentPos = f"0 0 {lengths[i]}"
+            else:
+                xml += f"""
+                <body name="link{i}" pos="{currentPos}">
+                    <joint name="joint{i}" type="slide" axis="0 0 1" pos="{currentPos} range="0 1" damping="1.0"/>
+                    <geom type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                """
+                currentPos = f"0 0 {lengths[i]}"    
+        xml += f'<site name="endEffector" pos={currentPos} size="0.01" rgba="0 1 0 1"/>'
+        xml += "</body>" * numJoints  # Close links
+        xml += """
+        </body>  <!-- Close base -->
+    <site name="startPos" pos="0 1 -1" size="0.02" rgba="0 0 1 1"/>
+    <site name="goalPos" pos="-2 0 -1" size="0.02" rgba="1 0 0 1"/>
+  </worldbody>
+<actuator>
+        """
+        for i in range(numJoints):
+            xml += f'<motor name="motor{i}" joint="joint{i}" ctrlrange="-10 10"/>'
+        xml += """
+</actuator>
+</mujoco>
+        """
+        return xml
+    except Exception as e:
+        print(f"Mujoco XML Generation Error: {e}")
+        raise
 
-model = mujoco.MjModel.from_xml_path('arm.xml')
+xml = generateXML(3, [0.3, 0.2, 0.3], [2, 1, 3])
+model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
 shoulderMotorId = model.actuator('shoulderMotor').id
 elbowMotorId = model.actuator('elbowMotor').id
