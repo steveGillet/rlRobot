@@ -76,4 +76,10 @@ K.~S. Luck, H.~B. Amor, R.~Calandra, and J.~Peters, ``Data-efficient co-adaptati
 \bibitem{hafner2019dream}
 D.~Hafner, T.~Lillicrap, I.~Fischer, R.~Villegas, D.~Ha, H.~Lee, and J.~Davidson, ``Dream to control: Learning behaviors by latent imagination,'' \emph{arXiv preprint arXiv:1912.01603}, 2019.
 
+\bibitem{yoshikawa1985manipulability}
+T.~Yoshikawa, ``Manipulability of robotic mechanisms,'' \emph{The International Journal of Robotics Research}, vol.~4, no.~2, pp. 3--9, 1985.
+
+\bibitem{schulman2015high}
+J.~Schulman, P.~Moritz, S.~Levine, M.~I. Jordan, and P.~Abbeel, ``High-dimensional continuous control using generalized advantage estimation,'' \emph{arXiv preprint arXiv:1506.02438}, 2015.
+
 \end{thebibliography}

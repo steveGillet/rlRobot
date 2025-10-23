@@ -62,14 +62,38 @@ The research questions we seek to answer: Can PPO be used to generate more effic
 
 \section{Background and Related Work}
 Most of the research in this area codesigns morphology and control of modular, atomic robots like \cite{bhatia2023reinforcement} which uses PPO, \cite{tjanaka2023co} which uses TD3, \cite{spielberg2025accelerated}, and \cite{kalimuthu2023} which uses PPO and A3C for configuration and control of a reconfigurable, modular robot.
-More pertinent \cite{ding2024modular} uses DDQN to co-optimize morphology and control for modular robotic manipulators and \cite{luck2019data} which uses soft actor critic for morphology and control for quadraped robots to avoid evalutating performance in sim or real to save time.
+More pertinent \cite{ding2024modular} uses DDQN to co-optimize morphology and control for modular robotic manipulators and \cite{luck2019data} which uses soft actor critic for morphology and control of quadraped robots to avoid evalutating performance in sim or real to save time.
 Our method will focus on manipulators with simple controllers to allow us to focus on morphology design.
-The method will contrast PPO and Dreamer.
+The method will use Behavioral Cloning (BC) as a baseline and contrast PPO and Dreamer.
 PPO has been used effectively in some of the relevant research and allows for searching over the continuous space of manipulator parameters instead of the discrete space of different modules.
 Dreamer uses a 'world model' to predict outcomes and plan ahead which improves sample efficiency which might be even more effective by reducing computation needs \cite{hafner2019dream}.
 
 \section{Methods}
-% Content here
+The idea is to use PPO to iteratively optimize robot manipulator morphology parameters like number of joints, joint types (hinge X/Y/Z or slide in Z), and link lengths through simulation in MuJoCo.
+The agent will propose designs, evaluate them on tasks using IK and RRT* path planning, and update the policy based on rewards for task success, efficiency, and manipulability.
+
+The algorithmic structure will follow a standard RL loop: At each episode the PPO agent samples a morphology configuration from its policy (parameterized as a Gaussian distribution over continuous link lengths and discrete joint types and numbers via Gumbel-Softmax for differentiability).
+The configuration will be instantiated in a dynamically generated MuJoCo XML model, simulated for a pick-and-place task (ie. moving from start to goal positions with varying elevations and distances), and controlled using numerical IK (using SciPy's minimize with L-BFGS-B) for joint angles and OMPL's RRT* for path planning in joint space.
+Rewards are then computed and the policy is updated.
+
+The object is to maximize expected cumulative rewards, defined as $r = w_1 \cdot s + w_2 \cdot \frac{1}{t} - w_3 \cdot c + w_4 \cdot m$, where $s$ is task success (1 if goal reached within tolerance, else 0), $t$ is trajectory time, $c$ is morphological complexity in number of joints, $m$ is the manipulability measure (joint Jacobian determinant \cite{yoshikawa1985manipulability}), and $w_i$ are the tunable weights.
+PPO minimizes the clipped surrogate loss:
+\begin{align}
+\mathcal{L}(\theta) &= \hat{\mathbb{E}}_t \left[ \min\left(r_t(\theta) \hat{A}_t, \max(1-\epsilon, \min(1+\epsilon, r_t(\theta))) \hat{A}_t\right) \right] \notag \\
+&\quad + S[\pi_\theta](s_t) - \beta \cdot \mathbb{E}_t [(\hat{V}_\theta(s_t) - V_t^{\text{targ}})^2]
+\end{align}
+where $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_t)}$ is the probability ratio, $\hat{A}_t$ is the advantage estimated via Generalized Advantage Estimation (GAE) \cite{schulman2015high}, $\epsilon=0.2$ bounds the ratio for stability, $S$ is an entropy bonus, and $\beta$ balances the value loss \cite{schulman2017proximal}.
+For Dreamer the world model consists of a Recurrent State Space Model (RSSM) with encoder-decoder architecture to predict latent states and rewards, allowing imagination rollouts for policy updates \cite{hafner2019dream}.
+
+Architectures use multi-layer perceptrons from Stable Baselines3.
+The policy network has 2 hidden layers of 64 units each with tanh activation functions for actor and critic.
+In Dreamer the world model adds a GRU recurrent layer (256 units) for dynamics prediction.
+
+Update rules involve collecting trajectories over $N$ episodes, computing advantages, and performing $K$ epochs of minibatch SGD on the PPO loss with a clip ratio of 0.2.
+For Dreamer, updates alternate between model fitting and actor-critic optimization on imagined trajectories.
+
+The baseline will involved BC trained on demonstrations from standard 6-DOF manipulators to imitate fixed morphologies to contrast with RL's exploration.
+As an ablation we will test removing the manipulability term from the reward function to assess the impact on design dexterity versus simplicity.
 
 \section{Experimental Setup}
 % Content here
