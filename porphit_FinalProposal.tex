@@ -29,10 +29,10 @@
 \maketitle
 
 \begin{abstract}
-High costs, lack of tailorability, and lack of retrofitting are some of the most cited problems for the adoption of the robotics in industrial settings \cite{mckinsey2019industrial}.
-We want to address this problem by creating an automation pipeline through which a use case is identified and a robot optimized for that use case is created.
-By matching the robot to the task we can ensure that robot can perform that task and only the parts needed for that task are used, reducing cost.
-Here we describe the process by which robot manipulator morphologies are optimized to particular tasks using a PPO agent.
+This paper aims to address the cost and overactuation of robotics used in manufacturing by leveraging reinforcement learning (RL) to optimize robot morphologies to specific use cases.
+RL is the right tool for this job because it can optimize over the large search space of different robot morphologies, effectively exploring a large variety of iterations from all over that search space.
+The core methodology involves using a PPO model to iterate on the different morphologies and MuJoCo to evaluate their effectiveness in simulation.
+The evaluation signals will be successes, timing, and manipulation measures and these will be used to show the effectiveness of the PPO model at creating morphologies that are faster, more effective, and more efficient for particular tasks.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -40,10 +40,33 @@ reinforcement learning, robot morphology, manipulator design
 \end{IEEEkeywords}
 
 \section{Introduction and Motivation}
-% Content here
+High costs, lack of tailorability, and lack of retrofitting are some of the most cited problems for the adoption of the robotics in industrial settings \cite{mckinsey2019industrial}.
+The most commonly used robotic manipulator in manufacturing is FANUC series of 6-DOF manipulators which cost from \$17,500 to \$400,000 depending on their capacity and customizations \cite{standardbots2025fanucprice}\cite{patentpc2025toprobotics}.
+Meanwhile \cite{russo2021task} and \cite{he2019underactuated} show that most manipulators are overactuated, less cost-efficient, and less effective for most tasks they are used in.
+We want to address this problem by creating an automation pipeline where you feed in a use case and you get out a robot specifically optimized for that use case.
+By matching the robot to the task we can ensure that robot can perform that task and only the parts needed for that task are used, reducing cost and increasing efficiency.
+Here we describe the process by which robot manipulator morphologies are optimized to particular tasks using a PPO agent.
+
+We chose reinforcement learning because morphology design is an optimization problem over a complex, high-dimensional search space and RL can explore and learn optimal designs through trial-and-error in simulation \cite{sutton1988learning}.
+We chose PPO because it is robust and on-policy and excels in continuous action spaces which is ideal for morphology design where there are continuous parameters like link lengths \cite{schulman2017proximal}.
+This is more effective than imitation learning because imitation learning can only use morphologies that already exist severely limiting sample space and innovation \cite{delgado2022robotics}.
+Supervised learning suffers from a very similar issue where labelled data would have to be provided which would be infeasible and there is no mechanism for exploration \cite{kober2013reinforcement}.
+
+The core method is to use MuJoCo to use stable\_baselines3 PPO implementation to iterate on the design parameters (number of links, joint types (X, Y, Z hinge, and Z actuation), and link lengths), use MuJoCo to simulate that iteration on a simple task using RRT* and numerical optimization IK for the path planning, feed the results (success, time, manipulability measure) back into the PPO model.
+The evaluation signals will be successes, time, and manipulability measure.
+Hopefully the better morphologies will be able to do the tasks more successfully, efficiently, and quicker and then we can vary the tasks slightly to find better morphologies for particular tasks.
+The tasks will be kept simple but varied in ways to test different types of movements like moving near the base, moving from near to far, different elevations, more linear movements.
+You can imagine that a lot of pick and place tasks are mostly linear and so might be largely done by linear actuators more efficiently.
+
+The research questions we seek to answer: Can PPO be used to generate more efficient morphologies? What are the best evaluation signals to use? How does varying evaluation signals yield different results (optimizing for time yields simpler manipulators while optimizing for manipulability measure yields more complex manipulators?)?
 
 \section{Background and Related Work}
-% Content here
+Most of the research in this area codesigns morphology and control of modular, atomic robots like \cite{bhatia2023reinforcement} which uses PPO, \cite{tjanaka2023co} which uses TD3, \cite{spielberg2025accelerated}, and \cite{kalimuthu2023} which uses PPO and A3C for configuration and control of a reconfigurable, modular robot.
+More pertinent \cite{ding2024modular} uses DDQN to co-optimize morphology and control for modular robotic manipulators and \cite{luck2019data} which uses soft actor critic for morphology and control for quadraped robots to avoid evalutating performance in sim or real to save time.
+Our method will focus on manipulators with simple controllers to allow us to focus on morphology design.
+The method will contrast PPO and Dreamer.
+PPO has been used effectively in some of the relevant research and allows for searching over the continuous space of manipulator parameters instead of the discrete space of different modules.
+Dreamer uses a 'world model' to predict outcomes and plan ahead which improves sample efficiency which might be even more effective by reducing computation needs \cite{hafner2019dream}.
 
 \section{Methods}
 % Content here

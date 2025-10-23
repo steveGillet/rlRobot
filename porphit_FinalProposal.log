@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.9.9)  20 OCT 2025 22:40
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.9.9)  22 OCT 2025 21:09
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -269,16 +269,18 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 48
  (/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
-Underfull \hbox (badness 1975) in paragraph at lines 31--36
-[]\OT1/ptm/b/it/9 Abstract\OT1/ptm/b/n/9 ---High costs, lack of tai-lorabil-ity, and lack of
- []
-
-(./porphit_FinalProposal.bbl
+LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 44.
+ (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd
+File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
+) (./porphit_FinalProposal.bbl
 Underfull \hbox (badness 10000) in paragraph at lines 25--27
 \OT1/ptm/m/n/8 functions/operations/our-insights/industrial-robotics-insights-into-the-
  []
 
-)
+[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}
+
+
+])
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -290,9 +292,7 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}
-
-
+[2
 
 ] (./porphit_FinalProposal.aux)
  ***********
@@ -301,18 +301,18 @@ L3 programming layer <2024-01-22>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 4117 strings out of 474222
- 64452 string characters out of 5748734
- 1929975 words of memory out of 5000000
- 26355 multiletter control sequences out of 15000+600000
- 587436 words of font info for 84 fonts, out of 8000000 for 9000
+ 4159 strings out of 474222
+ 65158 string characters out of 5748734
+ 1940975 words of memory out of 5000000
+ 26392 multiletter control sequences out of 15000+600000
+ 588886 words of font info for 86 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 57i,8n,65p,442b,266s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 57i,8n,65p,479b,266s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on porphit_FinalProposal.pdf (1 page, 54257 bytes).
+Output written on porphit_FinalProposal.pdf (2 pages, 67076 bytes).
 PDF statistics:
- 29 PDF objects out of 1000 (max. 8388607)
- 17 compressed objects within 1 object stream
+ 32 PDF objects out of 1000 (max. 8388607)
+ 19 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 
