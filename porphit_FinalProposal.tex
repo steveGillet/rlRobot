@@ -12,7 +12,7 @@
 
 \begin{document}
 
-\title{PorphIt: PPO Robot Manipulator Morphology Design}
+\title{PPOrphIt: PPO Robot Manipulator Morphology Design}
 
 \author{\IEEEauthorblockN{Steve Gillet}
 \IEEEauthorblockA{\textit{University of Colorado Boulder Robotics} \\
@@ -64,7 +64,7 @@ The research questions we seek to answer: Can PPO be used to generate more effic
 Most of the research in this area codesigns morphology and control of modular, atomic robots like \cite{bhatia2023reinforcement} which uses PPO, \cite{tjanaka2023co} which uses TD3, \cite{spielberg2025accelerated}, and \cite{kalimuthu2023} which uses PPO and A3C for configuration and control of a reconfigurable, modular robot.
 More pertinent \cite{ding2024modular} uses DDQN to co-optimize morphology and control for modular robotic manipulators and \cite{luck2019data} which uses soft actor critic for morphology and control of quadraped robots to avoid evalutating performance in sim or real to save time.
 Our method will focus on manipulators with simple controllers to allow us to focus on morphology design.
-The method will use Behavioral Cloning (BC) as a baseline and contrast PPO and Dreamer.
+The method will use standard 6-DOF morphology as a baseline and contrast with PPO and Dreamer generated morphologies.
 PPO has been used effectively in some of the relevant research and allows for searching over the continuous space of manipulator parameters instead of the discrete space of different modules.
 Dreamer uses a 'world model' to predict outcomes and plan ahead which improves sample efficiency which might be even more effective by reducing computation needs \cite{hafner2019dream}.
 
@@ -92,34 +92,122 @@ In Dreamer the world model adds a GRU recurrent layer (256 units) for dynamics p
 Update rules involve collecting trajectories over $N$ episodes, computing advantages, and performing $K$ epochs of minibatch SGD on the PPO loss with a clip ratio of 0.2.
 For Dreamer, updates alternate between model fitting and actor-critic optimization on imagined trajectories.
 
-The baseline will involved BC trained on demonstrations from standard 6-DOF manipulators to imitate fixed morphologies to contrast with RL's exploration.
+The baseline will involved standard 6-DOF manipulators to contrast with RL's exploration.
 As an ablation we will test removing the manipulability term from the reward function to assess the impact on design dexterity versus simplicity.
 
 \section{Experimental Setup}
-% Content here
+We are going to evaluate our approach using simulated pick-and-place type tasks in MuJoCo physics engine sourced from the official MuJoCo library (version 3.3.7).
+Tasks will include:
+\begin{enumerate}
+    \item Basic pick-and-place: moving the end-effector from an average height, average distance start position (e.g., [-0.5, 1.0, 1.0]) to a similar height, similar distance goal position (e.g., [0.6, 0.75, 1.0]) with minimal obstacles
+    \item Linear movement: moving the end-effector in a very linear way to try and illicit more linear actuation joints (e.g., [0.25, 0.0, 0.5] to [1.25, 0.0, 0.5]).
+    \item Varying elevation: going from high to low or vice versa to test vertical dexterity (e.g., [0.25, 0.25, 0.0] to [-0.25, 0.25, 1.0]).
+    \item Held-out generalization: similar to basic but with randomized obstacle positions
+\end{enumerate}
+
+Observations are parametric (joint type, link length, number of joints) and task-specific (start position, goal position, end-effector position, distance). 
+Actions are continuous (link lengths) and discrete (joint types, number of joints) sampled via the policy network.
+Rewards are defined by the objective function: $r = 10 \cdot s + 5 \cdot (1 / t) - 1 \cdot c + 2 \cdot m$ with episode termination on success or max steps.
+Episode length is fixed at 200 simulation steps (time horizon $T=200$) with stochasticity introduced via Guassian noise on initial joint positions and dynamics to simulate real-world uncertainty.
+
+For compute budget and reproducability, we will use a NVIDIA GeForce RTX 4060 GPU (or CPU fallback 11th Gen Intel(R) Core(TM) i9-11900KF @ 3.50GHz) via Stable Baselines3.
+The expected total environment frames will be approximately 1e6 (1000 episodes $\times$ 200 steps $\times$ 5 morphologies per evaluation) which corresponds to 4-6 hours wall-clock time based on MuJoCo's ~5000 steps/second benchmark on similar hardware.
+Experiments will use at least 3 random seeds for all training and evaluation with results logged via TensorBoard.
+We will report means with 95\% confidence intervals ($\bar{x} \pm 1.96 \cdot \frac{s}{\sqrt{n}}$ where $s$ is standard deviation and $n$ is number of seeds). 
+
+Primary success metrics will be cumulative return (average reward over episodes) and success rate (fraction of episodes reaching goal within 0.01m tolerance).
+Secondary metrics include sample efficiency (returns over total frames plotted as learning curves) and generalization (success on held-out tasks).
 
 \section{Timeline and Milestones}
-% Content here
+W1 (Oct 27 - Nov 2): Jay sets up the simulation environment, transitioning from MuJoCo to Isaac Lab if feasible, including dynamic XML/model generation for morphologies and basic pick-and-place tasks with IK/RRT* control; success check: Simulate and validate at least 3 fixed morphologies reaching goals with <0.01m error in under 100 steps, owner Jay.
+W2 (Nov 3 - Nov 9): Steve implements the baseline using demonstrations from standard 6-DOF manipulators in the simulation env, and reproduces PPO training on a simple fixed morphology; success check: Achieve >80\% success rate on basic reach task with standard morphologies, and PPO showing stable reward curves over 1e5 frames, owner Steve.
+W3 (Nov 10 - Nov 16): Integrate PPO with morphology optimization (e.g., sampling link lengths/joint types), with Jay assisting on env wrappers for dynamic configs; success check: PPO generates and evaluates 10 novel morphologies, improving average reward by 20\% over random baselines on linear motion task, owners Steve (RL) and Jay (simulation integration).
+W4 (Nov 17 - Nov 23): Add Dreamer comparison and manipulability ablation (w4=0), running with 3 seeds; Jay handles generalization tasks (e.g., perturbed dynamics); success check: Compare PPO vs. Dreamer on sample efficiency (frames to 90\% success), and ablation showing simpler designs without manipulability term (e.g., avg. joints reduced by 1-2), owners Steve (RL experiments) and Jay (task variants).
+W5 (Nov 24 - Nov 30): Finalize full evaluations on all tasks including held-out splits, generate plots (learning curves, morphology examples), and complete writing; success check: All metrics reported with means/CIs, paper draft ready with visuals of optimized vs. standard manipulators, all.
 
 \section{Risks and Mitigations}
-% Content here
+Potential risks include sparse rewards, a lot of designs will probably fail completely leading to zero feedback, we hope to mitigate this using shaped rewards (like distance to goal bonuses) and curriculum learning where we start with the simpler tasks first.
+Another risk is training instability in the RL model resulting from high-dimensional action spaces or inaccuracies in the world models, we hope to address this with hyperparameter sweeps via logging, regularization terms, and earling stopping based on validation rewards.
+Compute limits may constrain episode counts, we will handle this with initial testing, CPU fallback, trying more sample-efficient methods like Dreamer.
+Stochasticity may cause variance in results, we counter this with 3+ random seeds and confidence intervals.
+Lastly, dependency on team roles may risk delays in integration, we hope to mitigate this with weekly meetings and shared code repositories.
 
 \section{Resources}
-% Content here
+We are using the following software libraries and simulators:
+
+\subsection{Simulators}
+MuJoCo physics engine version 3.3.7 and Isaac Lab for robot dynamics.
+Both are open source under Apache 2.0 license.
+
+\subsection{RL Libraries}
+Stable Baselines3 version 2.7.0 for PPO implementation which is licensed under MIT and DreamerV3 which is open source under Apache 2.0.
+
+\subsection{Optimization \& Planning}
+SciPy version 1.16.2 Copyright (c) 2001-2002 Enthought, Inc. 2003, SciPy Developers.
+SciPy will be used for inverse kinematics.
+OMPL version 1.7.0 open source under BSD license for motion planning (shocking).
+
+\subsection{Data Processing}
+NumPy version 2.2.6 Copyright (c) 2005-2024, NumPy Developers.
+Used for array operations and reward calculations.
+Matplotlib version 3.10.6 Matplotlib Development Team license.
+Used for plotting learning curves.
+
+\subsection{Logging}
+TensorBoard version 2.20.0 licensed under Apache 2.0.
+Used for experiement tracking and metrics visualizations.
+
+\subsection{Datasets}
+No external datasets are used, all data is custom generated via MuJoCo/Isaac Lab.
+
+\subsection{Starter Code}
+Custom Python scripts for morphology generation and RL integration, inspired by MuJoCo tutorials (available from https://mujoco.readthedocs.io/en/stable/overview.html) and Stable Baselines3 examples (github.com/DLR-RM/stable-baselines3).
+All modifications are original to this project.
 
 \section{Ethics and Safety}
-% Content here
+No human subjects or hardware involved, all experiments conducted in simulation.
+We want to help advance the robotics community by ensuring our work is reproducible and all code will be made available under MIT license upon project completion.
+No sensitive data is used, only randomly-generated, simulation data.
 
 \section{Evaluation Plan}
-% Content here
+We will produce the folowing plots and tables to assess and visualize the results:
+
+\subsection{Learning Curves}
+Plots of average cumulative return vs. training frames for PPO and Dreamer, with shaded 95\% confidence intervals over 3 seeds with separate curves for each task to show convergence.
+
+\subsection{Sample Efficiency Tables}
+Tables comparing number of frames required to reach 90\% success rate across methods (baseline, PPO, Dreamer), with means and confidence intervals.
+Rows for tasks, columns for methods.
+
+\subsection{Generalization Results}
+Tables of success rates on held-out tasks (dynamics perturbation with 10\% mass variance) reporting means and confidence intervals.
+Include visualizations of optimized morphologies.
+
+\subsection{Pass Criteria}
+Methods pass if PPO/Dreamer achieves $>85\%$ success rate on primary tasks with samples efficiency $<$5e5 frames, and generalization $>75\%$ on held-out splits.
+Negative results (no improvement) will be reported as informative if ablation explains gaps (manipulability term boosts dexterity by gap amount).
 
 \section{Expected Results}
-% Content here
+We pose the following falsifiable hypotheses:
+\begin{enumerate}
+    \item PPO generated morphologies will achieve at least 20\% higher success rates and 15\% lower completion times on pick-and-place tasks compared to standard 6-DOF designs due to exploration of task-specific configurations.
+    \item Incorporating the manipulability term in the reward function will yield designs with 25\% greater dexterity (measured by manipulability index) but potentially higher complexity, testable via ablation.
+\end{enumerate}
+
+Success is defined as hypothesis (1) holding true with optimized morphologies showing reduced overkill and generalization $>75\%$ on held-out dynamics indicating RL's viability for cost-effective manipulator design.
+An informative negative result would occur if hypothesis (2) fails indicating reward shaping needs refinement or if RL underperforms baseline indicating probably limitations in high-dimensional morphology spaces.
+
 
 \section{Contributions and Roles}
-% Content here
+Steve Gillet is responsible for the RL implementation including PPO, Dreamer, and baseline setups, reward design, ablations, and primary experiements on optimization and efficiency
+He owns the learning curves and sample efficiency tables and RL-specific metrics in evaluations.
+
+Jay Vakil handles the simulation environment including dynamic model generation in MuJoCo/Isaac Lab, task definitions, IK/RRT* integration, and generalization studies with perturbations.
+He owns the morphology visualization plots and generalization results tables.
+
+Collaboratively one baseline, one ablation, integration testing, and final writing.
 
 \bibliographystyle{IEEEtran}
-\bibliography{references} % Assuming a references.bib file
+\bibliography{references}
 
 \end{document}
