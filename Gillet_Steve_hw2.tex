@@ -82,7 +82,7 @@ Run both agents in the environment for 500 episodes and use your results to answ
     You can see the SARSAMAX getting pretty consistently higher rewards which makes sense given that you are acting more greedily.
     There is a higher value on the greedy states and actions so the agent is more likely to go that way and the rewards are going to be higher because that behavior is going to result in shorter paths.
 
-\end{itemize}
+1`247'\end{itemize}
 
 \section{PART 2: TD, MC, AND BOOTSTRAPPING [20 POINTS]}
 
@@ -97,15 +97,18 @@ Imagine you run your SARSA agent on "Cliff Walking" for only one single episode.
 \begin{itemize}
     \item If you were using an Every-Visit Monte Carlo Control algorithm, which state-action pairs' Q-values would be updated after this single episode is complete? Briefly describe how the return would be calculated.
     
-    % Your answer here
+    All of the state-action pairs that were visited would be updated and the return would be the total discounted reward from that timestep forward.
     
     \item Now, describe which Q-values would have been updated using the SARSA (TD) algorithm you implemented. How does the timing and scope of the updates differ from the MC approach?
     
-    % Your answer here
+    The same Q-values would be updated but the values would be updated immediately instead of having to wait till the end of the episode and they would be updated just using the rewards for the current state and the next state instead of the entire return.
     
     \item Explain why this difference occurs, using the terms bootstrapping and TD target in your explanation. Your answer should clarify why TD can learn online from incomplete sequences while MC must wait for the final outcome.
     
-    % Your answer here
+    TD target is that estimated return that is taken from the current and next state-action pair.
+    Bootstrapping is process of making an estimate with an estimate, when you estimate the current return using the reward and the estimate based off of the next reward you are bootsrapping.
+    This is the reason why TD can learn online, it uses these techniques to update the value of a state-action pair based on an estimate instead of waiting to finish the episode and calculating the actual return.
+     
 \end{itemize}
 
 \section{PART 3: CREDIT ASSIGNMENT WITH SARSA($\lambda$) [40 POINTS]}
