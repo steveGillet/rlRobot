@@ -44,5 +44,5 @@ class SarsaLambdaAgent:
         delta = reward + self.gamma*self.q_table[next_state, next_action] - self.q_table[next_state, next_action]
         self.e_table[state, action] += 1
         self.q_table += self.alpha * delta * self.e_table
-        self.e_table += self.gamma * self.lambda_val * self.e_table
+        self.e_table = self.gamma * self.lambda_val * self.e_table
 

@@ -56,12 +56,12 @@ def plot_heatmap(e_table, lambda_val):
 
     # ---- create the figure ------------------------------------------------
     fig, ax = plt.subplots(figsize=(6, 6))
-    ax.set_xlim(0, 5)
-    ax.set_ylim(0, 5)
-    ax.set_xticks(np.arange(5) + 0.5)
-    ax.set_yticks(np.arange(5) + 0.5)
-    ax.set_xticklabels(range(5))
-    ax.set_yticklabels(range(5)[::-1])   # row 0 at the top
+    # ax.set_xlim(0, 5)
+    # ax.set_ylim(0, 5)
+    ax.set_xticks(np.arange(6))
+    ax.set_yticks(np.arange(6))
+    ax.set_xticklabels(range(6))
+    ax.set_yticklabels(range(6).__reversed__())   # row 0 at the top
     ax.grid(True, linewidth=1.5, color='k')
 
     # ---- colour each cell by its max trace --------------------------------
