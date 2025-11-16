@@ -76,11 +76,11 @@ def generateXML(numJoints, lengths, jointTypes):
             else:
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
-                    <joint name="joint{i}" type="slide" axis="0 0 1" pos="{currentPos} range="0 1" damping="1.0"/>
+                    <joint name="joint{i}" type="slide" axis="0 0 1" pos="{currentPos}" range="0 1" damping="1.0"/>
                     <geom type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"    
-        xml += f'<site name="endEffector" pos={currentPos} size="0.01" rgba="0 1 0 1"/>'
+        xml += f'<site name="endEffector" pos="{currentPos}" size="0.01" rgba="0 1 0 1"/>'
         xml += "</body>" * numJoints  # Close links
         xml += """
         </body>  <!-- Close base -->
@@ -100,41 +100,43 @@ def generateXML(numJoints, lengths, jointTypes):
         print(f"Mujoco XML Generation Error: {e}")
         raise
 
-xml = generateXML(3, [0.3, 0.2, 0.3], [2, 1, 3])
+numLinks = 3
+xml = generateXML(numLinks, [0.3, 0.2, 0.3], [2, 1, 3])
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
-shoulderMotorId = model.actuator('shoulderMotor').id
-elbowMotorId = model.actuator('elbowMotor').id
-shoulderId = model.joint('shoulder').id
-elbowId = model.joint('elbow').id
 
+actuatorIds = [model.actuator(f"motor{i}").id for i in range(numLinks)]
+jointIds = [model.joint(f"joint{i}").id for i in range(numLinks)]
 
 space = ob.CompoundStateSpace()
-space.addSubspace(ob.SO2StateSpace(), 1.0)
-space.addSubspace(ob.SO2StateSpace(), 1.0)
+for link in range(numLinks):
+    space.addSubspace(ob.SO2StateSpace(), 1.0)
 
 si = ob.SpaceInformation(space)
 simpleSetup = og.SimpleSetup(si)
 
-startPos = np.array([-.2, -0.2, 0.3])
-goalPos = np.array([0.2, 0.2, 0.4])
+startPos = np.array([-.4, -0.4, 0.6])
+goalPos = np.array([0.4, 0.4, 0.8])
 
 startQpos = ik(model, data, startPos)
 print(f"Starting angles: {startQpos}")
 goalQpos = ik(model, data, goalPos, initialQpos=startQpos)
 
-data.qpos[elbowId] = startQpos[0]
-data.qpos[shoulderId] = startQpos[1]
+i = 0
+for id in jointIds:
+    data.qpos[id] = startQpos[i]
+    i+=1
+
 mujoco.mj_forward(model, data)
 startError = np.linalg.norm(data.site('endEffector').xpos - startPos)
 print(f"Start error is: {startError}")
 
 start = ob.State(space)
-start()[0].value = startQpos[0]
-start()[1].value = startQpos[1]
 goal = ob.State(space)
-goal()[0].value = goalQpos[0]
-goal()[1].value = goalQpos[1]
+for i in range(len(startQpos)):
+    start()[i].value = startQpos[i]
+    goal()[i].value = goalQpos[i]
+    
 simpleSetup.setStartAndGoalStates(start, goal)
 
 planner = og.RRTstar(si)
@@ -158,9 +160,12 @@ model.site('goalPos').pos = goalPos
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
     while index < len(pathStates):
-        print(pathStates[index][0].value)
-        data.qpos[shoulderId] = pathStates[index][0].value
-        data.qpos[elbowId] = pathStates[index][1].value
+        i = 0
+        for id in jointIds:
+            data.qpos[id] = pathStates[index][i].value
+            i+=1
+
+        print(data.qpos[2])
 
         mujoco.mj_step(model,data)
         print(f"Time step: {data.time}s, Position: {data.geom_xpos[-1]}")
@@ -168,4 +173,4 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         time.sleep(0.1)
         index += 1
 
-print("Sim Complete")
+print("Sim Complete") 
