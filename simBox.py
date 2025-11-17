@@ -7,14 +7,14 @@ import ompl.geometric as og
 from scipy.optimize import minimize
 import gymnasium as gym
 from stable_baselines3 import PPO
-# from stable_baselines3.common.vec_env import SubprocVecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import VecNormalize
 from ompl import util as ou
 ou.setLogLevel(ou.LOG_NONE)
 
 class robotArmEnv(gym.Env):
-    metadata = {"render_modes": []}
+    # metadata = {"render_modes": []}
 
     def __init__(self, numLinks=4, fixedJointTypes=None):
         super().__init__()
@@ -47,8 +47,10 @@ class robotArmEnv(gym.Env):
         si = ob.SpaceInformation(space)
         simpleSetup = og.SimpleSetup(si)
 
-        startQpos = ik(model, data, self.startPos)
-        goalQpos = ik(model, data, self.goalPos, initialQpos=startQpos)
+        # startQpos = ik_dls(model, data, self.startPos)
+        # goalQpos = ik_dls(model, data, self.goalPos, q_init=startQpos)
+        startQpos = np.array([0.2, -0.8, -0.3, 0.9])
+        goalQpos = np.array([-0.4, 0.7, 0.5, -1.0])
         
         if startQpos is None:
             return -100.0
@@ -83,14 +85,19 @@ class robotArmEnv(gym.Env):
 
         planner = og.RRTstar(si)
         simpleSetup.setPlanner(planner)
-        simpleSetup.solve(8.0)
+        simpleSetup.solve(0.8)
+        planner.clear()
 
-        if simpleSetup.haveSolutionPath():
+        foundSolution = simpleSetup.haveSolutionPath()
+
+        if foundSolution:
             simpleSetup.simplifySolution()
             path = simpleSetup.getSolutionPath()
-            path.interpolate(20)
+            length = path.length()
+            path.clear()
+            # path.interpolate(20)
             # pathStates = [path.getState(i) for i in range(path.getStateCount())]
-            return 100 - 0.8 * path.length() - 20 * (startError + goalError)
+            return 100 - 0.8 * length - 20 * (startError + goalError)
 
         else:
             # pathStates = []
@@ -101,6 +108,56 @@ class robotArmEnv(gym.Env):
         reward = self._evaluate(lengths)
         done = True
         return np.array([0.0], dtype=np.float32), reward, done, done, {}
+
+def ik_dls(model, data, target_pos: np.ndarray, q_init: np.ndarray | None = None,
+            max_steps: int = 150, tol: float = 0.005, damping: float = 0.1) -> np.ndarray:
+    """
+    Damped least-squares (Levenberg-Marquardt style) IK.
+    Always returns the best joint angles found (never None).
+    Works extremely well even for unreachable targets — just returns the stretched pose.
+    """
+    nv = model.nv
+    if q_init is None:
+        q = np.zeros(nv)
+    else:
+        q = q_init.copy()
+
+    site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "endEffector")
+
+    for _ in range(max_steps):
+        # Set configuration and compute forward kinematics
+        data.qpos[:] = q
+        mujoco.mj_forward(model, data)
+
+        err = target_pos - data.site_xpos[site_id]               # ← correct sign!
+        err_norm = np.linalg.norm(err)
+        if err_norm < tol:
+            return q
+
+        # Geometric Jacobian for position only (3 × nv)
+        jac = np.zeros((3, nv))
+        mujoco.mj_jacSite(model, data, jac, None, site_id)
+
+        # Damped least-squares update
+        jtj = jac.T @ jac
+        delta_q = np.linalg.solve(jtj + damping**2 * np.eye(nv), jac.T @ err)
+
+        # Prevent huge steps that blow up near singularities
+        step_norm = np.linalg.norm(delta_q)
+        if step_norm > 0.3:                     # 0.3 rad ≈ 17° max step works great
+            delta_q *= 0.3 / step_norm
+
+        q += delta_q
+
+        # Gentle joint limit clamping (stay 0.01 rad inside limits)
+        for j in range(nv):
+            if model.jnt_limited[j]:
+                l, h = model.jnt_range[j]
+                q[j] = np.clip(q[j], l + 0.01, h - 0.01)
+
+    # Always return the best q we found (even if unreachable)
+    return q
+
 
 def ik(model, data, targetPos, initialQpos=None, tol=1e-4, maxIter=100, alpha=0.1):
     siteId = model.site('endEffector').id
@@ -201,23 +258,28 @@ def makeEnv():
         return robotArmEnv(4)
     return _init
 
-# if __name__ == '__main__':
-#     venv = DummyVecEnv([makeEnv() for _ in range(4)])
-#     venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
+if __name__ == '__main__':
+    venv = DummyVecEnv([makeEnv() for _ in range(1)])
+    # venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
 
-#     policyKwargs = dict(net_arch=[128,128,128])
-#     ppo = PPO("MlpPolicy", venv, policy_kwargs=policyKwargs, learning_rate=0.001, n_steps=128, batch_size=512, n_epochs=4, gamma=0.98, verbose=1, tensorboard_log="./arm_morph_tb/", device="cpu")
-#     ppo.learn(total_timesteps=3_000_000)
-#     ppo.save("bestestArm")
+    policyKwargs = dict(net_arch=[128,128,128])
+    ppo = PPO("MlpPolicy", venv, policy_kwargs=policyKwargs, learning_rate=0.001, n_steps=128, batch_size=512, n_epochs=4, gamma=0.98, verbose=1, tensorboard_log="./arm_morph_tb/", device="cpu")
+    ppo.learn(total_timesteps=3_000_000)
+    ppo.save("bestestArm")
 
-if __name__ == "__main__":
-    env = robotArmEnv(4)
-    obs, info = env.reset()
-    for _ in range(5):
-        a = env.action_space.sample()
-        print("step...")
-        obs, r, done, trunc, info = env.step(a)
-        print("reward:", r)
+# if __name__ == "__main__":
+#     env = robotArmEnv(4)
+#     obs, info = env.reset()
+#     for _ in range(25):
+#         a = env.action_space.sample()
+#         print("step...")
+#         obs, r, done, trunc, info = env.step(a)
+#         print("reward:", r)
+#         obs, info = env.reset()
+
+#     print("DONE WITH MAIN PYTHON CODE")
+#     import os
+#     os._exit(0)
 
 
 # index = 0
