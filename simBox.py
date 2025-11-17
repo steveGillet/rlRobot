@@ -47,10 +47,10 @@ class robotArmEnv(gym.Env):
         si = ob.SpaceInformation(space)
         simpleSetup = og.SimpleSetup(si)
 
-        # startQpos = ik_dls(model, data, self.startPos)
-        # goalQpos = ik_dls(model, data, self.goalPos, q_init=startQpos)
-        startQpos = np.array([0.2, -0.8, -0.3, 0.9])
-        goalQpos = np.array([-0.4, 0.7, 0.5, -1.0])
+        startQpos = ik_dls(model, self.startPos)
+        goalQpos = ik_dls(model, self.goalPos, q_init=startQpos)
+        # startQpos = np.array([0.2, -0.8, -0.3, 0.9])
+        # goalQpos = np.array([-0.4, 0.7, 0.5, -1.0])
         
         if startQpos is None:
             return -100.0
@@ -109,54 +109,106 @@ class robotArmEnv(gym.Env):
         done = True
         return np.array([0.0], dtype=np.float32), reward, done, done, {}
 
-def ik_dls(model, data, target_pos: np.ndarray, q_init: np.ndarray | None = None,
-            max_steps: int = 150, tol: float = 0.005, damping: float = 0.1) -> np.ndarray:
+def ik_dls(
+    model,
+    target_pos: np.ndarray,
+    q_init: np.ndarray | None = None,
+    max_iters: int = 200,
+    tol: float = 1e-3,
+    lambda_: float = 1e-2,
+    max_step: float = 0.3,
+) -> np.ndarray | None:
     """
-    Damped least-squares (Levenberg-Marquardt style) IK.
-    Always returns the best joint angles found (never None).
-    Works extremely well even for unreachable targets — just returns the stretched pose.
+    Damped least-squares IK for site 'endEffector'.
+
+    Returns:
+        q_best (np.ndarray of shape (nq,)) or None if something is badly wrong
+        (NaNs, singular beyond recovery, etc.).
     """
-    nv = model.nv
+    site_id = model.site("endEffector").id
+    nq = model.nq
+    nv = model.nv  # for your chain, nv == nq
+
+    # Separate data object so IK can't corrupt caller's MjData
+    ik_data = mujoco.MjData(model)
+
+    # --- Initial guess ---
     if q_init is None:
-        q = np.zeros(nv)
+        q = np.zeros(nq, dtype=np.float64)
     else:
-        q = q_init.copy()
+        q = np.array(q_init, dtype=np.float64).copy()
+        if q.shape[0] != nq or not np.all(np.isfinite(q)):
+            q = np.zeros(nq, dtype=np.float64)
 
-    site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "endEffector")
+    # --- Joint limits in q-space ---
+    q_min = np.full(nq, -np.inf)
+    q_max = np.full(nq,  np.inf)
+    for j in range(model.njnt):
+        adr = model.jnt_qposadr[j]  # index of this joint in qpos
+        if model.jnt_limited[j]:
+            lo, hi = model.jnt_range[j]
+            q_min[adr] = lo
+            q_max[adr] = hi
 
-    for _ in range(max_steps):
-        # Set configuration and compute forward kinematics
-        data.qpos[:] = q
-        mujoco.mj_forward(model, data)
+    q = np.clip(q, q_min, q_max)
 
-        err = target_pos - data.site_xpos[site_id]               # ← correct sign!
-        err_norm = np.linalg.norm(err)
+    # Track best pose seen
+    q_best = q.copy()
+    err_best = np.inf
+
+    # Jacobian buffers
+    jacp = np.zeros((3, nv))
+    jacr = np.zeros((3, nv))
+
+    for _ in range(max_iters):
+        # Sanity check
+        if not np.all(np.isfinite(q)):
+            return None
+
+        # Forward kinematics
+        ik_data.qpos[:] = q
+        mujoco.mj_forward(model, ik_data)
+        current_pos = np.array(ik_data.site(site_id).xpos, copy=True)
+
+        err = target_pos - current_pos
+        err_norm = float(np.linalg.norm(err))
+
+        # Track best
+        if np.isfinite(err_norm) and err_norm < err_best:
+            err_best = err_norm
+            q_best = q.copy()
+
+        # Good enough?
         if err_norm < tol:
-            return q
+            break
 
-        # Geometric Jacobian for position only (3 × nv)
-        jac = np.zeros((3, nv))
-        mujoco.mj_jacSite(model, data, jac, None, site_id)
+        # Compute Jacobian
+        mujoco.mj_jacSite(model, ik_data, jacp, jacr, site_id)
+        J = jacp[:, :nv]  # (3, nv)
 
-        # Damped least-squares update
-        jtj = jac.T @ jac
-        delta_q = np.linalg.solve(jtj + damping**2 * np.eye(nv), jac.T @ err)
+        # Damped least-squares step
+        A = J @ J.T + (lambda_ ** 2) * np.eye(3)
+        try:
+            v = np.linalg.solve(A, err)        # (3,)
+        except np.linalg.LinAlgError:
+            # Very ill-conditioned; use best so far
+            break
 
-        # Prevent huge steps that blow up near singularities
-        step_norm = np.linalg.norm(delta_q)
-        if step_norm > 0.3:                     # 0.3 rad ≈ 17° max step works great
-            delta_q *= 0.3 / step_norm
+        dq = J.T @ v  # (nv,)
 
-        q += delta_q
+        # Limit step size to avoid crazy jumps
+        step_norm = float(np.linalg.norm(dq))
+        if step_norm > max_step:
+            dq *= max_step / (step_norm + 1e-8)
 
-        # Gentle joint limit clamping (stay 0.01 rad inside limits)
-        for j in range(nv):
-            if model.jnt_limited[j]:
-                l, h = model.jnt_range[j]
-                q[j] = np.clip(q[j], l + 0.01, h - 0.01)
+        q = q + dq
+        q = np.minimum(np.maximum(q, q_min), q_max)
 
-    # Always return the best q we found (even if unreachable)
-    return q
+    # Final sanity check
+    if not np.all(np.isfinite(q_best)):
+        return None
+
+    return q_best
 
 
 def ik(model, data, targetPos, initialQpos=None, tol=1e-4, maxIter=100, alpha=0.1):
@@ -259,8 +311,8 @@ def makeEnv():
     return _init
 
 if __name__ == '__main__':
-    venv = DummyVecEnv([makeEnv() for _ in range(1)])
-    # venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
+    venv = DummyVecEnv([makeEnv() for _ in range(4)])
+    venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
 
     policyKwargs = dict(net_arch=[128,128,128])
     ppo = PPO("MlpPolicy", venv, policy_kwargs=policyKwargs, learning_rate=0.001, n_steps=128, batch_size=512, n_epochs=4, gamma=0.98, verbose=1, tensorboard_log="./arm_morph_tb/", device="cpu")
