@@ -1,15 +1,15 @@
 # Fdb version 4
-["bibtex porphit_FinalProposal"] 1761272625.70204 "porphit_FinalProposal.aux" "porphit_FinalProposal.bbl" "porphit_FinalProposal" 1761273655.10438 0
-  "./references.bib" 1761196880.9276 5414 42409522f4fa052ab8f37456729cb6b4 ""
+["bibtex porphit_FinalProposal"] 1761272625.70204 "porphit_FinalProposal.aux" "porphit_FinalProposal.bbl" "porphit_FinalProposal" 1763531043.19971 0
   "/usr/share/texlive/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1440712899 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "porphit_FinalProposal.aux" 1761273654.93952 3857 11a0bdc4341d5c76a3c31bdc85145dd8 "pdflatex"
+  "porphit_FinalProposal.aux" 1763531043.03593 3857 11a0bdc4341d5c76a3c31bdc85145dd8 "pdflatex"
+  "references.bib" 0 -1 0 ""
   (generated)
   "porphit_FinalProposal.bbl"
   "porphit_FinalProposal.blg"
   (rewritten before read)
-["pdflatex"] 1761273654.6778 "/home/steve-gillet/Desktop/rlRobot/porphit_FinalProposal.tex" "porphit_FinalProposal.pdf" "porphit_FinalProposal" 1761273655.10451 0
+["pdflatex"] 1763531042.74503 "/home/steve-gillet/Desktop/rlRobot/pporphit/proposal/porphit_FinalProposal.tex" "porphit_FinalProposal.pdf" "porphit_FinalProposal" 1763531043.19984 0
   "/etc/texmf/web2c/texmf.cnf" 1757467394.77312 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/steve-gillet/Desktop/rlRobot/porphit_FinalProposal.tex" 1761273654.53266 19430 1c69cfcbb45ed8f4d73cdf63214918bd ""
+  "/home/steve-gillet/Desktop/rlRobot/pporphit/proposal/porphit_FinalProposal.tex" 1761273654.53266 19430 1c69cfcbb45ed8f4d73cdf63214918bd ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/times/ptmb7t.tfm" 1136768653 2172 fd0c924230362ff848a33632ed45dc23 ""
@@ -81,7 +81,7 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1707919699 40399 f2c302f7d2af602abb742093540a5834 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1757467420.83173 5472669 54eaf61a88b6b7896ebd0dac973cb29c ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1757467474 8213095 4eae99bc70fd5a29aaa73b459517d883 ""
-  "porphit_FinalProposal.aux" 1761273654.93952 3857 11a0bdc4341d5c76a3c31bdc85145dd8 "pdflatex"
+  "porphit_FinalProposal.aux" 1763531043.03593 3857 11a0bdc4341d5c76a3c31bdc85145dd8 "pdflatex"
   "porphit_FinalProposal.bbl" 1761272625.76532 5080 ab899b1b4a5c0d8930267eb253075215 "bibtex porphit_FinalProposal"
   "porphit_FinalProposal.tex" 1761273654.53266 19430 1c69cfcbb45ed8f4d73cdf63214918bd ""
   (generated)

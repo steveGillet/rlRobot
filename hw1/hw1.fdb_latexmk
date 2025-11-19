@@ -1,7 +1,7 @@
 # Fdb version 4
-["pdflatex"] 1758779587.05127 "/home/steve-gillet/Desktop/rlRobot/hw1.tex" "hw1.pdf" "hw1" 1758779587.32017 0
+["pdflatex"] 1763530678.53374 "/home/steve-gillet/Desktop/rlRobot/hw1/hw1.tex" "hw1.pdf" "hw1" 1763530678.84579 0
   "/etc/texmf/web2c/texmf.cnf" 1757467394.77312 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/steve-gillet/Desktop/rlRobot/hw1.tex" 1758779586.90706 11798 7ca4fc46e3c5a22c7e0acac25d1e3e5d ""
+  "/home/steve-gillet/Desktop/rlRobot/hw1/hw1.tex" 1758779586.90706 11798 7ca4fc46e3c5a22c7e0acac25d1e3e5d ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/tcrm1000.tfm" 1136768653 1536 e07581a4bb3136ece9eeb4c3ffab8233 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm" 1246382020 1004 54797486969f23fa377b128694d548df ""
@@ -69,7 +69,7 @@
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1757467420.83173 5472669 54eaf61a88b6b7896ebd0dac973cb29c ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1757467474 8213095 4eae99bc70fd5a29aaa73b459517d883 ""
   "bellmanExpectation.png" 1758775108.82731 15075 e5cdd9f56adeba53b49687a98501e5b2 ""
-  "hw1.aux" 1758779587.28789 32 c81c40425fbb5e93b90fba65da0b5e61 "pdflatex"
+  "hw1.aux" 1763530678.80507 32 c81c40425fbb5e93b90fba65da0b5e61 "pdflatex"
   "hw1.tex" 1758779586.90706 11798 7ca4fc46e3c5a22c7e0acac25d1e3e5d ""
   "valueIter.png" 1758775228.16884 31969 19e2a56d43aa61198638dd0ca68a49cf ""
   (generated)

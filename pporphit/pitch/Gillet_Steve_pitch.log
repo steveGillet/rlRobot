@@ -1,10 +1,10 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.9.9)  10 SEP 2025 22:39
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.9.9)  18 NOV 2025 22:43
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
  %&-line parsing enabled.
-**/home/steve-gillet/Desktop/rlRobot/Gillet_Steve_pitch.tex
-(/home/steve-gillet/Desktop/rlRobot/Gillet_Steve_pitch.tex
+**/home/steve-gillet/Desktop/rlRobot/pporphit/pitch/Gillet_Steve_pitch.tex
+(/home/steve-gillet/Desktop/rlRobot/pporphit/pitch/Gillet_Steve_pitch.tex
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
 (/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
@@ -547,12 +547,12 @@ L3 programming layer <2024-01-22>
  ) 
 Here is how much of TeX's memory you used:
  18630 strings out of 474222
- 356946 string characters out of 5748734
+ 356991 string characters out of 5748734
  1931975 words of memory out of 5000000
  40509 multiletter control sequences out of 15000+600000
  571695 words of font info for 103 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 102i,8n,107p,1050b,401s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 102i,8n,107p,1065b,401s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
 Output written on Gillet_Steve_pitch.pdf (2 pages, 99311 bytes).
 PDF statistics:

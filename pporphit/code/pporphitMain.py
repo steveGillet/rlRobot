@@ -311,8 +311,8 @@ def makeEnv():
     return _init
 
 if __name__ == '__main__':
-    venv = DummyVecEnv([makeEnv() for _ in range(4)])
-    venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
+    venv = DummyVecEnv([makeEnv() for _ in range(1)])
+    # venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
 
     policyKwargs = dict(net_arch=[128,128,128])
     ppo = PPO("MlpPolicy", venv, policy_kwargs=policyKwargs, learning_rate=0.001, n_steps=128, batch_size=512, n_epochs=4, gamma=0.98, verbose=1, tensorboard_log="./arm_morph_tb/", device="cpu")

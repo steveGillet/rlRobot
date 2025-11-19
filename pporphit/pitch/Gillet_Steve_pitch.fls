@@ -1,9 +1,9 @@
-PWD /home/steve-gillet/Desktop/rlRobot
+PWD /home/steve-gillet/Desktop/rlRobot/pporphit/pitch
 INPUT /etc/texmf/web2c/texmf.cnf
 INPUT /usr/share/texmf/web2c/texmf.cnf
 INPUT /usr/share/texlive/texmf-dist/web2c/texmf.cnf
 INPUT /var/lib/texmf/web2c/pdftex/pdflatex.fmt
-INPUT /home/steve-gillet/Desktop/rlRobot/Gillet_Steve_pitch.tex
+INPUT /home/steve-gillet/Desktop/rlRobot/pporphit/pitch/Gillet_Steve_pitch.tex
 OUTPUT Gillet_Steve_pitch.log
 INPUT /usr/share/texlive/texmf-dist/tex/latex/base/article.cls
 INPUT /usr/share/texlive/texmf-dist/tex/latex/base/article.cls

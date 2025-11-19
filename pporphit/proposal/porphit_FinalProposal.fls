@@ -1,9 +1,9 @@
-PWD /home/steve-gillet/Desktop/rlRobot
+PWD /home/steve-gillet/Desktop/rlRobot/pporphit/proposal
 INPUT /etc/texmf/web2c/texmf.cnf
 INPUT /usr/share/texmf/web2c/texmf.cnf
 INPUT /usr/share/texlive/texmf-dist/web2c/texmf.cnf
 INPUT /var/lib/texmf/web2c/pdftex/pdflatex.fmt
-INPUT /home/steve-gillet/Desktop/rlRobot/porphit_FinalProposal.tex
+INPUT /home/steve-gillet/Desktop/rlRobot/pporphit/proposal/porphit_FinalProposal.tex
 OUTPUT porphit_FinalProposal.log
 INPUT /usr/share/texlive/texmf-dist/tex/latex/ieeetran/IEEEtran.cls
 INPUT /usr/share/texlive/texmf-dist/tex/latex/ieeetran/IEEEtran.cls
