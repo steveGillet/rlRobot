@@ -9,6 +9,7 @@ import gymnasium as gym
 from ompl import util as ou
 ou.setLogLevel(ou.LOG_NONE)
 import os
+import logging
 
 class robotArmEnv(gym.Env):
     def __init__(self, minNumLinks=2, maxNumLinks=7, minLength=0.05, maxLength=1.2):
@@ -24,10 +25,14 @@ class robotArmEnv(gym.Env):
         self.startPos = np.array([0.41, 0.21, 0.3], dtype=np.float32)
         self.goalPos = np.array([0.4, 0.2, 0.8], dtype=np.float32)
 
+        self.logger = setupLogging()
+
     def reset(self, seed=None, options=None):
         return np.array([0.0], dtype=np.float32), {}
 
     def _evaluate(self, numLinks, lengths, jointTypes):
+        self.logger.debug(f"Evaluating: numLinks={numLinks}, lengths={lengths}, jointTypes={jointTypes}")
+
         try:
             xml = generateXML(numLinks, lengths.tolist(), jointTypes.tolist())
             model = mujoco.MjModel.from_xml_string(xml)
@@ -51,15 +56,15 @@ class robotArmEnv(gym.Env):
                 space.addSubspace(subspace, 1.0)
                 bounds = ob.RealVectorBounds(1)
                 bounds.setLow(0, 0)
-                bounds.setHigh(0, 1)
+                bounds.setHigh(0, float(lengths[link]))
                 subspace.setBounds(bounds)
                 isSO2.append(False)
             else:
                 subspace = ob.RealVectorStateSpace(1)
                 space.addSubspace(subspace, 1.0)
                 bounds = ob.RealVectorBounds(1)
-                bounds.setLow(0, -np.pi/2)
-                bounds.setHigh(0, np.pi/2)
+                bounds.setLow(0, -1.57)
+                bounds.setHigh(0, 1.57)
                 subspace.setBounds(bounds)
                 isSO2.append(False)
 
@@ -87,11 +92,14 @@ class robotArmEnv(gym.Env):
         si.setStateValidityChecker(validityChecker)
         simpleSetup = og.SimpleSetup(si)
 
+        self.logger.debug(f"Pre-IK: startPos={self.startPos}")
         # print("Start IK")
         startQpos, jStart = ik_dls(model, self.startPos)
+        self.logger.debug(f"Post Start IK: startQpos={startQpos}, jStart={jStart}")
 
         # print("Goal IK")
         goalQpos, jGoal = ik_dls(model, self.goalPos, initialQpos=startQpos)
+        self.logger.debug(f"Post Goal IK: goalQpos={goalQpos}, jGoal={jGoal}")
         # startQpos = np.array([0.2, -0.8, -0.3, 0.9])
         # goalQpos = np.array([-0.4, 0.7, 0.5, -1.0])
         
@@ -109,6 +117,7 @@ class robotArmEnv(gym.Env):
 
         mujoco.mj_forward(model, data)
         goalError = np.linalg.norm(data.site('endEffector').xpos - self.goalPos)
+        self.logger.debug(f"Goal Error: {goalError}")
 
         i = 0
         for id in jointIds:
@@ -117,9 +126,18 @@ class robotArmEnv(gym.Env):
 
         mujoco.mj_forward(model, data)
         startError = np.linalg.norm(data.site('endEffector').xpos - self.startPos)
+        self.logger.debug(f"Start Error: {startError}")
 
-        muStart = manipulabilityIndex(jStart)
-        muGoal = manipulabilityIndex(jGoal)
+        if jStart.shape[1] == numLinks:
+            muStart = manipulabilityIndex(jStart)
+        else:
+            muStart = 0.0
+        self.logger.debug(f"Mu Start: {muStart}")
+        if jGoal.shape[1] == numLinks:
+            muGoal = manipulabilityIndex(jGoal)
+        else:
+            muGoal = 0.0
+        self.logger.debug(f"Mu Goal: {muGoal}")
 
         start = ob.State(space)
         goal = ob.State(space)
@@ -224,7 +242,7 @@ def ik_dls(
     for _ in range(max_iters):
         # Sanity check
         if not np.all(np.isfinite(q)):
-            return None
+            return None, None
 
         # Forward kinematics
         ik_data.qpos[:] = q
@@ -267,13 +285,18 @@ def ik_dls(
 
     # Final sanity check
     if not np.all(np.isfinite(q_best)):
-        return None
+        return None, None
     
-    ik_data.qpos[:] = q_best
-    mujoco.mj_forward(model, ik_data)
-    mujoco.mj_jacSite(model, ik_data, jacp, jacr, site_id)
-    jBest = jacp[:,:nv]
-
+    try:
+        ik_data.qpos[:] = q_best
+        mujoco.mj_forward(model, ik_data)
+        mujoco.mj_jacSite(model, ik_data, jacp, jacr, site_id)
+        jBest = jacp[:, :nv]
+        if not np.all(np.isfinite(jBest)):
+            jBest = np.zeros((3, nv))  # Fallback for non-finite Jacobian
+    except Exception as e:
+        print(f"jBest computation failed: {e}")
+        jBest = np.zeros((3, nv))
     return q_best, jBest
 
 
@@ -380,7 +403,7 @@ def generateXML(numJoints, lengths, jointTypes):
         raise
 
 def manipulabilityIndex(J):
-    if J is None or not np.all(np.isfinite(J)):
+    if J is None or J.shape[0] != 3 or not np.all(np.isfinite(J)):
         return 0.0
     
     JJT = J @ J.T
@@ -388,3 +411,17 @@ def manipulabilityIndex(J):
     if det <= 0:
         return 0.0
     return np.sqrt(det)
+
+    # S = np.linalg.svd(J, compute_uv=False)
+    # if len(S) < 3 or np.any(S < 1e-10):
+    #     return 0.0
+    # return np.prod(S)
+
+def setupLogging():
+    pid = os.getpid()
+    logger = logging.getLogger(f"process{pid}")
+    logger.setLevel(logging.DEBUG)
+    handler = logging.FileHandler(f"logs/logProcess{pid}.txt")
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    logger.addHandler(handler)
+    return logger

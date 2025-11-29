@@ -2,9 +2,12 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import VecNormalize
-from robotArmEnv import robotArmEnv
+from robotArmEnv import robotArmEnv, setupLogging
 import multiprocessing as mp
 mp.set_start_method('spawn', force=True)
+import os
+import faulthandler
+faulthandler.enable(file=open(f"logs/faulthandler{os.getpid()}.log", 'w'))
 
 def makeEnv():
     def _init():
@@ -12,6 +15,9 @@ def makeEnv():
     return _init
 
 if __name__ == '__main__':
+    logger = setupLogging()
+    logger.info("Main Process Started")
+
     venv = SubprocVecEnv([makeEnv() for _ in range(24)])
     venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
 
