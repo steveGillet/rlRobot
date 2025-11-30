@@ -378,7 +378,7 @@ def generateXML(numJoints, lengths, jointTypes):
             else:
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
-                    <joint name="joint{i}" type="slide" axis="0 0 1" pos="{currentPos}" range="0 {lengths[i]}" damping="1.0"/>
+                    <joint name="joint{i}" type="slide" axis="0 0 1" range="0 {lengths[i]}" damping="1.0"/>
                     <geom type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"    
