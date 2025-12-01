@@ -151,7 +151,7 @@ class robotArmEnv(gym.Env):
             
         simpleSetup.setStartAndGoalStates(start, goal)
 
-        planner = og.RRTstar(si)
+        planner = og.RRTConnect(si)
         simpleSetup.setPlanner(planner)
         # print("Planner")
         simpleSetup.solve(0.8)
@@ -166,18 +166,21 @@ class robotArmEnv(gym.Env):
             path.clear()
             # path.interpolate(20)
             # pathStates = [path.getState(i) for i in range(path.getStateCount())]
-            return 100 - 0.4 * length - 20 * (startError + goalError) + 5 * (muStart + muGoal)
+            return 100 - 0.4 * length - 40 * (startError + goalError) + 1.25 * (muStart + muGoal)
+            # return 100 - 0.4 * length - 20 * (startError + goalError)
 
         else:
             # pathStates = []
-            return 30 - 50 * (startError + goalError) + 2 * (muStart + muGoal)
+            return 30 - 100 * (startError + goalError) + 0.5 * (muStart + muGoal)
+            # return 30 - 50 * (startError + goalError)
         
     def step(self, action):
-        # numLinks = 3
         numLinks = int(np.round(action[0] * (self.maxNumLinks - self.minNumLinks) + self.minNumLinks))
         lengths = (action[1:(self.maxNumLinks + 1)] * (self.maxLength - self.minLength) + self.minLength)[:numLinks]
         jointTypes = np.round(action[(1+self.maxNumLinks):] * 3)[:numLinks].astype(int)
-        # jointTypes = np.array([1, 2, 1])
+        # numLinks = 7
+        # lengths = np.array([0.05, 0.05, 1.1999999, 0.51585096, 1.1999999, 1.1999999, 1.1999999])
+        # jointTypes = np.array([0, 1, 2, 1, 0, 3, 3])
 
         # print("Num Links: ", numLinks)
         # print("Lengths: ", lengths)

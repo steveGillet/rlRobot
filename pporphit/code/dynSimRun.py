@@ -5,7 +5,6 @@ import numpy as np
 import ompl.base as ob
 import ompl.geometric as og
 from scipy.optimize import minimize
-import keyboard
 
 def ik(model, data, targetPos, initialQpos=None, tol=1e-4, maxIter=100, alpha=0.1):
     siteId = model.site('endEffector').id
@@ -78,7 +77,7 @@ def generateXML(numJoints, lengths, jointTypes):
             else:
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
-                    <joint name="joint{i}" type="slide" axis="0 0 1" pos="{currentPos}" range="0 1" damping="1.0"/>
+                    <joint name="joint{i}" type="slide" axis="0 0 1" range="0 {lengths[i]}" damping="1.0"/>
                     <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"    
@@ -102,9 +101,9 @@ def generateXML(numJoints, lengths, jointTypes):
         print(f"Mujoco XML Generation Error: {e}")
         raise
 
-numLinks = 2
-lengths = [0.05, 0.45735735]
-jointTypes = [1, 0]
+numLinks = 7
+lengths = [0.5259622, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+jointTypes = [1, 3, 0, 0, 3, 3, 3]
 xml = generateXML(numLinks, lengths, jointTypes)
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
@@ -228,7 +227,7 @@ viewer.cam.azimuth = 145
 mujoco.mj_forward(model,data)
 viewer.sync()
 
-keyboard.wait('space')
+input("Press enter to continue...")
 
 index = 0
 while viewer.is_running() and index < len(pathStates):
