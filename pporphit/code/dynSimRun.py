@@ -52,6 +52,7 @@ def generateXML(numJoints, lengths, jointTypes):
             <geom name="baseBox" type="box" size="0.1 0.1 0.05"/>
         """
         currentPos = "0 0 0.05"
+        numCloses = 0
         for i in range(numJoints):
             if jointTypes[i] == 0:
                 xml += f"""
@@ -60,6 +61,7 @@ def generateXML(numJoints, lengths, jointTypes):
                     <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"
+                numCloses +=1
             elif jointTypes[i] == 1:
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
@@ -67,6 +69,7 @@ def generateXML(numJoints, lengths, jointTypes):
                     <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"
+                numCloses += 1
             elif jointTypes[i] == 2:
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
@@ -74,15 +77,19 @@ def generateXML(numJoints, lengths, jointTypes):
                     <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"
+                numCloses += 1
             else:
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
-                    <joint name="joint{i}" type="slide" axis="0 0 1" range="0 {lengths[i]}" damping="1.0"/>
-                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                    <geom name="baseCapsule{i}" type="capsule" size="0.025" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                    <body name="slideChild{i}"> 
+                        <joint name="joint{i}" type="slide" axis="0 0 1" range="0 {lengths[i]}" damping="1.0"/>
+                        <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"    
+                numCloses += 2
         xml += f'<site name="endEffector" pos="{currentPos}" size="0.01" rgba="0 1 0 1"/>'
-        xml += "</body>" * numJoints  # Close links
+        xml += "</body>" * numCloses  # Close links
         xml += """
         </body>  <!-- Close base -->
     <site name="startPos" pos="0 1 -1" size="0.02" rgba="0 0 1 1"/>
@@ -125,7 +132,7 @@ for link in range(numLinks):
         space.addSubspace(subspace, 1.0)
         bounds = ob.RealVectorBounds(1)
         bounds.setLow(0, 0)
-        bounds.setHigh(0, 1)
+        bounds.setHigh(0, lengths[link])
         subspace.setBounds(bounds)
         isSO2.append(False)
     else:
