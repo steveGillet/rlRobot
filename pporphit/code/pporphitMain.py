@@ -8,7 +8,25 @@ mp.set_start_method('spawn', force=True)
 import os
 import faulthandler
 faulthandler.enable(file=open(f"logs/faulthandler{os.getpid()}.log", 'w'))
+from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.logger import configure
 
+class RewardLoggerCallback(BaseCallback):
+    def __init__(self, verbose=0):
+        super().__init__(verbose)
+        self.rewards = []  # Buffer recent rewards
+
+    def _on_step(self) -> bool:
+        # Collect reward from the latest step (across vec envs)
+        if 'rewards' in self.locals:
+            self.rewards.extend(self.locals['rewards'])
+        # Log mean every 100 steps (adjust as needed)
+        if self.num_timesteps % 100 == 0 and self.rewards:
+            mean_reward = sum(self.rewards) / len(self.rewards)
+            self.logger.record("custom/mean_reward", mean_reward)
+            self.rewards = []  # Reset buffer
+        return True
+    
 def makeEnv():
     def _init():
         return robotArmEnv()
@@ -23,8 +41,8 @@ if __name__ == '__main__':
 
     policyKwargs = dict(net_arch=[128,128,128])
     ppo = PPO("MlpPolicy", venv, policy_kwargs=policyKwargs, learning_rate=0.001, n_steps=128, batch_size=512, n_epochs=4, gamma=0.98, verbose=1, tensorboard_log="./arm_morph_tb/", device="cpu")
-    ppo.learn(total_timesteps=1_000_000)
-    ppo.save("shelfArm")
+    ppo.learn(total_timesteps=1_000_000, callback=RewardLoggerCallback())
+    ppo.save("twoShelfArm")
 
 # if __name__ == "__main__":
 #     env = robotArmEnv()

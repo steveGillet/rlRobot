@@ -109,7 +109,7 @@ def generateXML(numJoints, lengths, jointTypes):
         raise
 
 numLinks = 7
-lengths = [0.5259622, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+lengths = [0.52983654, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
 jointTypes = [1, 3, 0, 0, 3, 3, 3]
 xml = generateXML(numLinks, lengths, jointTypes)
 model = mujoco.MjModel.from_xml_string(xml)

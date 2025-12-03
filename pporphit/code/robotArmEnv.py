@@ -22,8 +22,8 @@ class robotArmEnv(gym.Env):
         self.action_space = gym.spaces.Box(low=0, high=1, shape=(1 + self.maxNumLinks * 2,), dtype=np.float32)
         self.observation_space = gym.spaces.Box(low=-10, high=10, shape=(1,), dtype=np.float32)
 
-        self.startPos = np.array([0.41, 0.21, 0.3], dtype=np.float32)
-        self.goalPos = np.array([0.4, 0.2, 0.8], dtype=np.float32)
+        self.startPos = [np.array([0.41, 0.21, 0.3], dtype=np.float32), np.array([0.51, 0.31, 0.8], dtype=np.float32)] 
+        self.goalPos = [np.array([0.4, 0.2, 0.8], dtype=np.float32), np.array([0.50, 0.30, 0.3], dtype=np.float32)]
 
         self.logger = setupLogging()
 
@@ -92,95 +92,97 @@ class robotArmEnv(gym.Env):
         si.setStateValidityChecker(validityChecker)
         simpleSetup = og.SimpleSetup(si)
 
-        self.logger.debug(f"Pre-IK: startPos={self.startPos}")
-        # print("Start IK")
-        startQpos, jStart = ik_dls(model, self.startPos)
-        self.logger.debug(f"Post Start IK: startQpos={startQpos}, jStart={jStart}")
+        reward = 0
+        for startPos, goalPos in zip(self.startPos, self.goalPos):
+            self.logger.debug(f"Pre-IK: startPos={startPos}")
+            # print("Start IK")
+            startQpos, jStart = ik_dls(model, startPos)
+            self.logger.debug(f"Post Start IK: startQpos={startQpos}, jStart={jStart}")
 
-        # print("Goal IK")
-        goalQpos, jGoal = ik_dls(model, self.goalPos, initialQpos=startQpos)
-        self.logger.debug(f"Post Goal IK: goalQpos={goalQpos}, jGoal={jGoal}")
-        # startQpos = np.array([0.2, -0.8, -0.3, 0.9])
-        # goalQpos = np.array([-0.4, 0.7, 0.5, -1.0])
-        
-        if startQpos is None:
-            return -100.0
-
-        if goalQpos is None:
-            return -100.0
-
-
-        i = 0
-        for id in jointIds:
-            data.qpos[id] = goalQpos[i]
-            i+=1
-
-        mujoco.mj_forward(model, data)
-        goalError = np.linalg.norm(data.site('endEffector').xpos - self.goalPos)
-        self.logger.debug(f"Goal Error: {goalError}")
-
-        i = 0
-        for id in jointIds:
-            data.qpos[id] = startQpos[i]
-            i+=1
-
-        mujoco.mj_forward(model, data)
-        startError = np.linalg.norm(data.site('endEffector').xpos - self.startPos)
-        self.logger.debug(f"Start Error: {startError}")
-
-        if jStart.shape[1] == numLinks:
-            muStart = manipulabilityIndex(jStart)
-        else:
-            muStart = 0.0
-        self.logger.debug(f"Mu Start: {muStart}")
-        if jGoal.shape[1] == numLinks:
-            muGoal = manipulabilityIndex(jGoal)
-        else:
-            muGoal = 0.0
-        self.logger.debug(f"Mu Goal: {muGoal}")
-
-        start = ob.State(space)
-        goal = ob.State(space)
-        for i in range(len(startQpos)):
-            if isSO2[i]:
-                start()[i].value = startQpos[i]
-                goal()[i].value = goalQpos[i]
-            else:
-                start()[i][0] = startQpos[i]
-                goal()[i][0] = goalQpos[i]
+            # print("Goal IK")
+            goalQpos, jGoal = ik_dls(model, goalPos, initialQpos=startQpos)
+            self.logger.debug(f"Post Goal IK: goalQpos={goalQpos}, jGoal={jGoal}")
+            # startQpos = np.array([0.2, -0.8, -0.3, 0.9])
+            # goalQpos = np.array([-0.4, 0.7, 0.5, -1.0])
             
-        simpleSetup.setStartAndGoalStates(start, goal)
+            if startQpos is None or goalQpos is None:
+                return -100.0
 
-        planner = og.RRTConnect(si)
-        simpleSetup.setPlanner(planner)
-        # print("Planner")
-        simpleSetup.solve(0.8)
-        planner.clear()
+            i = 0
+            for id in jointIds:
+                data.qpos[id] = goalQpos[i]
+                i+=1
 
-        foundSolution = simpleSetup.haveSolutionPath()
+            mujoco.mj_forward(model, data)
+            goalError = np.linalg.norm(data.site('endEffector').xpos - goalPos)
+            self.logger.debug(f"Goal Error: {goalError}")
 
-        if foundSolution:
-            simpleSetup.simplifySolution()
-            path = simpleSetup.getSolutionPath()
-            length = path.length()
-            path.clear()
-            # path.interpolate(20)
-            # pathStates = [path.getState(i) for i in range(path.getStateCount())]
-            return 100 - 0.4 * length - 40 * (startError + goalError) + 1.25 * (muStart + muGoal)
-            # return 100 - 0.4 * length - 20 * (startError + goalError)
+            i = 0
+            for id in jointIds:
+                data.qpos[id] = startQpos[i]
+                i+=1
 
-        else:
-            # pathStates = []
-            return 30 - 100 * (startError + goalError) + 0.5 * (muStart + muGoal)
-            # return 30 - 50 * (startError + goalError)
+            mujoco.mj_forward(model, data)
+            startError = np.linalg.norm(data.site('endEffector').xpos - startPos)
+            self.logger.debug(f"Start Error: {startError}")
+
+            if jStart.shape[1] == numLinks:
+                muStart = manipulabilityIndex(jStart)
+            else:
+                muStart = 0.0
+            self.logger.debug(f"Mu Start: {muStart}")
+            if jGoal.shape[1] == numLinks:
+                muGoal = manipulabilityIndex(jGoal)
+            else:
+                muGoal = 0.0
+            self.logger.debug(f"Mu Goal: {muGoal}")
+
+            start = ob.State(space)
+            goal = ob.State(space)
+            for i in range(len(startQpos)):
+                if isSO2[i]:
+                    start()[i].value = startQpos[i]
+                    goal()[i].value = goalQpos[i]
+                else:
+                    start()[i][0] = startQpos[i]
+                    goal()[i][0] = goalQpos[i]
+                
+            simpleSetup.setStartAndGoalStates(start, goal)
+
+            planner = og.RRTConnect(si)
+            simpleSetup.setPlanner(planner)
+            # print("Planner")
+            simpleSetup.solve(0.8)
+            planner.clear()
+
+            foundSolution = simpleSetup.haveSolutionPath()
+
+            if foundSolution:
+                simpleSetup.simplifySolution()
+                path = simpleSetup.getSolutionPath()
+                length = path.length()
+                path.clear()
+                # path.interpolate(20)
+                # pathStates = [path.getState(i) for i in range(path.getStateCount())]
+                reward += 100 - 0.4 * length - 40 * (startError + goalError) + 1.25 * (muStart + muGoal) - 5 * (numLinks - self.minNumLinks)
+                # return 100 - 0.4 * length - 20 * (startError + goalError)
+
+            else:
+                # pathStates = []
+                reward += 30 - 100 * (startError + goalError) + 0.5 * (muStart + muGoal) - 10 * (numLinks - self.minNumLinks)
+                # return 30 - 50 * (startError + goalError)
+
+        avgReward = reward / len(self.startPos)
+        self.logger.debug(f"Average reward: {avgReward}") 
+        return avgReward
         
     def step(self, action):
         numLinks = int(np.round(action[0] * (self.maxNumLinks - self.minNumLinks) + self.minNumLinks))
         lengths = (action[1:(self.maxNumLinks + 1)] * (self.maxLength - self.minLength) + self.minLength)[:numLinks]
         jointTypes = np.round(action[(1+self.maxNumLinks):] * 3)[:numLinks].astype(int)
         # numLinks = 7
-        # lengths = np.array([0.05, 0.05, 1.1999999, 0.51585096, 1.1999999, 1.1999999, 1.1999999])
-        # jointTypes = np.array([0, 1, 2, 1, 0, 3, 3])
+        # lengths = np.array([0.52983654, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05])
+        # jointTypes = np.array([1, 3, 0, 0, 3, 3, 3])
 
         # print("Num Links: ", numLinks)
         # print("Lengths: ", lengths)
@@ -415,7 +417,7 @@ def generateXML(numJoints, lengths, jointTypes):
 def manipulabilityIndex(J):
     if J is None or J.shape[0] != 3 or not np.all(np.isfinite(J)):
         return 0.0
-    
+
     JJT = J @ J.T
     det = np.linalg.det(JJT)
     if det <= 0:
