@@ -7,9 +7,11 @@ import ompl.geometric as og
 from scipy.optimize import minimize
 import gymnasium as gym
 from ompl import util as ou
+
 ou.setLogLevel(ou.LOG_NONE)
 import os
 import logging
+
 
 class robotArmEnv(gym.Env):
     def __init__(self, minNumLinks=2, maxNumLinks=7, minLength=0.05, maxLength=1.2):
@@ -18,12 +20,22 @@ class robotArmEnv(gym.Env):
         self.maxNumLinks = maxNumLinks
         self.minLength = minLength
         self.maxLength = maxLength
-        
-        self.action_space = gym.spaces.Box(low=0, high=1, shape=(1 + self.maxNumLinks * 2,), dtype=np.float32)
-        self.observation_space = gym.spaces.Box(low=-10, high=10, shape=(1,), dtype=np.float32)
 
-        self.startPos = [np.array([0.41, 0.21, 0.3], dtype=np.float32), np.array([0.51, 0.31, 0.8], dtype=np.float32)] 
-        self.goalPos = [np.array([0.4, 0.2, 0.8], dtype=np.float32), np.array([0.50, 0.30, 0.3], dtype=np.float32)]
+        self.action_space = gym.spaces.Box(
+            low=0, high=1, shape=(1 + self.maxNumLinks * 2,), dtype=np.float32
+        )
+        self.observation_space = gym.spaces.Box(
+            low=-10, high=10, shape=(1,), dtype=np.float32
+        )
+
+        self.startPos = [
+            np.array([0.41, 0.21, 0.3], dtype=np.float32),
+            np.array([0.51, 0.31, 0.8], dtype=np.float32),
+        ]
+        self.goalPos = [
+            np.array([0.4, 0.2, 0.8], dtype=np.float32),
+            np.array([0.50, 0.30, 0.3], dtype=np.float32),
+        ]
 
         self.logger = setupLogging()
 
@@ -31,7 +43,9 @@ class robotArmEnv(gym.Env):
         return np.array([0.0], dtype=np.float32), {}
 
     def _evaluate(self, numLinks, lengths, jointTypes):
-        self.logger.debug(f"Evaluating: numLinks={numLinks}, lengths={lengths}, jointTypes={jointTypes}")
+        self.logger.debug(
+            f"Evaluating: numLinks={numLinks}, lengths={lengths}, jointTypes={jointTypes}"
+        )
 
         try:
             xml = generateXML(numLinks, lengths.tolist(), jointTypes.tolist())
@@ -45,7 +59,7 @@ class robotArmEnv(gym.Env):
 
         space = ob.CompoundStateSpace()
         isSO2 = []
-        obstacleId = model.geom('obstacle').id
+        obstacleId = model.geom("obstacle").id
 
         for link in range(numLinks):
             if jointTypes[link] == 2:
@@ -75,10 +89,10 @@ class robotArmEnv(gym.Env):
                     qpos[i] = state[i].value
                 else:
                     qpos[i] = state[i][0]
-            
+
             if not np.all(np.isfinite(qpos)):
                 return False
-            
+
             data.qpos[:] = qpos
             mujoco.mj_forward(model, data)
             for j in range(data.ncon):
@@ -104,26 +118,30 @@ class robotArmEnv(gym.Env):
             self.logger.debug(f"Post Goal IK: goalQpos={goalQpos}, jGoal={jGoal}")
             # startQpos = np.array([0.2, -0.8, -0.3, 0.9])
             # goalQpos = np.array([-0.4, 0.7, 0.5, -1.0])
-            
+
             if startQpos is None or goalQpos is None:
                 return -100.0
 
             i = 0
             for id in jointIds:
                 data.qpos[id] = goalQpos[i]
-                i+=1
+                i += 1
 
             mujoco.mj_forward(model, data)
-            goalError = np.linalg.norm(data.site('endEffector').xpos - goalPos)
+            goalError = np.linalg.norm(data.site("endEffector").xpos - goalPos)
             self.logger.debug(f"Goal Error: {goalError}")
+
+            # STRICT CHECK: If error is too large, FAIL immediately
+            if goalError > 0.02:  # 2cm tolerance
+                return -50.0  # Large penalty, no +100 bonus
 
             i = 0
             for id in jointIds:
                 data.qpos[id] = startQpos[i]
-                i+=1
+                i += 1
 
             mujoco.mj_forward(model, data)
-            startError = np.linalg.norm(data.site('endEffector').xpos - startPos)
+            startError = np.linalg.norm(data.site("endEffector").xpos - startPos)
             self.logger.debug(f"Start Error: {startError}")
 
             if jStart.shape[1] == numLinks:
@@ -146,7 +164,7 @@ class robotArmEnv(gym.Env):
                 else:
                     start()[i][0] = startQpos[i]
                     goal()[i][0] = goalQpos[i]
-                
+
             simpleSetup.setStartAndGoalStates(start, goal)
 
             planner = og.RRTConnect(si)
@@ -164,22 +182,42 @@ class robotArmEnv(gym.Env):
                 path.clear()
                 # path.interpolate(20)
                 # pathStates = [path.getState(i) for i in range(path.getStateCount())]
-                reward += 100 - 0.4 * length - 40 * (startError + goalError) + 1.25 * (muStart + muGoal) - 5 * (numLinks - self.minNumLinks)
+                reward += (
+                    100
+                    - 0.4 * length
+                    - 40 * (startError + goalError)
+                    + 1.25 * (muStart + muGoal)
+                    - 5 * (numLinks - self.minNumLinks)
+                )
                 # return 100 - 0.4 * length - 20 * (startError + goalError)
 
             else:
                 # pathStates = []
-                reward += 30 - 100 * (startError + goalError) + 0.5 * (muStart + muGoal) - 10 * (numLinks - self.minNumLinks)
+                reward += (
+                    30
+                    - 100 * (startError + goalError)
+                    + 0.5 * (muStart + muGoal)
+                    - 10 * (numLinks - self.minNumLinks)
+                )
                 # return 30 - 50 * (startError + goalError)
 
         avgReward = reward / len(self.startPos)
-        self.logger.debug(f"Average reward: {avgReward}") 
+        self.logger.debug(f"Average reward: {avgReward}")
         return avgReward
-        
+
     def step(self, action):
-        numLinks = int(np.round(action[0] * (self.maxNumLinks - self.minNumLinks) + self.minNumLinks))
-        lengths = (action[1:(self.maxNumLinks + 1)] * (self.maxLength - self.minLength) + self.minLength)[:numLinks]
-        jointTypes = np.round(action[(1+self.maxNumLinks):] * 3)[:numLinks].astype(int)
+        numLinks = int(
+            np.round(
+                action[0] * (self.maxNumLinks - self.minNumLinks) + self.minNumLinks
+            )
+        )
+        lengths = (
+            action[1 : (self.maxNumLinks + 1)] * (self.maxLength - self.minLength)
+            + self.minLength
+        )[:numLinks]
+        jointTypes = np.round(action[(1 + self.maxNumLinks) :] * 3)[:numLinks].astype(
+            int
+        )
         # numLinks = 7
         # lengths = np.array([0.52983654, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05])
         # jointTypes = np.array([1, 3, 0, 0, 3, 3, 3])
@@ -190,8 +228,9 @@ class robotArmEnv(gym.Env):
 
         reward = self._evaluate(numLinks, lengths, jointTypes)
         done = True
-     
+
         return np.array([0.0], dtype=np.float32), reward, done, done, {}
+
 
 def ik_dls(
     model,
@@ -226,7 +265,7 @@ def ik_dls(
 
     # --- Joint limits in q-space ---
     q_min = np.full(nq, -np.inf)
-    q_max = np.full(nq,  np.inf)
+    q_max = np.full(nq, np.inf)
     for j in range(model.njnt):
         adr = model.jnt_qposadr[j]  # index of this joint in qpos
         if model.jnt_limited[j]:
@@ -271,9 +310,9 @@ def ik_dls(
         J = jacp[:, :nv]  # (3, nv)
 
         # Damped least-squares step
-        A = J @ J.T + (lambda_ ** 2) * np.eye(3)
+        A = J @ J.T + (lambda_**2) * np.eye(3)
         try:
-            v = np.linalg.solve(A, err)        # (3,)
+            v = np.linalg.solve(A, err)  # (3,)
         except np.linalg.LinAlgError:
             # Very ill-conditioned; use best so far
             break
@@ -291,7 +330,7 @@ def ik_dls(
     # Final sanity check
     if not np.all(np.isfinite(q_best)):
         return None, None
-    
+
     try:
         ik_data.qpos[:] = q_best
         mujoco.mj_forward(model, ik_data)
@@ -306,7 +345,7 @@ def ik_dls(
 
 
 def ik(model, data, targetPos, initialQpos=None, tol=1e-4, maxIter=100, alpha=0.1):
-    siteId = model.site('endEffector').id
+    siteId = model.site("endEffector").id
     numJoints = model.nq
 
     if initialQpos is None:
@@ -317,11 +356,15 @@ def ik(model, data, targetPos, initialQpos=None, tol=1e-4, maxIter=100, alpha=0.
         if model.jnt_limited[i]:
             bounds.append((model.jnt_range[i][0], model.jnt_range[i][1]))
         else:
-            bounds.append((-10*np.pi, 10*np.pi))
+            bounds.append((-10 * np.pi, 10 * np.pi))
 
     epsilon = 1e-3
-    lowerBounds = np.array([b[0] + epsilon if np.isfinite(b[0]) else -10*np.pi for b in bounds])
-    upperBounds = np.array([b[1] - epsilon if np.isfinite(b[1]) else 10*np.pi for b in bounds])
+    lowerBounds = np.array(
+        [b[0] + epsilon if np.isfinite(b[0]) else -10 * np.pi for b in bounds]
+    )
+    upperBounds = np.array(
+        [b[1] - epsilon if np.isfinite(b[1]) else 10 * np.pi for b in bounds]
+    )
     if not np.all(np.isfinite(initialQpos)):
         initialQpos = np.zeros(numJoints)
     initialQpos = np.clip(initialQpos, lowerBounds, upperBounds)
@@ -333,8 +376,14 @@ def ik(model, data, targetPos, initialQpos=None, tol=1e-4, maxIter=100, alpha=0.
         posError = np.linalg.norm(currentPos - targetPos)
         regError = alpha * np.linalg.norm(q - initialQpos)
         return posError**2 + regError**2
-    
-    res = minimize(objective, initialQpos, bounds=bounds, method='L-BFGS-B', options={'maxiter': maxIter, 'ftol': tol, 'disp': False})
+
+    res = minimize(
+        objective,
+        initialQpos,
+        bounds=bounds,
+        method="L-BFGS-B",
+        options={"maxiter": maxIter, "ftol": tol, "disp": False},
+    )
 
     # print(res)
 
@@ -343,7 +392,8 @@ def ik(model, data, targetPos, initialQpos=None, tol=1e-4, maxIter=100, alpha=0.
     else:
         print(f"IK failed: {res.message}")
         return None
-    
+
+
 def generateXML(numJoints, lengths, jointTypes):
     try:
         xml = """
@@ -367,7 +417,7 @@ def generateXML(numJoints, lengths, jointTypes):
                     <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"
-                numCloses +=1
+                numCloses += 1
             elif jointTypes[i] == 1:
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
@@ -392,9 +442,11 @@ def generateXML(numJoints, lengths, jointTypes):
                         <joint name="joint{i}" type="slide" axis="0 0 1" range="0 {lengths[i]}" damping="1.0"/>
                         <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
                 """
-                currentPos = f"0 0 {lengths[i]}"    
+                currentPos = f"0 0 {lengths[i]}"
                 numCloses += 2
-        xml += f'<site name="endEffector" pos="{currentPos}" size="0.01" rgba="0 1 0 1"/>'
+        xml += (
+            f'<site name="endEffector" pos="{currentPos}" size="0.01" rgba="0 1 0 1"/>'
+        )
         xml += "</body>" * numCloses  # Close links
         xml += """
         </body>  <!-- Close base -->
@@ -414,6 +466,7 @@ def generateXML(numJoints, lengths, jointTypes):
         print(f"Mujoco XML Generation Error: {e}")
         raise
 
+
 def manipulabilityIndex(J):
     if J is None or J.shape[0] != 3 or not np.all(np.isfinite(J)):
         return 0.0
@@ -429,11 +482,12 @@ def manipulabilityIndex(J):
     #     return 0.0
     # return np.prod(S)
 
+
 def setupLogging():
     pid = os.getpid()
     logger = logging.getLogger(f"process{pid}")
     logger.setLevel(logging.DEBUG)
     handler = logging.FileHandler(f"logs/logProcess{pid}.txt")
-    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
     logger.addHandler(handler)
     return logger

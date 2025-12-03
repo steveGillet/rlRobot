@@ -5,9 +5,11 @@ import numpy as np
 import ompl.base as ob
 import ompl.geometric as og
 from scipy.optimize import minimize
+from stable_baselines3 import PPO
+
 
 def ik(model, data, targetPos, initialQpos=None, tol=1e-4, maxIter=100, alpha=0.1):
-    siteId = model.site('endEffector').id
+    siteId = model.site("endEffector").id
     numJoints = model.nq
 
     if initialQpos is None:
@@ -18,7 +20,7 @@ def ik(model, data, targetPos, initialQpos=None, tol=1e-4, maxIter=100, alpha=0.
         if model.jnt_limited[i]:
             bounds.append((model.jnt_range[i][0], model.jnt_range[i][1]))
         else:
-            bounds.append((-10*np.pi, 10*np.pi))
+            bounds.append((-10 * np.pi, 10 * np.pi))
 
     def objective(q):
         data.qpos[:] = q
@@ -27,8 +29,14 @@ def ik(model, data, targetPos, initialQpos=None, tol=1e-4, maxIter=100, alpha=0.
         posError = np.linalg.norm(currentPos - targetPos)
         regError = alpha * np.linalg.norm(q - initialQpos)
         return posError**2 + regError**2
-    
-    res = minimize(objective, initialQpos, bounds=bounds, method='L-BFGS-B', options={'maxiter': maxIter, 'ftol': tol})
+
+    res = minimize(
+        objective,
+        initialQpos,
+        bounds=bounds,
+        method="L-BFGS-B",
+        options={"maxiter": maxIter, "ftol": tol},
+    )
 
     print(res)
 
@@ -37,7 +45,8 @@ def ik(model, data, targetPos, initialQpos=None, tol=1e-4, maxIter=100, alpha=0.
     else:
         print(f"IK failed: {res.message}")
         return None
-    
+
+
 def generateXML(numJoints, lengths, jointTypes):
     try:
         xml = """
@@ -53,20 +62,30 @@ def generateXML(numJoints, lengths, jointTypes):
         """
         currentPos = "0 0 0.05"
         numCloses = 0
+        colors = [
+            "0.8 0.2 0.2 1",
+            "0.2 0.8 0.2 1",
+            "0.2 0.2 0.8 1",
+            "0.8 0.8 0.2 1",
+            "0.2 0.8 0.8 1",
+            "0.8 0.2 0.8 1",
+            "0.5 0.5 0.5 1",
+        ]
         for i in range(numJoints):
+            color = colors[i % len(colors)]
             if jointTypes[i] == 0:
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
                     <joint name="joint{i}" type="hinge" axis="1 0 0" range="-1.57 1.57" damping="1.0"/>
-                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0" rgba="{color}"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"
-                numCloses +=1
+                numCloses += 1
             elif jointTypes[i] == 1:
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
                     <joint name="joint{i}" type="hinge" axis="0 1 0" range="-1.57 1.57" damping="1.0"/>
-                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0" rgba="{color}"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"
                 numCloses += 1
@@ -74,21 +93,23 @@ def generateXML(numJoints, lengths, jointTypes):
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
                     <joint name="joint{i}" type="hinge" axis="0 0 1" damping="1.0"/>
-                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0" rgba="{color}"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"
                 numCloses += 1
             else:
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
-                    <geom name="baseCapsule{i}" type="capsule" size="0.025" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                    <geom name="baseCapsule{i}" type="capsule" size="0.025" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0" rgba="{color}"/>
                     <body name="slideChild{i}"> 
                         <joint name="joint{i}" type="slide" axis="0 0 1" range="0 {lengths[i]}" damping="1.0"/>
-                        <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                        <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0" rgba="{color}"/>
                 """
-                currentPos = f"0 0 {lengths[i]}"    
+                currentPos = f"0 0 {lengths[i]}"
                 numCloses += 2
-        xml += f'<site name="endEffector" pos="{currentPos}" size="0.01" rgba="0 1 0 1"/>'
+        xml += (
+            f'<site name="endEffector" pos="{currentPos}" size="0.01" rgba="0 1 0 1"/>'
+        )
         xml += "</body>" * numCloses  # Close links
         xml += """
         </body>  <!-- Close base -->
@@ -108,16 +129,50 @@ def generateXML(numJoints, lengths, jointTypes):
         print(f"Mujoco XML Generation Error: {e}")
         raise
 
+
+# Load PPO model and get configuration
+model_path = "shelfArm"
+print(f"Loading PPO model from {model_path}...")
+ppo_model = PPO.load(model_path)
+
+# Get action from policy (deterministic for best performance)
+obs = np.array([0.0], dtype=np.float32)
+action, _ = ppo_model.predict(obs, deterministic=True)
+
+# Decode action
+# Constants from robotArmEnv
+MIN_NUM_LINKS = 2
+MAX_NUM_LINKS = 7
+MIN_LENGTH = 0.05
+MAX_LENGTH = 1.2
+
+# Decode number of links (Force to 4 as requested)
 numLinks = 4
-lengths = [0.05, 1.2, 0.05, 1.2]
-jointTypes = [2,1,1,2]
+
+# Decode lengths
+# action[1:8] corresponds to lengths
+raw_lengths = action[1 : (MAX_NUM_LINKS + 1)]
+decoded_lengths = (raw_lengths * (MAX_LENGTH - MIN_LENGTH) + MIN_LENGTH)[:numLinks]
+lengths = decoded_lengths.tolist()
+
+# Decode joint types
+# action[8:15] corresponds to joint types
+raw_joint_types = action[(1 + MAX_NUM_LINKS) :]
+decoded_joint_types = np.round(raw_joint_types * 3)[:numLinks].astype(int)
+jointTypes = decoded_joint_types.tolist()
+
+print(f"PPO Config:")
+print(f"  Links: {numLinks}")
+print(f"  Lengths: {np.round(lengths, 4)}")
+print(f"  Joint Types: {jointTypes}")
+
 xml = generateXML(numLinks, lengths, jointTypes)
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
 
 actuatorIds = [model.actuator(f"motor{i}").id for i in range(numLinks)]
 jointIds = [model.joint(f"joint{i}").id for i in range(numLinks)]
-obstacleId = model.geom('obstacle').id
+obstacleId = model.geom("obstacle").id
 
 space = ob.CompoundStateSpace()
 
@@ -139,10 +194,11 @@ for link in range(numLinks):
         subspace = ob.RealVectorStateSpace(1)
         space.addSubspace(subspace, 1.0)
         bounds = ob.RealVectorBounds(1)
-        bounds.setLow(0, -np.pi/2)
-        bounds.setHigh(0, np.pi/2)
+        bounds.setLow(0, -np.pi / 2)
+        bounds.setHigh(0, np.pi / 2)
         subspace.setBounds(bounds)
         isSO2.append(False)
+
 
 def isStateValid(state):
     qpos = np.zeros(numLinks)
@@ -151,10 +207,10 @@ def isStateValid(state):
             qpos[i] = state[i].value
         else:
             qpos[i] = state[i][0]
-    
+
     if not np.all(np.isfinite(qpos)):
         return False
-    
+
     data.qpos[:] = qpos
     mujoco.mj_forward(model, data)
     for j in range(data.ncon):
@@ -162,6 +218,7 @@ def isStateValid(state):
         if contact.geom1 == obstacleId or contact.geom2 == obstacleId:
             return False
     return True
+
 
 validityChecker = ob.StateValidityCheckerFn(isStateValid)
 si = ob.SpaceInformation(space)
@@ -178,19 +235,19 @@ goalQpos = ik(model, data, goalPos, initialQpos=startQpos)
 i = 0
 for id in jointIds:
     data.qpos[id] = goalQpos[i]
-    i+=1
+    i += 1
 
 mujoco.mj_forward(model, data)
-goalError = np.linalg.norm(data.site('endEffector').xpos - goalPos)
+goalError = np.linalg.norm(data.site("endEffector").xpos - goalPos)
 print(f"Goal error is: {goalError}")
 
 i = 0
 for id in jointIds:
     data.qpos[id] = startQpos[i]
-    i+=1
+    i += 1
 
 mujoco.mj_forward(model, data)
-startError = np.linalg.norm(data.site('endEffector').xpos - startPos)
+startError = np.linalg.norm(data.site("endEffector").xpos - startPos)
 print(f"Start error is: {startError}")
 
 start = ob.State(space)
@@ -202,7 +259,7 @@ for i in range(len(startQpos)):
     else:
         start()[i][0] = startQpos[i]
         goal()[i][0] = goalQpos[i]
-    
+
 simpleSetup.setStartAndGoalStates(start, goal)
 
 planner = og.RRTstar(si)
@@ -216,13 +273,13 @@ if simpleSetup.haveSolutionPath():
     pathStates = [path.getState(i) for i in range(path.getStateCount())]
     print(f"Found path with {len(pathStates)} states.")
 else:
-    print('No path found')
+    print("No path found")
     pathStates = []
 
 index = 0
 
-model.site('startPos').pos = startPos
-model.site('goalPos').pos = goalPos
+model.site("startPos").pos = startPos
+model.site("goalPos").pos = goalPos
 
 viewer = mujoco.viewer.launch_passive(model, data)
 
@@ -231,7 +288,7 @@ viewer.cam.distance = model.stat.extent * 2
 viewer.cam.elevation = -35
 viewer.cam.azimuth = 145
 
-mujoco.mj_forward(model,data)
+mujoco.mj_forward(model, data)
 viewer.sync()
 
 input("Press enter to continue...")
@@ -241,7 +298,9 @@ while viewer.is_running() and index < len(pathStates):
     for i, jid in enumerate(jointIds):
         if not isSO2[i]:
             print(pathStates[index][i][0])
-        data.qpos[jid] = pathStates[index][i].value if isSO2[i] else pathStates[index][i][0]
+        data.qpos[jid] = (
+            pathStates[index][i].value if isSO2[i] else pathStates[index][i][0]
+        )
 
     mujoco.mj_forward(model, data)
     viewer.sync()
@@ -254,4 +313,3 @@ print("Sim Complete")
 while viewer.is_running():
     viewer.sync()
     time.sleep(0.02)
-    
