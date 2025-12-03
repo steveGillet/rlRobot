@@ -182,23 +182,12 @@ class robotArmEnv(gym.Env):
                 path.clear()
                 # path.interpolate(20)
                 # pathStates = [path.getState(i) for i in range(path.getStateCount())]
-                reward += (
-                    100
-                    - 0.4 * length
-                    - 40 * (startError + goalError)
-                    + 1.25 * (muStart + muGoal)
-                    - 5 * (numLinks - self.minNumLinks)
-                )
+                reward += 100 - 0.2 * length - 80 * (startError + goalError) + 2.5 * (muStart + muGoal) - 2.5 * (numLinks - self.minNumLinks)
                 # return 100 - 0.4 * length - 20 * (startError + goalError)
 
             else:
                 # pathStates = []
-                reward += (
-                    30
-                    - 100 * (startError + goalError)
-                    + 0.5 * (muStart + muGoal)
-                    - 10 * (numLinks - self.minNumLinks)
-                )
+                reward += 30 - 200 * (startError + goalError) + 1.0 * (muStart + muGoal) - 5 * (numLinks - self.minNumLinks)
                 # return 30 - 50 * (startError + goalError)
 
         avgReward = reward / len(self.startPos)
