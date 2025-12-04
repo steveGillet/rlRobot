@@ -158,7 +158,7 @@ def generateXML(numJoints, lengths, jointTypes):
     <worldbody>
         <light diffuse=".5 .5 .5" pos="0 0 3" dir="0 0 -1"/>
         <geom name="floor" type="plane" size="1 1 0.1" rgba=".9 0 0 1"/>
-        <geom name="obstacle" type="box" pos="0.45 0.25 0.55" size="0.3 0.1 0.025" rgba="1 0.5 0 1" />
+        <!-- <geom name="obstacle" type="box" pos="0.45 0.25 0.55" size="0.3 0.1 0.025" rgba="1 0.5 0 1" /> -->
         <body name="base" pos="0 0 0">
             <geom name="baseBox" type="box" size="0.1 0.1 0.05"/>
         """
@@ -221,16 +221,19 @@ def generateXML(numJoints, lengths, jointTypes):
         print(f"Mujoco XML Generation Error: {e}")
         raise
 
-numLinks = 2
-lengths = [0.56551564, 0.3223784]
-jointTypes = [1, 0]
+# numLinks = 7
+# lengths = [0.333, 0.0825, 0.316, 0.0825, 0.384, 0.088, 0.01]
+# jointTypes = [2, 1, 2, 1, 0, 1, 2]
+numLinks = 7
+lengths = np.array([0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05])
+jointTypes = np.array([2, 2, 2, 1, 1, 0, 3])
 xml = generateXML(numLinks, lengths, jointTypes)
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
 
 actuatorIds = [model.actuator(f"motor{i}").id for i in range(numLinks)]
 jointIds = [model.joint(f"joint{i}").id for i in range(numLinks)]
-obstacleId = model.geom('obstacle').id
+# obstacleId = model.geom('obstacle').id
 
 space = ob.CompoundStateSpace()
 
@@ -272,8 +275,8 @@ def isStateValid(state):
     mujoco.mj_forward(model, data)
     for j in range(data.ncon):
         contact = data.contact[j]
-        if contact.geom1 == obstacleId or contact.geom2 == obstacleId:
-            return False
+        # if contact.geom1 == obstacleId or contact.geom2 == obstacleId:
+        #     return False
     return True
 
 validityChecker = ob.StateValidityCheckerFn(isStateValid)
@@ -281,8 +284,10 @@ si = ob.SpaceInformation(space)
 si.setStateValidityChecker(validityChecker)
 simpleSetup = og.SimpleSetup(si)
 
-startPoses = [np.array([0.41, 0.21, 0.3], dtype=np.float32), np.array([0.51, 0.31, 0.8], dtype=np.float32)] 
-goalPoses = [np.array([0.4, 0.2, 0.8], dtype=np.float32), np.array([0.50, 0.30, 0.3], dtype=np.float32)]
+# startPoses = [np.array([0.41, 0.21, 0.3], dtype=np.float32), np.array([0.51, 0.31, 0.8], dtype=np.float32)] 
+# goalPoses = [np.array([0.4, 0.2, 0.8], dtype=np.float32), np.array([0.50, 0.30, 0.3], dtype=np.float32)]
+startPoses = [np.array([-.4, -0.4, 0.6], dtype=np.float32)]
+goalPoses = [np.array([0.4, 0.4, 0.8], dtype=np.float32)]
 
 pathStatesArr = []
 for startPos, goalPos in zip(startPoses, goalPoses):

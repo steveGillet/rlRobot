@@ -24,6 +24,8 @@ class robotArmEnv(gym.Env):
 
         self.startPos = [np.array([0.41, 0.21, 0.3], dtype=np.float32), np.array([0.51, 0.31, 0.8], dtype=np.float32)] 
         self.goalPos = [np.array([0.4, 0.2, 0.8], dtype=np.float32), np.array([0.50, 0.30, 0.3], dtype=np.float32)]
+        # self.startPos = np.array([-.4, -0.4, 0.6], dtype=np.float32)
+        # self.goalPos = np.array([0.4, 0.4, 0.8], dtype=np.float32)
 
         self.logger = setupLogging()
 
@@ -37,7 +39,8 @@ class robotArmEnv(gym.Env):
             xml = generateXML(numLinks, lengths.tolist(), jointTypes.tolist())
             model = mujoco.MjModel.from_xml_string(xml)
             data = mujoco.MjData(model)
-        except:
+        except Exception as e:
+            print(f"Mujoco XML Generation Error: {e}")
             return -50.0
 
         actuatorIds = [model.actuator(f"motor{i}").id for i in range(numLinks)]
@@ -162,13 +165,18 @@ class robotArmEnv(gym.Env):
                 path = simpleSetup.getSolutionPath()
                 length = path.length()
                 path.clear()
-                # path.interpolate(20)
-                # pathStates = [path.getState(i) for i in range(path.getStateCount())]
+                print(f"Path Length Penalty: {-0.2 * length}")
+                print(f"Accuracy Penalty: {-80 * (startError + goalError)}")
+                print(f"Manipulability Bonus: {2.5 * (muStart + muGoal)}")
+                print(f"Link Number Penalty: {-2.5 * (numLinks - self.minNumLinks)}")
                 reward += 100 - 0.2 * length - 80 * (startError + goalError) + 2.5 * (muStart + muGoal) - 2.5 * (numLinks - self.minNumLinks)
                 # return 100 - 0.4 * length - 20 * (startError + goalError)
 
             else:
                 # pathStates = []
+                print(f"Accuracy Penalty: {-200 * (startError + goalError)}")
+                print(f"Manipulability Bonus: {1.0 * (muStart + muGoal)}")
+                print(f"Link Number Penalty: {-5 * (numLinks - self.minNumLinks)}")
                 reward += 30 - 200 * (startError + goalError) + 1.0 * (muStart + muGoal) - 5 * (numLinks - self.minNumLinks)
                 # return 30 - 50 * (startError + goalError)
 
@@ -177,12 +185,12 @@ class robotArmEnv(gym.Env):
         return avgReward
         
     def step(self, action):
-        numLinks = int(np.round(action[0] * (self.maxNumLinks - self.minNumLinks) + self.minNumLinks))
-        lengths = (action[1:(self.maxNumLinks + 1)] * (self.maxLength - self.minLength) + self.minLength)[:numLinks]
-        jointTypes = np.round(action[(1+self.maxNumLinks):] * 3)[:numLinks].astype(int)
-        # numLinks = 7
-        # lengths = np.array([0.52983654, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05])
-        # jointTypes = np.array([1, 3, 0, 0, 3, 3, 3])
+        # numLinks = int(np.round(action[0] * (self.maxNumLinks - self.minNumLinks) + self.minNumLinks))
+        # lengths = (action[1:(self.maxNumLinks + 1)] * (self.maxLength - self.minLength) + self.minLength)[:numLinks]
+        # jointTypes = np.round(action[(1+self.maxNumLinks):] * 3)[:numLinks].astype(int)
+        numLinks = 7
+        lengths = np.array([0.333, 0.0825, 0.316, 0.0825, 0.384, 0.088, 0.01])
+        jointTypes = np.array([2, 1, 2, 1, 0, 1, 2])
 
         # print("Num Links: ", numLinks)
         # print("Lengths: ", lengths)
