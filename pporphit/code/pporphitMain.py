@@ -1,15 +1,23 @@
+import os
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import VecNormalize
 from robotArmEnv import robotArmEnv, setupLogging
 import multiprocessing as mp
-mp.set_start_method('spawn', force=True)
+
+mp.set_start_method("spawn", force=True)
 import os
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 import faulthandler
-faulthandler.enable(file=open(f"logs/faulthandler{os.getpid()}.log", 'w'))
+
+faulthandler.enable(file=open(f"logs/faulthandler{os.getpid()}.log", "w"))
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.logger import configure
+
 
 class RewardLoggerCallback(BaseCallback):
     def __init__(self, verbose=0):
@@ -18,18 +26,20 @@ class RewardLoggerCallback(BaseCallback):
 
     def _on_step(self) -> bool:
         # Collect reward from the latest step (across vec envs)
-        if 'rewards' in self.locals:
-            self.rewards.extend(self.locals['rewards'])
+        if "rewards" in self.locals:
+            self.rewards.extend(self.locals["rewards"])
         # Log mean every 100 steps (adjust as needed)
         if self.num_timesteps % 100 == 0 and self.rewards:
             mean_reward = sum(self.rewards) / len(self.rewards)
             self.logger.record("custom/mean_reward", mean_reward)
             self.rewards = []  # Reset buffer
         return True
-    
+
+
 def makeEnv():
     def _init():
         return robotArmEnv()
+
     return _init
 
 # if __name__ == '__main__':
@@ -80,4 +90,4 @@ if __name__ == "__main__":
 #         time.sleep(0.1)
 #         index += 1
 
-# print("Sim Complete") 
+# print("Sim Complete")
