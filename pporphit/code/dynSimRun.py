@@ -156,10 +156,14 @@ def generateXML(numJoints, lengths, jointTypes):
     <compiler angle="radian"/>
     <option gravity="0 0 -9.81"/>
     <worldbody>
-        <light diffuse=".5 .5 .5" pos="0 0 3" dir="0 0 -1"/>
-        <geom name="floor" type="plane" size="1 1 0.1" rgba=".9 0 0 1"/>
+        <light diffuse=".5 .5 .5" pos="3 1 2" dir="0 0 -1" cutoff="180"/>
+        <geom name="floor" type="plane" size="2 2 0.1" rgba=".9 0.5 0 1"/>
+        <!-- <geom name="containerBack" type="box" pos="-2.0 0.6 1.0" size="0.01 1.0 1.0" rgba="0.5 0.5 0.5 1"/> -->
+        <geom name="mountWall" type="box" pos="0 -0.4 1.0" size="1.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
+        <geom name="shelfWall" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
+        <geom name="shelf" type="box" pos="0.0 1.35 1.0" size="2.0 0.25 0.01" rgba="0.5 0.5 0.5 1"/>
         <!-- <geom name="obstacle" type="box" pos="0.45 0.25 0.55" size="0.3 0.1 0.025" rgba="1 0.5 0 1" /> -->
-        <body name="base" pos="0 0 0">
+        <body name="base" pos="0 -0.4 1.0" euler="-1.57 0 0">
             <geom name="baseBox" type="box" size="0.1 0.1 0.05"/>
         """
         currentPos = "0 0 0.05"
@@ -169,7 +173,7 @@ def generateXML(numJoints, lengths, jointTypes):
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
                     <joint name="joint{i}" type="hinge" axis="1 0 0" range="-1.57 1.57" damping="1.0"/>
-                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="{lengths[i]}"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"
                 numCloses +=1
@@ -177,7 +181,7 @@ def generateXML(numJoints, lengths, jointTypes):
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
                     <joint name="joint{i}" type="hinge" axis="0 1 0" range="-1.57 1.57" damping="1.0"/>
-                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="{lengths[i]}"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"
                 numCloses += 1
@@ -185,17 +189,17 @@ def generateXML(numJoints, lengths, jointTypes):
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
                     <joint name="joint{i}" type="hinge" axis="0 0 1" damping="1.0"/>
-                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="{lengths[i]}"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"
                 numCloses += 1
             else:
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
-                    <geom name="baseCapsule{i}" type="capsule" size="0.025" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                    <geom name="baseCapsule{i}" type="capsule" size="0.025" fromto="0 0 0 0 0 {lengths[i]}" mass="{lengths[i]/2}"/>
                     <body name="slideChild{i}"> 
                         <joint name="joint{i}" type="slide" axis="0 0 1" range="0 {lengths[i]}" damping="1.0"/>
-                        <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="1.0"/>
+                        <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="{lengths[i]/2}"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"    
                 numCloses += 2
@@ -222,18 +226,20 @@ def generateXML(numJoints, lengths, jointTypes):
         raise
 
 # numLinks = 7
-# lengths = [0.333, 0.0825, 0.316, 0.0825, 0.384, 0.088, 0.01]
-# jointTypes = [2, 1, 2, 1, 0, 1, 2]
+# sizeMultiplier = 2
+# lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
+# jointTypes = np.array([2, 0, 2, 0, 2, 0, 2])
 numLinks = 7
-lengths = np.array([0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05])
-jointTypes = np.array([2, 2, 2, 1, 1, 0, 3])
+lengths = np.array([0.5, 1.1999999, 0.44145596, 0.05, 0.05, 0.05, 0.05])
+jointTypes = np.array([3, 1, 0, 3, 3, 3, 3])
 xml = generateXML(numLinks, lengths, jointTypes)
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
 
 actuatorIds = [model.actuator(f"motor{i}").id for i in range(numLinks)]
 jointIds = [model.joint(f"joint{i}").id for i in range(numLinks)]
-# obstacleId = model.geom('obstacle').id
+obstacleNames = ["shelf", "shelfWall", "mountWall", "floor"]
+obstacleIds = set([model.geom(name).id for name in obstacleNames])
 
 space = ob.CompoundStateSpace()
 
@@ -275,8 +281,8 @@ def isStateValid(state):
     mujoco.mj_forward(model, data)
     for j in range(data.ncon):
         contact = data.contact[j]
-        # if contact.geom1 == obstacleId or contact.geom2 == obstacleId:
-        #     return False
+        if contact.geom1 in obstacleIds or contact.geom2 in obstacleIds:
+            return False
     return True
 
 validityChecker = ob.StateValidityCheckerFn(isStateValid)
@@ -284,10 +290,10 @@ si = ob.SpaceInformation(space)
 si.setStateValidityChecker(validityChecker)
 simpleSetup = og.SimpleSetup(si)
 
-# startPoses = [np.array([0.41, 0.21, 0.3], dtype=np.float32), np.array([0.51, 0.31, 0.8], dtype=np.float32)] 
-# goalPoses = [np.array([0.4, 0.2, 0.8], dtype=np.float32), np.array([0.50, 0.30, 0.3], dtype=np.float32)]
-startPoses = [np.array([-.4, -0.4, 0.6], dtype=np.float32)]
-goalPoses = [np.array([0.4, 0.4, 0.8], dtype=np.float32)]
+startPoses = [np.array([-0.9, 1.35, 1.1], dtype=np.float32), np.array([-1.5, -0.4, 0.1], dtype=np.float32)] 
+goalPoses = [np.array([1.5, -0.4, 0.2], dtype=np.float32), np.array([1.75, 1.36, 1.11], dtype=np.float32)]
+# startPoses = [np.array([-1.0, 0.6, 0.6], dtype=np.float32)]
+# goalPoses = [np.array([2.0, 0.4, 0.2], dtype=np.float32)]
 
 pathStatesArr = []
 for startPos, goalPos in zip(startPoses, goalPoses):
