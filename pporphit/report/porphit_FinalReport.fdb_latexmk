@@ -1,15 +1,15 @@
 # Fdb version 4
-["bibtex porphit_FinalReport"] 0 "porphit_FinalReport.aux" "porphit_FinalReport.bbl" "porphit_FinalReport" 1764970947.83075 0
+["bibtex porphit_FinalReport"] 1765112454.66802 "porphit_FinalReport.aux" "porphit_FinalReport.bbl" "porphit_FinalReport" 1765112588.36764 0
+  "./references.bib" 1765106076.84752 6276 88ad66194283f1b9abfcfeb161352225 ""
   "/usr/share/texlive/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1440712899 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "porphit_FinalReport.aux" 0 -1 0 "pdflatex"
-  "references.bib" 0 -1 0 ""
+  "porphit_FinalReport.aux" 1765112588.21987 4099 ea9a243dd3dde4ffbdf0d7ce9a8acdd8 "pdflatex"
   (generated)
   "porphit_FinalReport.bbl"
   "porphit_FinalReport.blg"
   (rewritten before read)
-["pdflatex"] 1764970947.41867 "/home/steve-gillet/Desktop/rlRobot/pporphit/report/porphit_FinalReport.tex" "porphit_FinalReport.pdf" "porphit_FinalReport" 1764970947.83087 0
+["pdflatex"] 1765112587.96812 "/home/steve-gillet/Desktop/rlRobot/pporphit/report/porphit_FinalReport.tex" "porphit_FinalReport.pdf" "porphit_FinalReport" 1765112588.36782 0
   "/etc/texmf/web2c/texmf.cnf" 1757467394.77312 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/steve-gillet/Desktop/rlRobot/pporphit/report/porphit_FinalReport.tex" 1764970947.26664 19799 74a9ee215d66782fe1af40c576c21959 ""
+  "/home/steve-gillet/Desktop/rlRobot/pporphit/report/porphit_FinalReport.tex" 1765112587.81811 20706 ca6ec9c2f71d298b3aeaf75a02d10682 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/times/ptmb7t.tfm" 1136768653 2172 fd0c924230362ff848a33632ed45dc23 ""
@@ -81,9 +81,9 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1707919699 40399 f2c302f7d2af602abb742093540a5834 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1757467420.83173 5472669 54eaf61a88b6b7896ebd0dac973cb29c ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1757467474 8213095 4eae99bc70fd5a29aaa73b459517d883 ""
-  "porphit_FinalReport.aux" 1764970947.6808 3270 70cfa74883c7ebf9dbb07d4bc01167cc "pdflatex"
-  "porphit_FinalReport.bbl" 0 -1 0 "bibtex porphit_FinalReport"
-  "porphit_FinalReport.tex" 1764970947.26664 19799 74a9ee215d66782fe1af40c576c21959 ""
+  "porphit_FinalReport.aux" 1765112588.21987 4099 ea9a243dd3dde4ffbdf0d7ce9a8acdd8 "pdflatex"
+  "porphit_FinalReport.bbl" 1765112454.7294 5622 9e7a73bc3b6bacde29e2ee585d3cef1f "bibtex porphit_FinalReport"
+  "porphit_FinalReport.tex" 1765112587.81811 20706 ca6ec9c2f71d298b3aeaf75a02d10682 ""
   (generated)
   "porphit_FinalReport.aux"
   "porphit_FinalReport.log"
