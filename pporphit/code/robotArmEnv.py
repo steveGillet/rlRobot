@@ -28,8 +28,14 @@ class robotArmEnv(gym.Env):
             low=-10, high=10, shape=(1,), dtype=np.float32
         )
 
-        self.startPos = [np.array([-0.9, 1.35, 1.1], dtype=np.float32), np.array([-1.5, -0.4, 0.1], dtype=np.float32)] 
-        self.goalPos = [np.array([1.5, -0.4, 0.2], dtype=np.float32), np.array([1.75, 1.36, 1.11], dtype=np.float32)]
+        self.startPos = [
+            np.array([-0.9, 1.35, 1.1], dtype=np.float32),
+            np.array([-1.5, -0.4, 0.1], dtype=np.float32),
+        ]
+        self.goalPos = [
+            np.array([1.5, -0.4, 0.2], dtype=np.float32),
+            np.array([1.75, 1.36, 1.11], dtype=np.float32),
+        ]
         # self.startPos = np.array([-.4, -0.4, 0.6], dtype=np.float32)
         # self.goalPos = np.array([0.4, 0.4, 0.8], dtype=np.float32)
 
@@ -164,7 +170,7 @@ class robotArmEnv(gym.Env):
             planner = og.RRTConnect(si)
             simpleSetup.setPlanner(planner)
             # print("Planner")
-            simpleSetup.solve(0.8)
+            simpleSetup.solve(0.2)
             planner.clear()
 
             foundSolution = simpleSetup.haveSolutionPath()
@@ -189,13 +195,13 @@ class robotArmEnv(gym.Env):
 
                 totalDist = 0.0
                 for s in range(1, numStates):
-                    delta = qPoses[s] - qPoses[s-1]
+                    delta = qPoses[s] - qPoses[s - 1]
                     totalDist += np.linalg.norm(delta)
                 if totalDist > 0:
                     totalTime = 0.1
                     dt = totalTime / (numStates - 1)
                     for s in range(1, numStates):
-                        q1 = qPoses[s-1]
+                        q1 = qPoses[s - 1]
                         q2 = qPoses[s]
                         deltaQ = q2 - q1
                         v = deltaQ / dt
@@ -203,7 +209,7 @@ class robotArmEnv(gym.Env):
                         data.qpos[:] = qMid
                         data.qvel[:] = v
                         data.qacc[:] = 0
-                        mujoco.mj_inverse(model,data)
+                        mujoco.mj_inverse(model, data)
                         tau = data.qfrc_inverse[:numLinks].copy()
                         power = np.sum(np.abs(tau * v))
                         energyCost += power * dt
@@ -216,7 +222,13 @@ class robotArmEnv(gym.Env):
                 # print(f"Link Number Penalty: {-0.625 * (numLinks - self.minNumLinks)}")
                 # print(f"Energy Cost Penalty: {-0.0025 * energyCost}")
                 # reward += 100 - 0.05 * length - 20 * (startError + goalError) + 0.3125 * (muStart + muGoal) - 0.625 * (numLinks - self.minNumLinks) - 0.0025 * energyCost
-                reward += 100 - 0.05 * length - 20 * (startError + goalError) - 0.625 * (numLinks - self.minNumLinks) - 0.0025 * energyCost
+                reward += (
+                    100
+                    - 0.05 * length
+                    - 20 * (startError + goalError)
+                    - 0.625 * (numLinks - self.minNumLinks)
+                    - 0.0025 * energyCost
+                )
 
             else:
                 # pathStates = []
@@ -224,7 +236,11 @@ class robotArmEnv(gym.Env):
                 # # print(f"Manipulability Bonus: {0.15 * (muStart + muGoal)}")
                 # print(f"Link Number Penalty: {-1.25 * (numLinks - self.minNumLinks)}")
                 # reward += 30 - 50 * (startError + goalError) + 0.15 * (muStart + muGoal) - 1.25 * (numLinks - self.minNumLinks)
-                reward += 30 - 50 * (startError + goalError) - 1.25 * (numLinks - self.minNumLinks)
+                reward += (
+                    30
+                    - 50 * (startError + goalError)
+                    - 1.25 * (numLinks - self.minNumLinks)
+                )
 
         avgReward = reward / len(self.startPos)
         self.logger.debug(f"Average reward: {avgReward}")
@@ -232,9 +248,18 @@ class robotArmEnv(gym.Env):
 
     def step(self, action):
         # PPO GENERATED
-        numLinks = int(np.round(action[0] * (self.maxNumLinks - self.minNumLinks) + self.minNumLinks))
-        lengths = (action[1:(self.maxNumLinks + 1)] * (self.maxLength - self.minLength) + self.minLength)[:numLinks]
-        jointTypes = np.round(action[(1+self.maxNumLinks):] * 3)[:numLinks].astype(int)
+        numLinks = int(
+            np.round(
+                action[0] * (self.maxNumLinks - self.minNumLinks) + self.minNumLinks
+            )
+        )
+        lengths = (
+            action[1 : (self.maxNumLinks + 1)] * (self.maxLength - self.minLength)
+            + self.minLength
+        )[:numLinks]
+        jointTypes = np.round(action[(1 + self.maxNumLinks) :] * 3)[:numLinks].astype(
+            int
+        )
         # # TEST
         # numLinks = 7
         # lengths = np.array([0.5, 1.1999999, 0.44145596, 0.05, 0.05, 0.05, 0.05])
@@ -258,7 +283,7 @@ def ik_dls(
     model,
     target_pos: np.ndarray,
     initialQpos: np.ndarray | None = None,
-    max_iters: int = 200,
+    max_iters: int = 50,
     tol: float = 1e-3,
     lambda_: float = 1e-2,
     max_step: float = 0.3,
@@ -499,6 +524,7 @@ def manipulabilityIndex(J):
     if det <= 0:
         return 0.0
     return np.sqrt(det)
+
 
 def setupLogging():
     pid = os.getpid()
