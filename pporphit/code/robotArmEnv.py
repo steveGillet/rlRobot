@@ -28,16 +28,19 @@ class robotArmEnv(gym.Env):
             low=-10, high=10, shape=(1,), dtype=np.float32
         )
 
-        self.startPos = [
-            np.array([-0.9, 1.35, 1.1], dtype=np.float32),
-            np.array([-1.5, -0.4, 0.1], dtype=np.float32),
-        ]
-        self.goalPos = [
-            np.array([1.5, -0.4, 0.2], dtype=np.float32),
-            np.array([1.75, 1.36, 1.11], dtype=np.float32),
-        ]
-        # self.startPos = np.array([-.4, -0.4, 0.6], dtype=np.float32)
-        # self.goalPos = np.array([0.4, 0.4, 0.8], dtype=np.float32)
+        # self.startPos = [
+        #     np.array([-0.9, 1.35, 1.1], dtype=np.float32),
+        #     np.array([-1.5, -0.4, 0.1], dtype=np.float32),
+        # ]
+        # self.goalPos = [
+        #     np.array([1.5, -0.4, 0.2], dtype=np.float32),
+        #     np.array([1.75, 1.36, 1.11], dtype=np.float32),
+        # ]
+        # Container task
+        self.startPos = [np.array([-1.8, 0.3, 0.3], dtype=np.float32), np.array([-1.8, 0.8, 0.4], dtype=np.float32)] 
+        self.goalPos = [np.array([1.9, 0.9, 0.4], dtype=np.float32), np.array([1.8, 0.31, 0.2], dtype=np.float32)]
+        # self.startPos = [np.array([-.4, -0.4, 0.6], dtype=np.float32)]
+        # self.goalPos = [np.array([0.4, 0.4, 0.8], dtype=np.float32)]
 
         self.logger = setupLogging()
 
@@ -59,7 +62,7 @@ class robotArmEnv(gym.Env):
 
         actuatorIds = [model.actuator(f"motor{i}").id for i in range(numLinks)]
         jointIds = [model.joint(f"joint{i}").id for i in range(numLinks)]
-        obstacleNames = ["shelf", "shelfWall", "mountWall", "floor"]
+        obstacleNames = ["containerLeft", "containerRight", "containerBack", "containerTop", "floor"]
         obstacleIds = set([model.geom(name).id for name in obstacleNames])
 
         space = ob.CompoundStateSpace()
@@ -144,16 +147,16 @@ class robotArmEnv(gym.Env):
             startError = np.linalg.norm(data.site("endEffector").xpos - startPos)
             self.logger.debug(f"Start Error: {startError}")
 
-            # if jStart.shape[1] == numLinks:
-            #     muStart = manipulabilityIndex(jStart)
-            # else:
-            #     muStart = 0.0
-            # self.logger.debug(f"Mu Start: {muStart}")
-            # if jGoal.shape[1] == numLinks:
-            #     muGoal = manipulabilityIndex(jGoal)
-            # else:
-            #     muGoal = 0.0
-            # self.logger.debug(f"Mu Goal: {muGoal}")
+            if jStart.shape[1] == numLinks:
+                muStart = manipulabilityIndex(jStart)
+            else:
+                muStart = 0.0
+            self.logger.debug(f"Mu Start: {muStart}")
+            if jGoal.shape[1] == numLinks:
+                muGoal = manipulabilityIndex(jGoal)
+            else:
+                muGoal = 0.0
+            self.logger.debug(f"Mu Goal: {muGoal}")
 
             start = ob.State(space)
             goal = ob.State(space)
@@ -180,94 +183,95 @@ class robotArmEnv(gym.Env):
                 path = simpleSetup.getSolutionPath()
                 length = path.length()
 
-                energyCost = 0.0
-                numStates = path.getStateCount()
-                qPoses = []
-                for s in range(numStates):
-                    state = path.getState(s)
-                    qpos = np.zeros(numLinks)
-                    for i in range(numLinks):
-                        if isSO2[i]:
-                            qpos[i] = state[i].value
-                        else:
-                            qpos[i] = state[i][0]
-                    qPoses.append(qpos)
+                # energyCost = 0.0
+                # numStates = path.getStateCount()
+                # qPoses = []
+                # for s in range(numStates):
+                #     state = path.getState(s)
+                #     qpos = np.zeros(numLinks)
+                #     for i in range(numLinks):
+                #         if isSO2[i]:
+                #             qpos[i] = state[i].value
+                #         else:
+                #             qpos[i] = state[i][0]
+                #     qPoses.append(qpos)
 
-                totalDist = 0.0
-                for s in range(1, numStates):
-                    delta = qPoses[s] - qPoses[s - 1]
-                    totalDist += np.linalg.norm(delta)
-                if totalDist > 0:
-                    totalTime = 0.1
-                    dt = totalTime / (numStates - 1)
-                    for s in range(1, numStates):
-                        q1 = qPoses[s - 1]
-                        q2 = qPoses[s]
-                        deltaQ = q2 - q1
-                        v = deltaQ / dt
-                        qMid = (q1 + q2) / 2
-                        data.qpos[:] = qMid
-                        data.qvel[:] = v
-                        data.qacc[:] = 0
-                        mujoco.mj_inverse(model, data)
-                        tau = data.qfrc_inverse[:numLinks].copy()
-                        power = np.sum(np.abs(tau * v))
-                        energyCost += power * dt
-                        # print(f"Step {s}: avg |tau| = {np.mean(np.abs(tau))}, avg |dq| = {np.mean(np.abs(v))}, dt = {dt}, power = {power}")
-                self.logger.debug(f"Energy Cost: {energyCost}")
+                # totalDist = 0.0
+                # for s in range(1, numStates):
+                #     delta = qPoses[s] - qPoses[s - 1]
+                #     totalDist += np.linalg.norm(delta)
+                # if totalDist > 0:
+                #     totalTime = 0.1
+                #     dt = totalTime / (numStates - 1)
+                #     for s in range(1, numStates):
+                #         q1 = qPoses[s - 1]
+                #         q2 = qPoses[s]
+                #         deltaQ = q2 - q1
+                #         v = deltaQ / dt
+                #         qMid = (q1 + q2) / 2
+                #         data.qpos[:] = qMid
+                #         data.qvel[:] = v
+                #         data.qacc[:] = 0
+                #         mujoco.mj_inverse(model, data)
+                #         tau = data.qfrc_inverse[:numLinks].copy()
+                #         power = np.sum(np.abs(tau * v))
+                #         energyCost += power * dt
+                #         # print(f"Step {s}: avg |tau| = {np.mean(np.abs(tau))}, avg |dq| = {np.mean(np.abs(v))}, dt = {dt}, power = {power}")
+                # self.logger.debug(f"Energy Cost: {energyCost}")
                 path.clear()
-                # print(f"Path Length Penalty: {-0.05 * length}")
-                # print(f"Accuracy Penalty: {-20 * (startError + goalError)}")
-                # # print(f"Manipulability Bonus: {0.3125 * (muStart + muGoal)}")
-                # print(f"Link Number Penalty: {-0.625 * (numLinks - self.minNumLinks)}")
+                print(f"Path Length Penalty: {-0.05 * length}")
+                print(f"Accuracy Penalty: {-20 * (startError + goalError)}")
+                print(f"Manipulability Bonus: {0.3125 * (muStart + muGoal)}")
+                print(f"Link Number Penalty: {-0.625 * (numLinks - self.minNumLinks)}")
                 # print(f"Energy Cost Penalty: {-0.0025 * energyCost}")
-                # reward += 100 - 0.05 * length - 20 * (startError + goalError) + 0.3125 * (muStart + muGoal) - 0.625 * (numLinks - self.minNumLinks) - 0.0025 * energyCost
-                reward += (
-                    100
-                    - 0.05 * length
-                    - 20 * (startError + goalError)
-                    - 0.625 * (numLinks - self.minNumLinks)
-                    - 0.0025 * energyCost
-                )
+                reward += 100 - 0.05 * length - 20 * (startError + goalError) + 0.3125 * (muStart + muGoal) - 0.625 * (numLinks - self.minNumLinks)
+                # reward += (
+                #     100
+                #     - 0.05 * length
+                #     - 20 * (startError + goalError)
+                #     - 0.625 * (numLinks - self.minNumLinks)
+                #     - 0.0025 * energyCost
+                # )
 
             else:
                 # pathStates = []
-                # print(f"Accuracy Penalty: {-50 * (startError + goalError)}")
-                # # print(f"Manipulability Bonus: {0.15 * (muStart + muGoal)}")
-                # print(f"Link Number Penalty: {-1.25 * (numLinks - self.minNumLinks)}")
-                # reward += 30 - 50 * (startError + goalError) + 0.15 * (muStart + muGoal) - 1.25 * (numLinks - self.minNumLinks)
-                reward += (
-                    30
-                    - 50 * (startError + goalError)
-                    - 1.25 * (numLinks - self.minNumLinks)
-                )
+                print(f"Accuracy Penalty: {-50 * (startError + goalError)}")
+                print(f"Manipulability Bonus: {0.15 * (muStart + muGoal)}")
+                print(f"Link Number Penalty: {-1.25 * (numLinks - self.minNumLinks)}")
+                reward += 30 - 50 * (startError + goalError) + 0.15 * (muStart + muGoal) - 1.25 * (numLinks - self.minNumLinks)
+                # reward += (
+                #     30
+                #     - 50 * (startError + goalError)
+                #     - 1.25 * (numLinks - self.minNumLinks)
+                # )
 
         avgReward = reward / len(self.startPos)
         self.logger.debug(f"Average reward: {avgReward}")
         return avgReward
 
     def step(self, action):
-        # PPO GENERATED
-        numLinks = int(
-            np.round(
-                action[0] * (self.maxNumLinks - self.minNumLinks) + self.minNumLinks
-            )
-        )
-        lengths = (
-            action[1 : (self.maxNumLinks + 1)] * (self.maxLength - self.minLength)
-            + self.minLength
-        )[:numLinks]
-        jointTypes = np.round(action[(1 + self.maxNumLinks) :] * 3)[:numLinks].astype(
-            int
-        )
+        # # PPO GENERATED
+        # numLinks = int(
+        #     np.round(
+        #         action[0] * (self.maxNumLinks - self.minNumLinks) + self.minNumLinks
+        #     )
+        # )
+        # lengths = (
+        #     action[1 : (self.maxNumLinks + 1)] * (self.maxLength - self.minLength)
+        #     + self.minLength
+        # )[:numLinks]
+        # jointTypes = np.round(action[(1 + self.maxNumLinks) :] * 3)[:numLinks].astype(
+        #     int
+        # )
         # # TEST
         # numLinks = 7
         # lengths = np.array([0.5, 1.1999999, 0.44145596, 0.05, 0.05, 0.05, 0.05])
         # jointTypes = np.array([3, 1, 0, 3, 3, 3, 3])
-        # # PANDA
-        # numLinks = 7
-        # lengths = np.array([0.333, 0.0825, 0.316, 0.0825, 0.384, 0.088, 0.01])
-        # jointTypes = np.array([2, 1, 2, 1, 0, 1, 2])
+        # PANDA
+        numLinks = 7
+        sizeMultiplier = 2
+        lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
+        jointTypes = np.array([2, 1, 2, 0, 2, 0, 2])
 
         # print("Num Links: ", numLinks)
         # print("Lengths: ", lengths)
@@ -449,10 +453,15 @@ def generateXML(numJoints, lengths, jointTypes):
     <option gravity="0 0 -9.81"/>
     <worldbody>
         <geom name="floor" type="plane" size="2 2 0.1" rgba=".9 0.5 0 1"/>
-        <geom name="mountWall" type="box" pos="0 -0.4 1.0" size="1.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
-        <geom name="shelfWall" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
-        <geom name="shelf" type="box" pos="0.0 1.35 1.0" size="2.0 0.25 0.01" rgba="0.5 0.5 0.5 1"/>
-        <body name="base" pos="0 -0.4 1.0" euler="-1.57 0 0">
+        <geom name="containerBack" type="box" pos="-2.0 0.6 1.0" size="0.01 1.0 1.0" rgba="0.5 0.5 0.5 1"/>
+        <geom name="containerLeft" type="box" pos="0 -0.4 1.0" size="2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
+        <geom name="containerRight" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
+        <geom name="containerTop" type="box" pos="0 0.6 2.0" size="2.0 1.0 0.01" rgba="0.5 0.5 0.5 1"/>
+        <!-- <geom name="mountWall" type="box" pos="0 -0.4 1.0" size="1.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/> -->
+        <!-- <geom name="shelfWall" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/> -->
+        <!-- <geom name="shelf" type="box" pos="0.0 1.35 1.0" size="2.0 0.25 0.01" rgba="0.5 0.5 0.5 1"/> -->
+        <!-- <body name="base" pos="0 -0.4 1.0" euler="-1.57 0 0"> -->
+        <body name="base" pos="0 0 0">
             <geom name="baseBox" type="box" size="0.1 0.1 0.05"/>
         """
         currentPos = "0 0 0.05"

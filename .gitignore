@@ -2,3 +2,4 @@ venv
 pporphit/code/logs/
 pporphit/code/arm_morph_tb/
 *.mkv
+*.pptx
