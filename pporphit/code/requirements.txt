@@ -1,0 +1,8 @@
+gymnasium
+numpy
+matplotlib
+torch
+stable_baselines3
+mujoco
+scipy
+# Note: OMPL must be installed separately (e.g., conda install -c conda-forge ompl)

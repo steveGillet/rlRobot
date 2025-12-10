@@ -43,7 +43,7 @@ class robotArmEnv(gym.Env):
         # self.startPos = np.array([-.4, -0.4, 0.6], dtype=np.float32)
         # self.goalPos = np.array([0.4, 0.4, 0.8], dtype=np.float32)
 
-        # self.logger = setupLogging()
+        self.logger = setupLogging()
         self.last_info = {}
 
     def reset(self, seed=None, options=None):

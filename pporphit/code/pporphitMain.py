@@ -41,7 +41,7 @@ def makeEnv():
 
 
 if __name__ == "__main__":
-    logger = setupLogging()
+    # logger = setupLogging()
     logger.info("Main Process Started")
 
     venv = SubprocVecEnv([makeEnv() for _ in range(10)])
