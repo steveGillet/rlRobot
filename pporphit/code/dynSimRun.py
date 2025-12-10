@@ -158,10 +158,11 @@ def generateXML(numJoints, lengths, jointTypes):
     <worldbody>
         <light diffuse=".5 .5 .5" pos="3 1 2" dir="0 0 -1" cutoff="180"/>
         <geom name="floor" type="plane" size="2 2 0.1" rgba=".9 0.5 0 1"/>
-        <!-- <geom name="containerBack" type="box" pos="-2.0 0.6 1.0" size="0.01 1.0 1.0" rgba="0.5 0.5 0.5 1"/> -->
-        <geom name="mountWall" type="box" pos="0 -0.4 1.0" size="1.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
-        <geom name="shelfWall" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
-        <geom name="shelf" type="box" pos="0.0 1.35 1.0" size="2.0 0.25 0.01" rgba="0.5 0.5 0.5 1"/>
+        <geom name="containerBack" type="box" pos="-2.0 0.6 1.0" size="0.01 1.0 1.0" rgba="0.5 0.5 0.5 1"/>
+        <geom name="containerLeft" type="box" pos="0 -0.4 1.0" size="2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
+        <geom name="containerRight" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
+        <geom name="containerTop" type="box" pos="0 0.6 2.0" size="2.0 1.0 0.01" rgba="0.5 0.5 0.5 1"/>
+        <!-- <geom name="shelf" type="box" pos="0.0 1.35 1.0" size="2.0 0.25 0.01" rgba="0.5 0.5 0.5 1"/> -->
         <!-- <geom name="obstacle" type="box" pos="0.45 0.25 0.55" size="0.3 0.1 0.025" rgba="1 0.5 0 1" /> -->
         <body name="base" pos="0 -0.4 1.0" euler="-1.57 0 0">
             <geom name="baseBox" type="box" size="0.1 0.1 0.05"/>
@@ -225,20 +226,20 @@ def generateXML(numJoints, lengths, jointTypes):
         print(f"Mujoco XML Generation Error: {e}")
         raise
 
-# numLinks = 7
-# sizeMultiplier = 2
-# lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
-# jointTypes = np.array([2, 0, 2, 0, 2, 0, 2])
 numLinks = 7
-lengths = np.array([0.5, 1.1999999, 0.44145596, 0.05, 0.05, 0.05, 0.05])
-jointTypes = np.array([3, 1, 0, 3, 3, 3, 3])
+sizeMultiplier = 2
+lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
+jointTypes = np.array([2, 1, 2, 0, 2, 0, 2])
+# numLinks = 2
+# lengths = np.array([0.05, 1.1999999])
+# jointTypes = np.array([3, 3])
 xml = generateXML(numLinks, lengths, jointTypes)
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
 
 actuatorIds = [model.actuator(f"motor{i}").id for i in range(numLinks)]
 jointIds = [model.joint(f"joint{i}").id for i in range(numLinks)]
-obstacleNames = ["shelf", "shelfWall", "mountWall", "floor"]
+obstacleNames = ["containerBack", "containerLeft", "containerRight", "containerTop", "floor"]
 obstacleIds = set([model.geom(name).id for name in obstacleNames])
 
 space = ob.CompoundStateSpace()
@@ -290,8 +291,10 @@ si = ob.SpaceInformation(space)
 si.setStateValidityChecker(validityChecker)
 simpleSetup = og.SimpleSetup(si)
 
-startPoses = [np.array([-0.9, 1.35, 1.1], dtype=np.float32), np.array([-1.5, -0.4, 0.1], dtype=np.float32)] 
-goalPoses = [np.array([1.5, -0.4, 0.2], dtype=np.float32), np.array([1.75, 1.36, 1.11], dtype=np.float32)]
+startPoses = [np.array([-1.8, 0.3, 0.3], dtype=np.float32), np.array([-1.8, 0.8, 0.4], dtype=np.float32)] 
+goalPoses = [np.array([1.9, 0.9, 0.4], dtype=np.float32), np.array([1.8, 0.31, 0.2], dtype=np.float32)]
+# startPoses = [np.array([-0.9, 1.35, 1.1], dtype=np.float32), np.array([-1.5, -0.4, 0.1], dtype=np.float32)] 
+# goalPoses = [np.array([1.5, -0.4, 0.2], dtype=np.float32), np.array([1.75, 1.36, 1.11], dtype=np.float32)]
 # startPoses = [np.array([-1.0, 0.6, 0.6], dtype=np.float32)]
 # goalPoses = [np.array([2.0, 0.4, 0.2], dtype=np.float32)]
 

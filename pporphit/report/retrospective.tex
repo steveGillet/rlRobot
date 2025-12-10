@@ -1,0 +1,53 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{booktabs}
+
+\title{Retrospective \& Contribution Report}
+\author{
+Steve Gillet \\
+University of Colorado Boulder Robotics \\
+Email: steve.gillet@colorado.edu \\
+\and
+Jay Vakil \\
+Email: Jay.Vakil@colorado.edu
+}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Team Contributions}
+Steve handled the initial set up and the overall structure, the evolution of the reward function and the task and environment set up, all of the RL related components except the REAL RL ablation that Jay did, the writing, the initial code set up, and some of the simulation graphics for the presentations, the reward curve and results table.
+Jay handled the multi MuJoCo sim set up, creating and structuring the presentations, all of the other evaluations and ablations, refining the codebase, refining the final report, any other graphics.
+
+\section{Post-Mortem}
+I put a lot of this in the conclusion of the final report but basically the trick was the reward function and shaping that and setting up the simulation environment, dealing with the bugs in that, and adding complexity to it to allow more realistic tasks with obstacles and energy expenditure calculations.
+A lot of the time was spent ironing out bugs and that requires a very solid foundation.
+Given time I would go back through and make sure everything is solid.
+It's a constant effort when you have bugs that only show up every 100,000 iterations and are very hard to see.
+
+Overall the method works.
+You can use PPO to design morphologies that perform better than standard morphologies, the trick in my mind is to define that performance accurately and then be able to demonstrate that in reality which is a step I am excited about.
+
+\section{Hypothetical Next Steps}
+I would keep refining the process.
+I would go back through the code and make everything as solid as possible and then I would refine the reward function.
+Remove the manipulability measure, look for something else that effectively adds robustness.
+I would more harshly punish inaccuracy or create something where it just fails morphologies that are outside of a certain distance from the start and goal.
+I would add noise to the start and goal positions to add robustness (I should have done this in the beginning in hindsight).
+I would get the energy cost measure to work and I would dream up some more tasks to test on.
+I'd also like to try some other RL algorithms.
+
+Ultimately, I think it would be cool to have an LLM help define the task for you and set it up in MuJoCo and then feed it into this algorithm and then take the resulting morphology and feed that into something that would actually build a feasible 3D model which could then be printed.
+I think the first step to that would be taking this algorithm and fitting it to a real world task and then print out the resulting morphology and actually do a real comparison against a real Panda.
+I think I could do a lot of that in the next 3 months, maybe not the entire pipeline but everything else.
+
+\section{Grading Context}
+I can't think of any additional context that would give more information relevant to grading, I think it's all here and in the rest of the submission.
+
+\end{document}
