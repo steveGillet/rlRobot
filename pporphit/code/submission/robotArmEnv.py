@@ -14,13 +14,12 @@ import logging
 
 
 class robotArmEnv(gym.Env):
-    def __init__(self, minNumLinks=2, maxNumLinks=7, minLength=0.05, maxLength=1.2, noise=0.05):
+    def __init__(self, minNumLinks=2, maxNumLinks=7, minLength=0.05, maxLength=1.2):
         super().__init__()
         self.minNumLinks = minNumLinks
         self.maxNumLinks = maxNumLinks
         self.minLength = minLength
         self.maxLength = maxLength
-        self.noise = noise
 
         self.action_space = gym.spaces.Box(
             low=0, high=1, shape=(1 + self.maxNumLinks * 2,), dtype=np.float32
@@ -29,22 +28,22 @@ class robotArmEnv(gym.Env):
             low=-10, high=10, shape=(1,), dtype=np.float32
         )
 
-        # Wall Task?
         self.startPos = [
             np.array([-0.9, 1.35, 1.1], dtype=np.float32),
             np.array([-1.5, -0.4, 0.1], dtype=np.float32),
+            # NEW: Challenge Task (Panda Reach Limit ~ 0.855m)
+            # Distance needed: 3.0m (Even harder)
+            np.array([0.0, 0.0, 0.0], dtype=np.float32),
         ]
         self.goalPos = [
             np.array([1.5, -0.4, 0.2], dtype=np.float32),
             np.array([1.75, 1.36, 1.11], dtype=np.float32),
+            np.array([3.0, 0.0, 0.0], dtype=np.float32),
         ]
-        # # Container task
-        # self.startPos = [np.array([-1.8, 0.3, 0.3], dtype=np.float32), np.array([-1.8, 0.8, 0.4], dtype=np.float32)] 
-        # self.goalPos = [np.array([1.9, 0.9, 0.4], dtype=np.float32), np.array([1.8, 0.31, 0.2], dtype=np.float32)]
-        # self.startPos = [np.array([-.4, -0.4, 0.6], dtype=np.float32)]
-        # self.goalPos = [np.array([0.4, 0.4, 0.8], dtype=np.float32)]
+        # self.startPos = np.array([-.4, -0.4, 0.6], dtype=np.float32)
+        # self.goalPos = np.array([0.4, 0.4, 0.8], dtype=np.float32)
 
-        # self.logger = setupLogging()
+        self.logger = setupLogging()
         self.last_info = {}
 
     def reset(self, seed=None, options=None):
@@ -65,7 +64,7 @@ class robotArmEnv(gym.Env):
 
         actuatorIds = [model.actuator(f"motor{i}").id for i in range(numLinks)]
         jointIds = [model.joint(f"joint{i}").id for i in range(numLinks)]
-        obstacleNames = ["mountWall", "shelfWall", "shelf", "floor"]
+        obstacleNames = ["shelf", "shelfWall", "mountWall", "floor"]
         obstacleIds = set([model.geom(name).id for name in obstacleNames])
 
         space = ob.CompoundStateSpace()
@@ -130,12 +129,12 @@ class robotArmEnv(gym.Env):
 
         reward = 0
         for startPos, goalPos in zip(self.startPos, self.goalPos):
-            startPos = startPos + np.random.normal(0, self.noise, size=3)
-            goalPos = goalPos + np.random.normal(0, self.noise, size=3)
             self.logger.debug(f"Pre-IK: startPos={startPos}")
+            # print("Start IK")
             startQpos, jStart = ik_dls(model, startPos)
             self.logger.debug(f"Post Start IK: startQpos={startQpos}, jStart={jStart}")
 
+            # print("Goal IK")
             goalQpos, jGoal = ik_dls(model, goalPos, initialQpos=startQpos)
             self.logger.debug(f"Post Goal IK: goalQpos={goalQpos}, jGoal={jGoal}")
             # startQpos = np.array([0.2, -0.8, -0.3, 0.9])
@@ -167,16 +166,16 @@ class robotArmEnv(gym.Env):
             startError = np.linalg.norm(data.site("endEffector").xpos - startPos)
             self.logger.debug(f"Start Error: {startError}")
 
-            # if jStart.shape[1] == numLinks:
-            #     muStart = manipulabilityIndex(jStart)
-            # else:
-            #     muStart = 0.0
-            # self.logger.debug(f"Mu Start: {muStart}")
-            # if jGoal.shape[1] == numLinks:
-            #     muGoal = manipulabilityIndex(jGoal)
-            # else:
-            #     muGoal = 0.0
-            # self.logger.debug(f"Mu Goal: {muGoal}")
+            if jStart.shape[1] == numLinks:
+                muStart = manipulabilityIndex(jStart)
+            else:
+                muStart = 0.0
+            self.logger.debug(f"Mu Start: {muStart}")
+            if jGoal.shape[1] == numLinks:
+                muGoal = manipulabilityIndex(jGoal)
+            else:
+                muGoal = 0.0
+            self.logger.debug(f"Mu Goal: {muGoal}")
 
             start = ob.State(space)
             goal = ob.State(space)
@@ -192,7 +191,8 @@ class robotArmEnv(gym.Env):
 
             planner = og.RRTConnect(si)
             simpleSetup.setPlanner(planner)
-            simpleSetup.solve(0.5)
+            # print("Planner")
+            simpleSetup.solve(0.2)
             planner.clear()
 
             foundSolution = simpleSetup.haveSolutionPath()
@@ -238,33 +238,59 @@ class robotArmEnv(gym.Env):
                         # print(f"Step {s}: avg |tau| = {np.mean(np.abs(tau))}, avg |dq| = {np.mean(np.abs(v))}, dt = {dt}, power = {power}")
                 self.logger.debug(f"Energy Cost: {energyCost}")
                 path.clear()
-                # print(f"Path Length Penalty: {-0.025 * length}")
-                # print(f"Accuracy Penalty: {-40 * (startError + goalError)}")
-                # # print(f"Manipulability Bonus: {0.15 * (muStart + muGoal)}")
-                # print(f"Link Number Penalty: {-0.3125 * (numLinks - self.minNumLinks)}")
-                # print(f"Energy Cost Penalty: {-0.00125 * energyCost}")
-                # # reward += 100 - 0.025 * length - 40 * (startError + goalError) + 0.15 * (muStart + muGoal) - 0.3125 * (numLinks - self.minNumLinks)
-                reward += (
+                # Calculate metrics
+                link_penalty = -0.625 * (numLinks - self.minNumLinks)
+                path_penalty = -0.05 * length
+                acc_penalty = -20 * (startError + goalError)
+                # RESTORED MANIPULABILITY
+                man_bonus = 0.3125 * (muStart + muGoal)
+                en_cost = -0.0025 * energyCost
+
+                cycle_reward += (
                     100
-                    - 0.025 * length
-                    - 40 * (startError + goalError)
-                    - 0.3125 * (numLinks - self.minNumLinks)
-                    - 0.00125 * energyCost
+                    + path_penalty
+                    + acc_penalty
+                    + link_penalty
+                    + en_cost
+                    + man_bonus
                 )
+
+                accumulated_info["reward"] += cycle_reward
+                accumulated_info["link_penalty"] += link_penalty
+                accumulated_info["path_penalty"] += path_penalty
+                accumulated_info["accuracy_penalty"] += acc_penalty
+                accumulated_info["manipulability_bonus"] += man_bonus
+                accumulated_info["energy_cost"] += en_cost
+                accumulated_info["success"] += 1.0
 
             else:
                 # pathStates = []
-                # print(f"Accuracy Penalty: {-200 * (startError + goalError)}")
+                # print(f"Accuracy Penalty: {-50 * (startError + goalError)}")
                 # # print(f"Manipulability Bonus: {0.15 * (muStart + muGoal)}")
                 # print(f"Link Number Penalty: {-1.25 * (numLinks - self.minNumLinks)}")
-                # reward += 30 - 200 * (startError + goalError) + 0.15 * (muStart + muGoal) - 1.25 * (numLinks - self.minNumLinks)
-                reward += (
-                    30
-                    - 200 * (startError + goalError)
-                    - 1.25 * (numLinks - self.minNumLinks)
-                )
+                # reward += 30 - 50 * (startError + goalError) + 0.15 * (muStart + muGoal) - 1.25 * (numLinks - self.minNumLinks)
 
-        avgReward = reward / len(self.startPos)
+                link_penalty = -1.25 * (numLinks - self.minNumLinks)
+                acc_penalty = -50 * (startError + goalError)
+                # RESTORED MANIPULABILITY for fail case too?
+                # Original code: reward += 30 - 50 * ... + 0.15 * (muStart + muGoal) ...
+                man_bonus = 0.15 * (muStart + muGoal)
+
+                cycle_reward += 30 + acc_penalty + link_penalty + man_bonus
+
+                accumulated_info["reward"] += cycle_reward
+                accumulated_info["link_penalty"] += link_penalty
+                accumulated_info["accuracy_penalty"] += acc_penalty
+                accumulated_info["manipulability_bonus"] += man_bonus
+
+            reward += cycle_reward
+
+        avgReward = reward / num_tasks
+
+        # Average metrics
+        for k in accumulated_info:
+            self.last_info[k] = accumulated_info[k] / num_tasks
+
         self.logger.debug(f"Average reward: {avgReward}")
         # Average metrics if mostly identical across startPos?
         # Actually loop runs twice. self.last_info will be overwritten.
@@ -276,18 +302,26 @@ class robotArmEnv(gym.Env):
 
     def step(self, action):
         # PPO GENERATED
-        numLinks = int(np.round(action[0] * (self.maxNumLinks - self.minNumLinks) + self.minNumLinks))
-        lengths = (action[1:(self.maxNumLinks + 1)] * (self.maxLength - self.minLength) + self.minLength)[:numLinks]
-        jointTypes = np.round(action[(1 + self.maxNumLinks):] * 3)[:numLinks].astype(int)
+        numLinks = int(
+            np.round(
+                action[0] * (self.maxNumLinks - self.minNumLinks) + self.minNumLinks
+            )
+        )
+        lengths = (
+            action[1 : (self.maxNumLinks + 1)] * (self.maxLength - self.minLength)
+            + self.minLength
+        )[:numLinks]
+        jointTypes = np.round(action[(1 + self.maxNumLinks) :] * 3)[:numLinks].astype(
+            int
+        )
         # # TEST
-        # numLinks = 2
-        # lengths = np.array([0.5, 1.1999999])
-        # jointTypes = np.array([0, 0])
+        # numLinks = 7
+        # lengths = np.array([0.5, 1.1999999, 0.44145596, 0.05, 0.05, 0.05, 0.05])
+        # jointTypes = np.array([3, 1, 0, 3, 3, 3, 3])
         # # PANDA
         # numLinks = 7
-        # sizeMultiplier = 2
-        # lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
-        # jointTypes = np.array([2, 1, 2, 0, 2, 0, 2])
+        # lengths = np.array([0.333, 0.0825, 0.316, 0.0825, 0.384, 0.088, 0.01])
+        # jointTypes = np.array([2, 1, 2, 1, 0, 1, 2])
 
         # print("Num Links: ", numLinks)
         # print("Lengths: ", lengths)
@@ -307,7 +341,7 @@ def ik_dls(
     model,
     target_pos: np.ndarray,
     initialQpos: np.ndarray | None = None,
-    max_iters: int = 200,
+    max_iters: int = 50,
     tol: float = 1e-3,
     lambda_: float = 1e-2,
     max_step: float = 0.3,
@@ -473,15 +507,10 @@ def generateXML(numJoints, lengths, jointTypes):
     <option gravity="0 0 -9.81"/>
     <worldbody>
         <geom name="floor" type="plane" size="2 2 0.1" rgba=".9 0.5 0 1"/>
-        <!-- <geom name="containerBack" type="box" pos="-2.0 0.6 1.0" size="0.01 1.0 1.0" rgba="0.5 0.5 0.5 1"/> -->
-        <!-- <geom name="containerLeft" type="box" pos="0 -0.4 1.0" size="2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/> -->
-        <!-- <geom name="containerRight" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/> -->
-        <!-- <geom name="containerTop" type="box" pos="0 0.6 2.0" size="2.0 1.0 0.01" rgba="0.5 0.5 0.5 1"/> -->
         <geom name="mountWall" type="box" pos="0 -0.4 1.0" size="1.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
         <geom name="shelfWall" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
         <geom name="shelf" type="box" pos="0.0 1.35 1.0" size="2.0 0.25 0.01" rgba="0.5 0.5 0.5 1"/>
         <body name="base" pos="0 -0.4 1.0" euler="-1.57 0 0">
-        <!-- <body name="base" pos="0 0 0"> -->
             <geom name="baseBox" type="box" size="0.1 0.1 0.05"/>
         """
         currentPos = "0 0 0.05"
