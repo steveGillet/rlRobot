@@ -40,44 +40,44 @@ def makeEnv():
     return _init
 
 
-# if __name__ == "__main__":
-#     logger = setupLogging()
-#     logger.info("Main Process Started")
-
-#     venv = SubprocVecEnv([makeEnv() for _ in range(24)])
-#     venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
-
-#     policyKwargs = dict(net_arch=[128, 128, 128])
-#     ppo = PPO(
-#         "MlpPolicy",
-#         venv,
-#         verbose=1,
-#         policy_kwargs=policyKwargs,
-#         learning_rate=0.001,
-#         n_steps=256,
-#         batch_size=512,
-#         n_epochs=4,
-#         gamma=0.98,
-#         tensorboard_log="./arm_morph_tb/",
-#         device="auto",
-#     )
-#     ppo.learn(total_timesteps=2_000_000, callback=RewardLoggerCallback())
-#     ppo.save("wallArm2")
-
 if __name__ == "__main__":
-    env = robotArmEnv()
-    obs, info = env.reset()
-    for _ in range(2500):
-        a = env.action_space.sample()
-        print(a)
-        print("step...")
-        obs, r, done, trunc, info = env.step(a)
-        print("reward:", r)
-        obs, info = env.reset()
+    logger = setupLogging()
+    logger.info("Main Process Started")
 
-    print("DONE WITH MAIN PYTHON CODE")
-    import os
-    os._exit(0)
+    venv = SubprocVecEnv([makeEnv() for _ in range(24)])
+    venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
+
+    policyKwargs = dict(net_arch=[128, 128, 128])
+    ppo = PPO(
+        "MlpPolicy",
+        venv,
+        verbose=1,
+        policy_kwargs=policyKwargs,
+        learning_rate=0.001,
+        n_steps=256,
+        batch_size=512,
+        n_epochs=4,
+        gamma=0.98,
+        tensorboard_log="./arm_morph_tb/",
+        device="cpu",
+    )
+    ppo.learn(total_timesteps=4_000_000, callback=RewardLoggerCallback())
+    ppo.save("wallArm4")
+
+# if __name__ == "__main__":
+#     env = robotArmEnv()
+#     obs, info = env.reset()
+#     for _ in range(2500):
+#         a = env.action_space.sample()
+#         print(a)
+#         print("step...")
+#         obs, r, done, trunc, info = env.step(a)
+#         print("reward:", r)
+#         obs, info = env.reset()
+
+#     print("DONE WITH MAIN PYTHON CODE")
+#     import os
+#     os._exit(0)
 
 
 # index = 0
