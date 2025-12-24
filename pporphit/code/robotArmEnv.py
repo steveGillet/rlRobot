@@ -29,7 +29,7 @@ class robotArmEnv(gym.Env):
             low=-10, high=10, shape=(1,), dtype=np.float32
         )
 
-        # Wall Task?
+        # Wall Task
         self.startPos = [
             np.array([-0.9, 1.35, 1.1], dtype=np.float32),
             np.array([-1.5, -0.4, 0.1], dtype=np.float32),
@@ -44,8 +44,7 @@ class robotArmEnv(gym.Env):
         # self.startPos = [np.array([-.4, -0.4, 0.6], dtype=np.float32)]
         # self.goalPos = [np.array([0.4, 0.4, 0.8], dtype=np.float32)]
 
-        # self.logger = setupLogging()
-        self.last_info = {}
+        self.logger = setupLogging()
 
     def reset(self, seed=None, options=None):
         return np.array([0.0], dtype=np.float32), {}
@@ -85,10 +84,10 @@ class robotArmEnv(gym.Env):
                 isSO2.append(False)
             else:
                 subspace = ob.RealVectorStateSpace(1)
-                space.addSubspace(subspace, 1.0 / 3.14)
+                space.addSubspace(subspace, 1.0 / 4.71)
                 bounds = ob.RealVectorBounds(1)
-                bounds.setLow(0, -1.57)
-                bounds.setHigh(0, 1.57)
+                bounds.setLow(0, -2.355)
+                bounds.setHigh(0, 2.355)
                 subspace.setBounds(bounds)
                 isSO2.append(False)
 
@@ -116,18 +115,6 @@ class robotArmEnv(gym.Env):
         si.setStateValidityChecker(validityChecker)
         simpleSetup = og.SimpleSetup(si)
 
-        accumulated_info = {
-            "reward": 0.0,
-            "link_penalty": 0.0,
-            "path_penalty": 0.0,
-            "accuracy_penalty": 0.0,
-            "manipulability_bonus": 0.0,
-            "energy_cost": 0.0,
-            "success": 0.0,
-        }
-
-        num_tasks = len(self.startPos)
-
         reward = 0
         for startPos, goalPos in zip(self.startPos, self.goalPos):
             startPos = startPos + np.random.normal(0, self.noise, size=3)
@@ -141,13 +128,9 @@ class robotArmEnv(gym.Env):
             # startQpos = np.array([0.2, -0.8, -0.3, 0.9])
             # goalQpos = np.array([-0.4, 0.7, 0.5, -1.0])
 
-            cycle_reward = 0.0
-
             if startQpos is None or goalQpos is None:
-                # return -100.0 # Don't return early if we want average? Actually logic says return -100.
-                # But if we want fair ablation we should probably just penalize heavily and continue?
-                # The original code returned early. Let's keep it but note metrics might be partial.
-                return -100.0
+                reward = -100.0
+                break
 
             i = 0
             for id in jointIds:
@@ -177,6 +160,12 @@ class robotArmEnv(gym.Env):
             # else:
             #     muGoal = 0.0
             # self.logger.debug(f"Mu Goal: {muGoal}")
+
+            for i in range(len(startQpos)):
+                if isSO2[i]:
+                    startQpos[i] = np.arctan2(np.sin(startQpos[i]), np.cos(startQpos[i]))
+                    goalQpos[i] = np.arctan2(np.sin(goalQpos[i]), np.cos(goalQpos[i]))
+
 
             start = ob.State(space)
             goal = ob.State(space)
@@ -220,7 +209,7 @@ class robotArmEnv(gym.Env):
                     delta = qPoses[s] - qPoses[s - 1]
                     totalDist += np.linalg.norm(delta)
                 if totalDist > 0:
-                    totalTime = 0.1
+                    totalTime = 0.1 * length
                     dt = totalTime / (numStates - 1)
                     for s in range(1, numStates):
                         q1 = qPoses[s - 1]
@@ -266,11 +255,6 @@ class robotArmEnv(gym.Env):
 
         avgReward = reward / len(self.startPos)
         self.logger.debug(f"Average reward: {avgReward}")
-        # Average metrics if mostly identical across startPos?
-        # Actually loop runs twice. self.last_info will be overwritten.
-        # Ideally we should average them. But let's just stick to the last one or accumulate?
-        # The prompt implies single scalar values for report.
-        # Since the loop runs over `self.startPos` (len 2), we should probably accumulate `self.last_info`.
 
         return avgReward
 
@@ -293,10 +277,6 @@ class robotArmEnv(gym.Env):
         # print("Lengths: ", lengths)
         # print("Joint Types: ", jointTypes)
 
-        print(
-            f"DEBUG STEP: numLinks={numLinks}, lengths={lengths}, jointTypes={jointTypes}"
-        )
-
         reward = self._evaluate(numLinks, lengths, jointTypes)
         done = True
 
@@ -307,110 +287,133 @@ def ik_dls(
     model,
     target_pos: np.ndarray,
     initialQpos: np.ndarray | None = None,
-    max_iters: int = 200,
+    max_iters: int = 500,  # Increased for harder convergence
     tol: float = 1e-3,
     lambda_: float = 1e-2,
     max_step: float = 0.3,
-) -> np.ndarray | None:
-    """
-    Damped least-squares IK for site 'endEffector'.
-
-    Returns:
-        q_best (np.ndarray of shape (nq,)) or None if something is badly wrong
-        (NaNs, singular beyond recovery, etc.).
-    """
+    penalty_weight: float = 10.0,
+    safety_margin: float = 0.01,
+    fd_eps: float = 1e-4,
+) -> tuple[np.ndarray | None, np.ndarray | None]:
     site_id = model.site("endEffector").id
     nq = model.nq
-    nv = model.nv  # for your chain, nv == nq
+    nv = model.nv
 
-    # Separate data object so IK can't corrupt caller's MjData
+    obstacle_ids = set([model.geom(name).id for name in ["mountWall", "shelfWall", "shelf", "floor"]])
+
     ik_data = mujoco.MjData(model)
 
-    # --- Initial guess ---
     if initialQpos is None:
-        q = np.zeros(nq, dtype=np.float64)
+        q = np.zeros(nq)
     else:
-        q = np.array(initialQpos, dtype=np.float64).copy()
-        if q.shape[0] != nq or not np.all(np.isfinite(q)):
-            q = np.zeros(nq, dtype=np.float64)
+        q = initialQpos.copy()
+        if not np.all(np.isfinite(q)):
+            q = np.zeros(nq)
 
-    # --- Joint limits in q-space ---
     q_min = np.full(nq, -np.inf)
     q_max = np.full(nq, np.inf)
     for j in range(model.njnt):
-        adr = model.jnt_qposadr[j]  # index of this joint in qpos
+        adr = model.jnt_qposadr[j]
         if model.jnt_limited[j]:
-            lo, hi = model.jnt_range[j]
-            q_min[adr] = lo
-            q_max[adr] = hi
+            q_min[adr], q_max[adr] = model.jnt_range[j]
 
     q = np.clip(q, q_min, q_max)
 
-    # Track best pose seen
     q_best = q.copy()
     err_best = np.inf
 
-    # Jacobian buffers
     jacp = np.zeros((3, nv))
     jacr = np.zeros((3, nv))
 
     for _ in range(max_iters):
-        # Sanity check
         if not np.all(np.isfinite(q)):
             return None, None
 
-        # Forward kinematics
         ik_data.qpos[:] = q
         mujoco.mj_forward(model, ik_data)
-        current_pos = np.array(ik_data.site(site_id).xpos, copy=True)
+        current_pos = ik_data.site(site_id).xpos.copy()
 
-        err = target_pos - current_pos
-        err_norm = float(np.linalg.norm(err))
+        pos_err = target_pos - current_pos
+        pos_err_norm = np.linalg.norm(pos_err)
 
-        # Track best
-        if np.isfinite(err_norm) and err_norm < err_best:
-            err_best = err_norm
+        penalty = 0.0
+        for j in range(ik_data.ncon):
+            contact = ik_data.contact[j]
+            if contact.geom1 in obstacle_ids or contact.geom2 in obstacle_ids:
+                dist = contact.dist
+                if dist < safety_margin:
+                    penetration = safety_margin - dist
+                    penalty += penetration ** 2
+
+        total_err = pos_err_norm + penalty_weight * penalty
+        if total_err < err_best:
+            err_best = total_err
             q_best = q.copy()
 
-        # Good enough?
-        if err_norm < tol:
+        if pos_err_norm < tol and penalty == 0.0:
             break
 
-        # Compute Jacobian
         mujoco.mj_jacSite(model, ik_data, jacp, jacr, site_id)
-        J = jacp[:, :nv]  # (3, nv)
-
-        # Damped least-squares step
-        A = J @ J.T + (lambda_**2) * np.eye(3)
+        J = jacp[:, :nv]
+        A = J @ J.T + (lambda_ ** 2) * np.eye(3)
         try:
-            v = np.linalg.solve(A, err)  # (3,)
+            v = np.linalg.solve(A, pos_err)
         except np.linalg.LinAlgError:
-            # Very ill-conditioned; use best so far
             break
+        dq_pos = J.T @ v
 
-        dq = J.T @ v  # (nv,)
+        dq_penalty = np.zeros(nv)
+        if penalty > 0.0:
+            base_penalty = penalty
+            for i in range(nv):
+                q_pert = q.copy()
+                q_pert[i] += fd_eps
+                q_pert = np.clip(q_pert, q_min, q_max)
+                ik_data.qpos[:] = q_pert
+                mujoco.mj_forward(model, ik_data)
+                pert_penalty = 0.0
+                for j in range(ik_data.ncon):
+                    contact = ik_data.contact[j]
+                    if contact.geom1 in obstacle_ids or contact.geom2 in obstacle_ids:
+                        dist = contact.dist
+                        if dist < safety_margin:
+                            pert_penalty += (safety_margin - dist) ** 2
+                grad_i = (pert_penalty - base_penalty) / fd_eps
+                dq_penalty[i] = -grad_i
 
-        # Limit step size to avoid crazy jumps
-        step_norm = float(np.linalg.norm(dq))
+        dq = dq_pos + penalty_weight * dq_penalty
+
+        step_norm = np.linalg.norm(dq)
         if step_norm > max_step:
             dq *= max_step / (step_norm + 1e-8)
 
-        q = q + dq
-        q = np.minimum(np.maximum(q, q_min), q_max)
+        q += dq
+        q = np.clip(q, q_min, q_max)
 
-    # Final sanity check
     if not np.all(np.isfinite(q_best)):
         return None, None
 
+    # Recompute errors for q_best (fix from original)
+    ik_data.qpos[:] = q_best
+    mujoco.mj_forward(model, ik_data)
+    current_pos = ik_data.site(site_id).xpos.copy()
+    pos_err_norm = np.linalg.norm(target_pos - current_pos)
+    penalty = 0.0
+    for j in range(ik_data.ncon):
+        contact = ik_data.contact[j]
+        if contact.geom1 in obstacle_ids or contact.geom2 in obstacle_ids:
+            dist = contact.dist
+            if dist < safety_margin:
+                penetration = safety_margin - dist
+                penalty += penetration ** 2
+
     try:
-        ik_data.qpos[:] = q_best
-        mujoco.mj_forward(model, ik_data)
         mujoco.mj_jacSite(model, ik_data, jacp, jacr, site_id)
         jBest = jacp[:, :nv]
         if not np.all(np.isfinite(jBest)):
-            jBest = np.zeros((3, nv))  # Fallback for non-finite Jacobian
+            jBest = np.zeros((3, nv))
     except Exception as e:
-        print(f"jBest computation failed: {e}")
+        # print(f"jBest computation failed: {e}")
         jBest = np.zeros((3, nv))
     return q_best, jBest
 
@@ -490,7 +493,7 @@ def generateXML(numJoints, lengths, jointTypes):
             if jointTypes[i] == 0:
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
-                    <joint name="joint{i}" type="hinge" axis="1 0 0" range="-1.57 1.57" damping="1.0"/>
+                    <joint name="joint{i}" type="hinge" axis="1 0 0" range="-2.355 2.355" damping="1.0"/>
                     <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="{lengths[i]}"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"
@@ -498,7 +501,7 @@ def generateXML(numJoints, lengths, jointTypes):
             elif jointTypes[i] == 1:
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
-                    <joint name="joint{i}" type="hinge" axis="0 1 0" range="-1.57 1.57" damping="1.0"/>
+                    <joint name="joint{i}" type="hinge" axis="0 1 0" range="-2.355 2.355" damping="1.0"/>
                     <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="{lengths[i]}"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"

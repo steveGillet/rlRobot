@@ -45,7 +45,7 @@ if __name__ == "__main__":
     logger.info("Main Process Started")
 
     venv = SubprocVecEnv([makeEnv() for _ in range(24)])
-    venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
+    # venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
 
     policyKwargs = dict(net_arch=[128, 128, 128])
     ppo = PPO(
@@ -61,8 +61,8 @@ if __name__ == "__main__":
         tensorboard_log="./arm_morph_tb/",
         device="cpu",
     )
-    ppo.learn(total_timesteps=4_000_000, callback=RewardLoggerCallback())
-    ppo.save("wallArm4")
+    ppo.learn(total_timesteps=2_000_000, callback=RewardLoggerCallback())
+    ppo.save("wallArm2obsIkEnergy")
 
 # if __name__ == "__main__":
 #     env = robotArmEnv()

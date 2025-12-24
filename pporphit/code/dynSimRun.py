@@ -42,108 +42,132 @@ def ik_dls(
     model,
     target_pos: np.ndarray,
     initialQpos: np.ndarray | None = None,
-    max_iters: int = 200,
+    max_iters: int = 500,  # Increased for harder convergence
     tol: float = 1e-3,
     lambda_: float = 1e-2,
     max_step: float = 0.3,
-) -> np.ndarray | None:
-    """
-    Damped least-squares IK for site 'endEffector'.
-
-    Returns:
-        q_best (np.ndarray of shape (nq,)) or None if something is badly wrong
-        (NaNs, singular beyond recovery, etc.).
-    """
+    penalty_weight: float = 10.0,
+    safety_margin: float = 0.01,
+    fd_eps: float = 1e-4,
+) -> tuple[np.ndarray | None, np.ndarray | None]:
     site_id = model.site("endEffector").id
     nq = model.nq
-    nv = model.nv  # for your chain, nv == nq
+    nv = model.nv
 
-    # Separate data object so IK can't corrupt caller's MjData
+    obstacle_ids = set([model.geom(name).id for name in ["mountWall", "shelfWall", "shelf", "floor"]])
+
     ik_data = mujoco.MjData(model)
 
-    # --- Initial guess ---
     if initialQpos is None:
-        q = np.zeros(nq, dtype=np.float64)
+        q = np.zeros(nq)
     else:
-        q = np.array(initialQpos, dtype=np.float64).copy()
-        if q.shape[0] != nq or not np.all(np.isfinite(q)):
-            q = np.zeros(nq, dtype=np.float64)
+        q = initialQpos.copy()
+        if not np.all(np.isfinite(q)):
+            q = np.zeros(nq)
 
-    # --- Joint limits in q-space ---
     q_min = np.full(nq, -np.inf)
-    q_max = np.full(nq,  np.inf)
+    q_max = np.full(nq, np.inf)
     for j in range(model.njnt):
-        adr = model.jnt_qposadr[j]  # index of this joint in qpos
+        adr = model.jnt_qposadr[j]
         if model.jnt_limited[j]:
-            lo, hi = model.jnt_range[j]
-            q_min[adr] = lo
-            q_max[adr] = hi
+            q_min[adr], q_max[adr] = model.jnt_range[j]
 
     q = np.clip(q, q_min, q_max)
 
-    # Track best pose seen
     q_best = q.copy()
     err_best = np.inf
 
-    # Jacobian buffers
     jacp = np.zeros((3, nv))
     jacr = np.zeros((3, nv))
 
     for _ in range(max_iters):
-        # Sanity check
         if not np.all(np.isfinite(q)):
             return None, None
 
-        # Forward kinematics
         ik_data.qpos[:] = q
         mujoco.mj_forward(model, ik_data)
-        current_pos = np.array(ik_data.site(site_id).xpos, copy=True)
+        current_pos = ik_data.site(site_id).xpos.copy()
 
-        err = target_pos - current_pos
-        err_norm = float(np.linalg.norm(err))
+        pos_err = target_pos - current_pos
+        pos_err_norm = np.linalg.norm(pos_err)
 
-        # Track best
-        if np.isfinite(err_norm) and err_norm < err_best:
-            err_best = err_norm
+        penalty = 0.0
+        for j in range(ik_data.ncon):
+            contact = ik_data.contact[j]
+            if contact.geom1 in obstacle_ids or contact.geom2 in obstacle_ids:
+                dist = contact.dist
+                if dist < safety_margin:
+                    penetration = safety_margin - dist
+                    penalty += penetration ** 2
+
+        total_err = pos_err_norm + penalty_weight * penalty
+        if total_err < err_best:
+            err_best = total_err
             q_best = q.copy()
 
-        # Good enough?
-        if err_norm < tol:
+        if pos_err_norm < tol and penalty == 0.0:
             break
 
-        # Compute Jacobian
         mujoco.mj_jacSite(model, ik_data, jacp, jacr, site_id)
-        J = jacp[:, :nv]  # (3, nv)
-
-        # Damped least-squares step
+        J = jacp[:, :nv]
         A = J @ J.T + (lambda_ ** 2) * np.eye(3)
         try:
-            v = np.linalg.solve(A, err)        # (3,)
+            v = np.linalg.solve(A, pos_err)
         except np.linalg.LinAlgError:
-            # Very ill-conditioned; use best so far
             break
+        dq_pos = J.T @ v
 
-        dq = J.T @ v  # (nv,)
+        dq_penalty = np.zeros(nv)
+        if penalty > 0.0:
+            base_penalty = penalty
+            for i in range(nv):
+                q_pert = q.copy()
+                q_pert[i] += fd_eps
+                q_pert = np.clip(q_pert, q_min, q_max)
+                ik_data.qpos[:] = q_pert
+                mujoco.mj_forward(model, ik_data)
+                pert_penalty = 0.0
+                for j in range(ik_data.ncon):
+                    contact = ik_data.contact[j]
+                    if contact.geom1 in obstacle_ids or contact.geom2 in obstacle_ids:
+                        dist = contact.dist
+                        if dist < safety_margin:
+                            pert_penalty += (safety_margin - dist) ** 2
+                grad_i = (pert_penalty - base_penalty) / fd_eps
+                dq_penalty[i] = -grad_i
 
-        # Limit step size to avoid crazy jumps
-        step_norm = float(np.linalg.norm(dq))
+        dq = dq_pos + penalty_weight * dq_penalty
+
+        step_norm = np.linalg.norm(dq)
         if step_norm > max_step:
             dq *= max_step / (step_norm + 1e-8)
 
-        q = q + dq
-        q = np.minimum(np.maximum(q, q_min), q_max)
+        q += dq
+        q = np.clip(q, q_min, q_max)
 
-    # Final sanity check
     if not np.all(np.isfinite(q_best)):
         return None, None
-    
+
+    # Recompute errors for q_best (fix from original)
+    ik_data.qpos[:] = q_best
+    mujoco.mj_forward(model, ik_data)
+    current_pos = ik_data.site(site_id).xpos.copy()
+    pos_err_norm = np.linalg.norm(target_pos - current_pos)
+    penalty = 0.0
+    for j in range(ik_data.ncon):
+        contact = ik_data.contact[j]
+        if contact.geom1 in obstacle_ids or contact.geom2 in obstacle_ids:
+            dist = contact.dist
+            if dist < safety_margin:
+                penetration = safety_margin - dist
+                penalty += penetration ** 2
+    print(f"Best error: pos={pos_err_norm:.4f}, penalty={penalty:.4f}")
+
     try:
-        ik_data.qpos[:] = q_best
-        mujoco.mj_forward(model, ik_data)
         mujoco.mj_jacSite(model, ik_data, jacp, jacr, site_id)
         jBest = jacp[:, :nv]
         if not np.all(np.isfinite(jBest)):
-            jBest = np.zeros((3, nv))  # Fallback for non-finite Jacobian
+            jBest = np.zeros((3, nv))
     except Exception as e:
         print(f"jBest computation failed: {e}")
         jBest = np.zeros((3, nv))
@@ -167,7 +191,7 @@ def generateXML(numJoints, lengths, jointTypes):
         <geom name="shelf" type="box" pos="0.0 1.35 1.0" size="2.0 0.25 0.01" rgba="0.5 0.5 0.5 1"/>
         <body name="base" pos="0 -0.4 1.0" euler="-1.57 0 0">
         <!-- <geom name="obstacle" type="box" pos="0.45 0.25 0.55" size="0.3 0.1 0.025" rgba="1 0.5 0 1" /> -->
-        <!-- <body name="base" pos="0 -0.4 1.0" euler="-1.57 0 0"> -->
+        <!-- <body name="base" pos="0 0 0"> -->
             <geom name="baseBox" type="box" size="0.1 0.1 0.05"/>
         """
         currentPos = "0 0 0.05"
@@ -176,7 +200,7 @@ def generateXML(numJoints, lengths, jointTypes):
             if jointTypes[i] == 0:
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
-                    <joint name="joint{i}" type="hinge" axis="1 0 0" range="-1.57 1.57" damping="1.0"/>
+                    <joint name="joint{i}" type="hinge" axis="1 0 0" range="-2.355 2.355" damping="1.0"/>
                     <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="{lengths[i]}"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"
@@ -184,7 +208,7 @@ def generateXML(numJoints, lengths, jointTypes):
             elif jointTypes[i] == 1:
                 xml += f"""
                 <body name="link{i}" pos="{currentPos}">
-                    <joint name="joint{i}" type="hinge" axis="0 1 0" range="-1.57 1.57" damping="1.0"/>
+                    <joint name="joint{i}" type="hinge" axis="0 1 0" range="-2.355 2.355" damping="1.0"/>
                     <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="{lengths[i]}"/>
                 """
                 currentPos = f"0 0 {lengths[i]}"
@@ -233,9 +257,9 @@ def generateXML(numJoints, lengths, jointTypes):
 # sizeMultiplier = 2
 # lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
 # jointTypes = np.array([2, 1, 2, 0, 2, 1, 2])
-numLinks = 2
-lengths = np.array([0.05, 1.1999999])
-jointTypes = np.array([0, 0])
+numLinks = 7
+lengths = np.array([0.05, 0.05, 0.05, 0.05, 0.46852955, 0.05, 1.1999999])
+jointTypes = np.array([3, 0, 1, 2, 3, 3, 0])
 xml = generateXML(numLinks, lengths, jointTypes)
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
@@ -251,11 +275,11 @@ isSO2 = []
 
 for link in range(numLinks):
     if jointTypes[link] == 2:
-        space.addSubspace(ob.SO2StateSpace(), 1.0)
+        space.addSubspace(ob.SO2StateSpace(), 1.0 / 6.28)
         isSO2.append(True)
     elif jointTypes[link] == 3:
         subspace = ob.RealVectorStateSpace(1)
-        space.addSubspace(subspace, 1.0)
+        space.addSubspace(subspace, 1.0 / float(lengths[link]))
         bounds = ob.RealVectorBounds(1)
         bounds.setLow(0, 0)
         bounds.setHigh(0, lengths[link])
@@ -263,10 +287,10 @@ for link in range(numLinks):
         isSO2.append(False)
     else:
         subspace = ob.RealVectorStateSpace(1)
-        space.addSubspace(subspace, 1.0)
+        space.addSubspace(subspace, 1.0 / 4.71)
         bounds = ob.RealVectorBounds(1)
-        bounds.setLow(0, -np.pi/2)
-        bounds.setHigh(0, np.pi/2)
+        bounds.setLow(0, -2.355)
+        bounds.setHigh(0, 2.355)
         subspace.setBounds(bounds)
         isSO2.append(False)
 
@@ -326,6 +350,11 @@ for startPos, goalPos in zip(startPoses, goalPoses):
     mujoco.mj_forward(model, data)
     startError = np.linalg.norm(data.site('endEffector').xpos - startPos)
 
+    for i in range(len(startQpos)):
+        if isSO2[i]:
+            startQpos[i] = np.arctan2(np.sin(startQpos[i]), np.cos(startQpos[i]))
+            goalQpos[i] = np.arctan2(np.sin(goalQpos[i]), np.cos(goalQpos[i]))
+
     start = ob.State(space)
     goal = ob.State(space)
     for i in range(len(startQpos)):
@@ -339,9 +368,10 @@ for startPos, goalPos in zip(startPoses, goalPoses):
     simpleSetup.setStartAndGoalStates(start, goal)
 
     planner = og.RRTConnect(si)
+    planner.setRange(0.5)
     simpleSetup.setPlanner(planner)
     # print("Planner")
-    simpleSetup.solve(0.5)
+    simpleSetup.solve(10.0)
     planner.clear()
 
     foundSolution = simpleSetup.haveSolutionPath()
@@ -396,6 +426,46 @@ for pathStates in pathStatesArr:
         index += 1
 
 print("Sim Complete")
+
+# steps = 100
+# sleepTime = 0.02
+
+# for joint in range(numLinks):
+#     print(f"Rotating joint {joint} (type {jointTypes[joint]})")
+
+#     # data.qpos[:] = 0.0
+#     mujoco.mj_forward(model, data)
+#     viewer.sync()
+#     time.sleep(0.5)
+
+#     if jointTypes[joint] == 2:
+#         minAng = -2*np.pi
+#         maxAng = 2*np.pi
+#     elif jointTypes[joint] == 3:
+#         minAng = 0
+#         maxAng = lengths[joint]
+#     else:
+#         minAng = model.jnt_range[jointIds[joint]][0]
+#         maxAng = model.jnt_range[jointIds[joint]][1]
+
+#     for s in range(steps):
+#         ang = minAng + (maxAng - minAng) * s / (steps - 1)
+#         data.qpos[jointIds[joint]] = ang
+#         mujoco.mj_forward(model,data)
+#         viewer.sync()
+#         time.sleep(sleepTime)
+
+#     time.sleep(0.5)
+
+#     for s in range(steps - 1, -1, -1):
+#         ang = minAng + (maxAng - minAng) * s / (steps - 1)
+#         data.qpos[jointIds[joint]] = ang
+#         mujoco.mj_forward(model, data)
+#         viewer.sync()
+#         time.sleep(sleepTime)
+
+#     time.sleep(1.0)
+
 
 while viewer.is_running():
     viewer.sync()
