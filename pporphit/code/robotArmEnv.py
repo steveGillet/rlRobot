@@ -29,20 +29,20 @@ class robotArmEnv(gym.Env):
             low=-10, high=10, shape=(1,), dtype=np.float32
         )
 
-        # Wall Task
-        self.startPos = [
-            np.array([-0.9, 1.35, 1.1], dtype=np.float32),
-            np.array([-1.5, -0.4, 0.1], dtype=np.float32),
-        ]
-        self.goalPos = [
-            np.array([1.5, -0.4, 0.2], dtype=np.float32),
-            np.array([1.75, 1.36, 1.11], dtype=np.float32),
-        ]
-        # # Container task
-        # self.startPos = [np.array([-1.8, 0.3, 0.3], dtype=np.float32), np.array([-1.8, 0.8, 0.4], dtype=np.float32)] 
-        # self.goalPos = [np.array([1.9, 0.9, 0.4], dtype=np.float32), np.array([1.8, 0.31, 0.2], dtype=np.float32)]
-        # self.startPos = [np.array([-.4, -0.4, 0.6], dtype=np.float32)]
-        # self.goalPos = [np.array([0.4, 0.4, 0.8], dtype=np.float32)]
+        # # Wall Task
+        # self.startPos = [
+        #     np.array([-0.9, 1.35, 1.1], dtype=np.float32),
+        #     np.array([-1.5, -0.4, 0.1], dtype=np.float32),
+        # ]
+        # self.goalPos = [
+        #     np.array([1.5, -0.4, 0.2], dtype=np.float32),
+        #     np.array([1.75, 1.36, 1.11], dtype=np.float32),
+        # ]
+        # Container task
+        self.startPos = [np.array([-1.8, 0.3, 0.3], dtype=np.float32), np.array([-1.8, 0.8, 0.4], dtype=np.float32)] 
+        self.goalPos = [np.array([1.9, 0.9, 0.4], dtype=np.float32), np.array([1.8, 0.31, 0.2], dtype=np.float32)]
+        self.startPos = [np.array([-.4, -0.4, 0.6], dtype=np.float32)]
+        self.goalPos = [np.array([0.4, 0.4, 0.8], dtype=np.float32)]
 
         self.logger = setupLogging()
 
@@ -64,7 +64,7 @@ class robotArmEnv(gym.Env):
 
         actuatorIds = [model.actuator(f"motor{i}").id for i in range(numLinks)]
         jointIds = [model.joint(f"joint{i}").id for i in range(numLinks)]
-        obstacleNames = ["mountWall", "shelfWall", "shelf", "floor"]
+        obstacleNames = ["containerTop", "containerBack", "containerLeft", "containerRight", "floor"]
         obstacleIds = set([model.geom(name).id for name in obstacleNames])
 
         space = ob.CompoundStateSpace()
@@ -230,15 +230,15 @@ class robotArmEnv(gym.Env):
                 # print(f"Path Length Penalty: {-0.025 * length}")
                 # print(f"Accuracy Penalty: {-40 * (startError + goalError)}")
                 # # print(f"Manipulability Bonus: {0.15 * (muStart + muGoal)}")
-                # print(f"Link Number Penalty: {-0.3125 * (numLinks - self.minNumLinks)}")
-                # print(f"Energy Cost Penalty: {-0.00125 * energyCost}")
+                # print(f"Link Number Penalty: {-0.625 * (numLinks - self.minNumLinks)}")
+                # print(f"Energy Cost Penalty: {-0.000125 * energyCost}")
                 # # reward += 100 - 0.025 * length - 40 * (startError + goalError) + 0.15 * (muStart + muGoal) - 0.3125 * (numLinks - self.minNumLinks)
                 reward += (
                     100
                     - 0.025 * length
                     - 40 * (startError + goalError)
-                    - 0.3125 * (numLinks - self.minNumLinks)
-                    - 0.00125 * energyCost
+                    - 0.625 * (numLinks - self.minNumLinks)
+                    - 0.000125 * energyCost
                 )
 
             else:
@@ -299,7 +299,7 @@ def ik_dls(
     nq = model.nq
     nv = model.nv
 
-    obstacle_ids = set([model.geom(name).id for name in ["mountWall", "shelfWall", "shelf", "floor"]])
+    obstacle_ids = set([model.geom(name).id for name in ["containerTop", "containerBack", "containerRight", "containerLeft", "floor"]])
 
     ik_data = mujoco.MjData(model)
 
@@ -476,15 +476,15 @@ def generateXML(numJoints, lengths, jointTypes):
     <option gravity="0 0 -9.81"/>
     <worldbody>
         <geom name="floor" type="plane" size="2 2 0.1" rgba=".9 0.5 0 1"/>
-        <!-- <geom name="containerBack" type="box" pos="-2.0 0.6 1.0" size="0.01 1.0 1.0" rgba="0.5 0.5 0.5 1"/> -->
-        <!-- <geom name="containerLeft" type="box" pos="0 -0.4 1.0" size="2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/> -->
-        <!-- <geom name="containerRight" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/> -->
-        <!-- <geom name="containerTop" type="box" pos="0 0.6 2.0" size="2.0 1.0 0.01" rgba="0.5 0.5 0.5 1"/> -->
-        <geom name="mountWall" type="box" pos="0 -0.4 1.0" size="1.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
-        <geom name="shelfWall" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
-        <geom name="shelf" type="box" pos="0.0 1.35 1.0" size="2.0 0.25 0.01" rgba="0.5 0.5 0.5 1"/>
-        <body name="base" pos="0 -0.4 1.0" euler="-1.57 0 0">
-        <!-- <body name="base" pos="0 0 0"> -->
+        <geom name="containerBack" type="box" pos="-2.0 0.6 1.0" size="0.01 1.0 1.0" rgba="0.5 0.5 0.5 1"/>
+        <geom name="containerLeft" type="box" pos="0 -0.4 1.0" size="2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
+        <geom name="containerRight" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
+        <geom name="containerTop" type="box" pos="0 0.6 2.0" size="2.0 1.0 0.01" rgba="0.5 0.5 0.5 1"/>
+        <!-- <geom name="mountWall" type="box" pos="0 -0.4 1.0" size="1.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/> -->
+        <!-- <geom name="shelfWall" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/> -->
+        <!-- <geom name="shelf" type="box" pos="0.0 1.35 1.0" size="2.0 0.25 0.01" rgba="0.5 0.5 0.5 1"/> -->
+        <!-- <body name="base" pos="0 -0.4 1.0" euler="-1.57 0 0"> -->
+        <body name="base" pos="0 0 0">
             <geom name="baseBox" type="box" size="0.1 0.1 0.05"/>
         """
         currentPos = "0 0 0.05"

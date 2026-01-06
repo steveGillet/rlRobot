@@ -2,7 +2,7 @@ from stable_baselines3 import PPO
 import numpy as np
 
 # Load the trained model
-ppo = PPO.load("wallArm1obsIkEnergy")
+ppo = PPO.load("wallArm1obsIkTenLessEnergy")
 
 # Dummy observation from your env
 obs = np.array([0.0])

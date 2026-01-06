@@ -320,7 +320,7 @@ simpleSetup = og.SimpleSetup(si)
 
 # startPoses = [np.array([-1.8, 0.3, 0.3], dtype=np.float32), np.array([-1.8, 0.8, 0.4], dtype=np.float32)] 
 # goalPoses = [np.array([1.9, 0.9, 0.4], dtype=np.float32), np.array([1.8, 0.31, 0.2], dtype=np.float32)]
-startPoses = [np.array([-0.9, 1.35, 1.1], dtype=np.float32), np.array([-1.5, -0.4, 0.1], dtype=np.float32)] 
+startPoses = [np.array([-0.9, 1.35, 1.1], dtype=np.float32), np.array([-1.4, -0.9, 0.1], dtype=np.float32)] 
 goalPoses = [np.array([1.5, -0.4, 0.2], dtype=np.float32), np.array([1.75, 1.36, 1.11], dtype=np.float32)]
 # startPoses = [np.array([-1.0, 0.6, 0.6], dtype=np.float32)]
 # goalPoses = [np.array([2.0, 0.4, 0.2], dtype=np.float32)]

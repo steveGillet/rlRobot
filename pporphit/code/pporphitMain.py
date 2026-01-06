@@ -61,8 +61,8 @@ if __name__ == "__main__":
         tensorboard_log="./arm_morph_tb/",
         device="cpu",
     )
-    ppo.learn(total_timesteps=2_000_000, callback=RewardLoggerCallback())
-    ppo.save("wallArm2obsIkEnergy")
+    ppo.learn(total_timesteps=1_000_000, callback=RewardLoggerCallback())
+    ppo.save("containerArm1obsIkTenthEnergyTwiceLink")
 
 # if __name__ == "__main__":
 #     env = robotArmEnv()
