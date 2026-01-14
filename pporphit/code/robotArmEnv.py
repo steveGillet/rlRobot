@@ -120,10 +120,10 @@ class robotArmEnv(gym.Env):
             startPos = startPos + np.random.normal(0, self.noise, size=3)
             goalPos = goalPos + np.random.normal(0, self.noise, size=3)
             self.logger.debug(f"Pre-IK: startPos={startPos}")
-            startQpos, jStart = ik_dls(model, startPos)
+            startQpos, jStart = ik_dls(model, obstacleIds, startPos)
             self.logger.debug(f"Post Start IK: startQpos={startQpos}, jStart={jStart}")
 
-            goalQpos, jGoal = ik_dls(model, goalPos, initialQpos=startQpos)
+            goalQpos, jGoal = ik_dls(model, obstacleIds, goalPos, initialQpos=startQpos)
             self.logger.debug(f"Post Goal IK: goalQpos={goalQpos}, jGoal={jGoal}")
             # startQpos = np.array([0.2, -0.8, -0.3, 0.9])
             # goalQpos = np.array([-0.4, 0.7, 0.5, -1.0])
@@ -285,137 +285,69 @@ class robotArmEnv(gym.Env):
 
 def ik_dls(
     model,
+    obstacleIds,
     target_pos: np.ndarray,
     initialQpos: np.ndarray | None = None,
-    max_iters: int = 500,  # Increased for harder convergence
-    tol: float = 1e-3,
-    lambda_: float = 1e-2,
-    max_step: float = 0.3,
-    penalty_weight: float = 10.0,
-    safety_margin: float = 0.01,
-    fd_eps: float = 1e-4,
+    max_iters: int = 200,
+    tol: float = 0.01,
+    lambda_: float = 0.01,
+    alpha: float = 0.75,
 ) -> tuple[np.ndarray | None, np.ndarray | None]:
-    site_id = model.site("endEffector").id
-    nq = model.nq
-    nv = model.nv
+    data = mujoco.MjData(model)
+    endEffectorId = model.site("endEffector").id
 
-    obstacle_ids = set([model.geom(name).id for name in ["containerTop", "containerBack", "containerRight", "containerLeft", "floor"]])
-
-    ik_data = mujoco.MjData(model)
-
-    if initialQpos is None:
-        q = np.zeros(nq)
+    if initialQpos is not None:
+        data.qpos[:] = initialQpos.copy()
     else:
-        q = initialQpos.copy()
-        if not np.all(np.isfinite(q)):
-            q = np.zeros(nq)
+        data.qpos[:] = np.zeros(model.nq)
 
-    q_min = np.full(nq, -np.inf)
-    q_max = np.full(nq, np.inf)
-    for j in range(model.njnt):
-        adr = model.jnt_qposadr[j]
-        if model.jnt_limited[j]:
-            q_min[adr], q_max[adr] = model.jnt_range[j]
+    mujoco.mj_forward(model, data)
+    deltaX = target_pos - data.site(endEffectorId).xpos.copy()
 
-    q = np.clip(q, q_min, q_max)
+    i = 0
+    jacp = np.zeros((3, model.nv))
+    jacr = np.zeros((3, model.nv))
 
-    q_best = q.copy()
-    err_best = np.inf
+    while i < max_iters and np.linalg.norm(deltaX) > tol:
+        mujoco.mj_jacSite(model, data, jacp, jacr, endEffectorId)
+        J = jacp
 
-    jacp = np.zeros((3, nv))
-    jacr = np.zeros((3, nv))
+        U, Sigma, VT = np.linalg.svd(J, compute_uv=True, full_matrices=False)
+        D = np.diag(Sigma / (Sigma**2 + lambda_**2))
 
-    for _ in range(max_iters):
-        if not np.all(np.isfinite(q)):
-            return None, None
+        deltaTheta = VT.T @ D @ U.T @ deltaX
 
-        ik_data.qpos[:] = q
-        mujoco.mj_forward(model, ik_data)
-        current_pos = ik_data.site(site_id).xpos.copy()
+        collision = True
+        al = alpha
+        originalQpos = data.qpos.copy()
 
-        pos_err = target_pos - current_pos
-        pos_err_norm = np.linalg.norm(pos_err)
+        while collision and al >= 0.01:
+            collision = False
 
-        penalty = 0.0
-        for j in range(ik_data.ncon):
-            contact = ik_data.contact[j]
-            if contact.geom1 in obstacle_ids or contact.geom2 in obstacle_ids:
-                dist = contact.dist
-                if dist < safety_margin:
-                    penetration = safety_margin - dist
-                    penalty += penetration ** 2
+            data.qpos[:] = originalQpos + al * deltaTheta
+            data.qpos = np.clip(data.qpos, model.jnt_range[:, 0], model.jnt_range[:, 1])
+            mujoco.mj_forward(model, data)
+            
+            for j in range(data.ncon):
+                contact = data.contact[j]
+                if contact.geom1 in obstacleIds or contact.geom2 in obstacleIds:
+                    collision = True
+                    break
 
-        total_err = pos_err_norm + penalty_weight * penalty
-        if total_err < err_best:
-            err_best = total_err
-            q_best = q.copy()
+            if collision:
+                al /= 2.0
 
-        if pos_err_norm < tol and penalty == 0.0:
+        if collision:
+            data.qpos[:] = originalQpos
+            mujoco.mj_forward(model, data)
             break
 
-        mujoco.mj_jacSite(model, ik_data, jacp, jacr, site_id)
-        J = jacp[:, :nv]
-        A = J @ J.T + (lambda_ ** 2) * np.eye(3)
-        try:
-            v = np.linalg.solve(A, pos_err)
-        except np.linalg.LinAlgError:
-            break
-        dq_pos = J.T @ v
+        deltaX = target_pos - data.site(endEffectorId).xpos.copy()
+        i += 1
 
-        dq_penalty = np.zeros(nv)
-        if penalty > 0.0:
-            base_penalty = penalty
-            for i in range(nv):
-                q_pert = q.copy()
-                q_pert[i] += fd_eps
-                q_pert = np.clip(q_pert, q_min, q_max)
-                ik_data.qpos[:] = q_pert
-                mujoco.mj_forward(model, ik_data)
-                pert_penalty = 0.0
-                for j in range(ik_data.ncon):
-                    contact = ik_data.contact[j]
-                    if contact.geom1 in obstacle_ids or contact.geom2 in obstacle_ids:
-                        dist = contact.dist
-                        if dist < safety_margin:
-                            pert_penalty += (safety_margin - dist) ** 2
-                grad_i = (pert_penalty - base_penalty) / fd_eps
-                dq_penalty[i] = -grad_i
-
-        dq = dq_pos + penalty_weight * dq_penalty
-
-        step_norm = np.linalg.norm(dq)
-        if step_norm > max_step:
-            dq *= max_step / (step_norm + 1e-8)
-
-        q += dq
-        q = np.clip(q, q_min, q_max)
-
-    if not np.all(np.isfinite(q_best)):
-        return None, None
-
-    # Recompute errors for q_best (fix from original)
-    ik_data.qpos[:] = q_best
-    mujoco.mj_forward(model, ik_data)
-    current_pos = ik_data.site(site_id).xpos.copy()
-    pos_err_norm = np.linalg.norm(target_pos - current_pos)
-    penalty = 0.0
-    for j in range(ik_data.ncon):
-        contact = ik_data.contact[j]
-        if contact.geom1 in obstacle_ids or contact.geom2 in obstacle_ids:
-            dist = contact.dist
-            if dist < safety_margin:
-                penetration = safety_margin - dist
-                penalty += penetration ** 2
-
-    try:
-        mujoco.mj_jacSite(model, ik_data, jacp, jacr, site_id)
-        jBest = jacp[:, :nv]
-        if not np.all(np.isfinite(jBest)):
-            jBest = np.zeros((3, nv))
-    except Exception as e:
-        # print(f"jBest computation failed: {e}")
-        jBest = np.zeros((3, nv))
-    return q_best, jBest
+    mujoco.mj_jacSite(model, data, jacp, jacr, endEffectorId)
+    J = jacp
+    return data.qpos.copy(), J.copy()
 
 
 def ik(model, data, targetPos, initialQpos=None, tol=1e-4, maxIter=100, alpha=0.1):

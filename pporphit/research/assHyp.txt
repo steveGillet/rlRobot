@@ -1,0 +1,10 @@
+Hypotheses:
+RL can produce more efficient and effective manipulators for particular tasks than the generic industry arm.
+Manipulators can be created to be task specific and thus more efficient for a particular task.
+Is it more cost effective to have the optimized arm (cost to manufacture/operate) than to have mass produced generics? (Can mass produce, can swap parts)
+
+Assumptions:
+People want manipulators
+People want cheaper manipulators
+People want manipulators that only do one or two things
+It is more efficient to design an arm for each task than it is to use generic arms for all

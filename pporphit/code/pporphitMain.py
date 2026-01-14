@@ -62,7 +62,7 @@ if __name__ == "__main__":
         device="cpu",
     )
     ppo.learn(total_timesteps=1_000_000, callback=RewardLoggerCallback())
-    ppo.save("containerArm1obsIkTenthEnergyTwiceLink")
+    ppo.save("refactoredIK")
 
 # if __name__ == "__main__":
 #     env = robotArmEnv()
