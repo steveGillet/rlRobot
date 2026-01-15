@@ -120,10 +120,10 @@ class robotArmEnv(gym.Env):
             startPos = startPos + np.random.normal(0, self.noise, size=3)
             goalPos = goalPos + np.random.normal(0, self.noise, size=3)
             self.logger.debug(f"Pre-IK: startPos={startPos}")
-            startQpos, jStart = ik_dls(model, obstacleIds, startPos)
+            startQpos, jStart = dlsIK(model, obstacleIds, startPos)
             self.logger.debug(f"Post Start IK: startQpos={startQpos}, jStart={jStart}")
 
-            goalQpos, jGoal = ik_dls(model, obstacleIds, goalPos, initialQpos=startQpos)
+            goalQpos, jGoal = dlsIK(model, obstacleIds, goalPos, initialQpos=startQpos)
             self.logger.debug(f"Post Goal IK: goalQpos={goalQpos}, jGoal={jGoal}")
             # startQpos = np.array([0.2, -0.8, -0.3, 0.9])
             # goalQpos = np.array([-0.4, 0.7, 0.5, -1.0])
@@ -283,7 +283,7 @@ class robotArmEnv(gym.Env):
         return np.array([0.0], dtype=np.float32), reward, done, done, {}
 
 
-def ik_dls(
+def dlsIK(
     model,
     obstacleIds,
     target_pos: np.ndarray,
@@ -348,57 +348,6 @@ def ik_dls(
     mujoco.mj_jacSite(model, data, jacp, jacr, endEffectorId)
     J = jacp
     return data.qpos.copy(), J.copy()
-
-
-def ik(model, data, targetPos, initialQpos=None, tol=1e-4, maxIter=100, alpha=0.1):
-    siteId = model.site("endEffector").id
-    numJoints = model.nq
-
-    if initialQpos is None:
-        initialQpos = data.qpos.copy()
-
-    bounds = []
-    for i in range(numJoints):
-        if model.jnt_limited[i]:
-            bounds.append((model.jnt_range[i][0], model.jnt_range[i][1]))
-        else:
-            bounds.append((-10 * np.pi, 10 * np.pi))
-
-    epsilon = 1e-3
-    lowerBounds = np.array(
-        [b[0] + epsilon if np.isfinite(b[0]) else -10 * np.pi for b in bounds]
-    )
-    upperBounds = np.array(
-        [b[1] - epsilon if np.isfinite(b[1]) else 10 * np.pi for b in bounds]
-    )
-    if not np.all(np.isfinite(initialQpos)):
-        initialQpos = np.zeros(numJoints)
-    initialQpos = np.clip(initialQpos, lowerBounds, upperBounds)
-
-    def objective(q):
-        data.qpos[:] = q
-        mujoco.mj_forward(model, data)
-        currentPos = data.site(siteId).xpos
-        posError = np.linalg.norm(currentPos - targetPos)
-        regError = alpha * np.linalg.norm(q - initialQpos)
-        return posError**2 + regError**2
-
-    res = minimize(
-        objective,
-        initialQpos,
-        bounds=bounds,
-        method="L-BFGS-B",
-        options={"maxiter": maxIter, "ftol": tol, "disp": False},
-    )
-
-    # print(res)
-
-    if res.success:
-        return res.x
-    else:
-        print(f"IK failed: {res.message}")
-        return None
-
 
 def generateXML(numJoints, lengths, jointTypes):
     try:
@@ -489,7 +438,39 @@ def manipulabilityIndex(J):
         return 0.0
     return np.sqrt(det)
 
+def rrtConnect(model, data, qGoal, obstacleIds, totalTime=10.0, stepSize=0.1, greedyBias=0.2):
+    pathNotFound = True
+    startTime = time.time()
+    treeA = []
+    while pathNotFound and (time.time() - startTime) < totalTime:
+        qRand = []
+        if np.random.rand() < greedyBias:
+            qRand = qGoal.copy()
+        for jnt in model.joints:
+            qRand.append(np.random.uniform(jnt.range[0], jnt.range[1]))
+        
+        nearestNeighbor = np.argmin([np.linalg.norm(np.array(q) - np.array(qRand)) for q in treeA])
+        qNear = treeA[nearestNeighbor]
+ 
+        qNew = qNear.copy()
+        for i in range(len(qNear)):
+            diff = qRand[i] - qNear[i]
+            step = np.min(stepSize, diff)
+            qNew[i] = qNear[i] + step
 
+        data.qpos[:] = qNew
+        mujoco.mj_forward(model, data)
+        collision = False
+        for j in range(data.ncon):
+            contact = data.contact[j]
+            if contact.geom1 in obstacleIds or contact.geom2 in obstacleIds:
+                collision = True
+                break
+        if collision:
+            continue
+
+        treeA.append(qNew)
+            
 def setupLogging():
     pid = os.getpid()
     logger = logging.getLogger(f"process{pid}")
