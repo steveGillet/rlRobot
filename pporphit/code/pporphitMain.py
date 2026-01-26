@@ -40,64 +40,41 @@ def makeEnv():
     return _init
 
 
-if __name__ == "__main__":
-    logger = setupLogging()
-    logger.info("Main Process Started")
-
-    venv = SubprocVecEnv([makeEnv() for _ in range(24)])
-    # venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
-
-    policyKwargs = dict(net_arch=[128, 128, 128])
-    ppo = PPO(
-        "MlpPolicy",
-        venv,
-        verbose=1,
-        policy_kwargs=policyKwargs,
-        learning_rate=0.001,
-        n_steps=256,
-        batch_size=512,
-        n_epochs=4,
-        gamma=0.98,
-        tensorboard_log="./arm_morph_tb/",
-        device="cpu",
-    )
-    ppo.learn(total_timesteps=1_000_000, callback=RewardLoggerCallback())
-    ppo.save("refactoredIK")
-
 # if __name__ == "__main__":
-#     env = robotArmEnv()
-#     obs, info = env.reset()
-#     for _ in range(2500):
-#         a = env.action_space.sample()
-#         print(a)
-#         print("step...")
-#         obs, r, done, trunc, info = env.step(a)
-#         print("reward:", r)
-#         obs, info = env.reset()
+#     logger = setupLogging()
+#     logger.info("Main Process Started")
 
-#     print("DONE WITH MAIN PYTHON CODE")
-#     import os
-#     os._exit(0)
+#     venv = SubprocVecEnv([makeEnv() for _ in range(24)])
+#     # venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
 
+#     policyKwargs = dict(net_arch=[128, 128, 128])
+#     ppo = PPO(
+#         "MlpPolicy",
+#         venv,
+#         verbose=1,
+#         policy_kwargs=policyKwargs,
+#         learning_rate=0.001,
+#         n_steps=256,
+#         batch_size=512,
+#         n_epochs=4,
+#         gamma=0.98,
+#         tensorboard_log="./arm_morph_tb/",
+#         device="cpu",
+#     )
+#     ppo.learn(total_timesteps=1_000_000, callback=RewardLoggerCallback())
+#     ppo.save("refactoredIK")
 
-# index = 0
+if __name__ == "__main__":
+    env = robotArmEnv()
+    obs, info = env.reset()
+    for _ in range(2500):
+        a = env.action_space.sample()
+        print(a)
+        print("step...")
+        obs, r, done, trunc, info = env.step(a)
+        print("reward:", r)
+        obs, info = env.reset()
 
-# model.site('startPos').pos = startPos
-# model.site('goalPos').pos = goalPos
-
-# with mujoco.viewer.launch_passive(model, data) as viewer:
-#     while index < len(pathStates):
-#         i = 0
-#         for id in jointIds:
-#             data.qpos[id] = pathStates[index][i].value
-#             i+=1
-
-#         print(data.qpos[2])
-
-#         mujoco.mj_step(model,data)
-#         print(f"Time step: {data.time}s, Position: {data.geom_xpos[-1]}")
-#         viewer.sync()
-#         time.sleep(0.1)
-#         index += 1
-
-# print("Sim Complete")
+    print("DONE WITH MAIN PYTHON CODE")
+    import os
+    os._exit(0)

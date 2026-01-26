@@ -2,13 +2,8 @@ import mujoco
 import mujoco.viewer
 import time
 import numpy as np
-import ompl.base as ob
-import ompl.geometric as og
 from scipy.optimize import minimize
 import gymnasium as gym
-from ompl import util as ou
-
-ou.setLogLevel(ou.LOG_NONE)
 import os
 import logging
 
@@ -41,8 +36,9 @@ class robotArmEnv(gym.Env):
         # Container task
         self.startPos = [np.array([-1.8, 0.3, 0.3], dtype=np.float32), np.array([-1.8, 0.8, 0.4], dtype=np.float32)] 
         self.goalPos = [np.array([1.9, 0.9, 0.4], dtype=np.float32), np.array([1.8, 0.31, 0.2], dtype=np.float32)]
-        self.startPos = [np.array([-.4, -0.4, 0.6], dtype=np.float32)]
-        self.goalPos = [np.array([0.4, 0.4, 0.8], dtype=np.float32)]
+        # Simple task
+        # self.startPos = [np.array([-.4, -0.4, 0.6], dtype=np.float32)]
+        # self.goalPos = [np.array([0.4, 0.4, 0.8], dtype=np.float32)]
 
         self.logger = setupLogging()
 
@@ -67,53 +63,13 @@ class robotArmEnv(gym.Env):
         obstacleNames = ["containerTop", "containerBack", "containerLeft", "containerRight", "floor"]
         obstacleIds = set([model.geom(name).id for name in obstacleNames])
 
-        space = ob.CompoundStateSpace()
         isSO2 = []
 
         for link in range(numLinks):
             if jointTypes[link] == 2:
-                space.addSubspace(ob.SO2StateSpace(), 1.0 / 6.28)
                 isSO2.append(True)
-            elif jointTypes[link] == 3:
-                subspace = ob.RealVectorStateSpace(1)
-                space.addSubspace(subspace, 1.0 / float(lengths[link]))
-                bounds = ob.RealVectorBounds(1)
-                bounds.setLow(0, 0)
-                bounds.setHigh(0, float(lengths[link]))
-                subspace.setBounds(bounds)
-                isSO2.append(False)
             else:
-                subspace = ob.RealVectorStateSpace(1)
-                space.addSubspace(subspace, 1.0 / 4.71)
-                bounds = ob.RealVectorBounds(1)
-                bounds.setLow(0, -2.355)
-                bounds.setHigh(0, 2.355)
-                subspace.setBounds(bounds)
                 isSO2.append(False)
-
-        def isStateValid(state):
-            qpos = np.zeros(numLinks)
-            for i in range(numLinks):
-                if isSO2[i]:
-                    qpos[i] = state[i].value
-                else:
-                    qpos[i] = state[i][0]
-
-            if not np.all(np.isfinite(qpos)):
-                return False
-
-            data.qpos[:] = qpos
-            mujoco.mj_forward(model, data)
-            for j in range(data.ncon):
-                contact = data.contact[j]
-                if contact.geom1 in obstacleIds or contact.geom2 in obstacleIds:
-                    return False
-            return True
-
-        validityChecker = ob.StateValidityCheckerFn(isStateValid)
-        si = ob.SpaceInformation(space)
-        si.setStateValidityChecker(validityChecker)
-        simpleSetup = og.SimpleSetup(si)
 
         reward = 0
         for startPos, goalPos in zip(self.startPos, self.goalPos):
@@ -150,108 +106,110 @@ class robotArmEnv(gym.Env):
             startError = np.linalg.norm(data.site("endEffector").xpos - startPos)
             self.logger.debug(f"Start Error: {startError}")
 
-            # if jStart.shape[1] == numLinks:
-            #     muStart = manipulabilityIndex(jStart)
-            # else:
-            #     muStart = 0.0
-            # self.logger.debug(f"Mu Start: {muStart}")
-            # if jGoal.shape[1] == numLinks:
-            #     muGoal = manipulabilityIndex(jGoal)
-            # else:
-            #     muGoal = 0.0
-            # self.logger.debug(f"Mu Goal: {muGoal}")
+            if jStart.shape[1] == numLinks:
+                muStart = manipulabilityIndex(jStart)
+            else:
+                muStart = 0.0
+            self.logger.debug(f"Mu Start: {muStart}")
+            if jGoal.shape[1] == numLinks:
+                muGoal = manipulabilityIndex(jGoal)
+            else:
+                muGoal = 0.0
+            self.logger.debug(f"Mu Goal: {muGoal}")
 
             for i in range(len(startQpos)):
                 if isSO2[i]:
                     startQpos[i] = np.arctan2(np.sin(startQpos[i]), np.cos(startQpos[i]))
                     goalQpos[i] = np.arctan2(np.sin(goalQpos[i]), np.cos(goalQpos[i]))
 
-
-            start = ob.State(space)
-            goal = ob.State(space)
-            for i in range(len(startQpos)):
-                if isSO2[i]:
-                    start()[i].value = startQpos[i]
-                    goal()[i].value = goalQpos[i]
-                else:
-                    start()[i][0] = startQpos[i]
-                    goal()[i][0] = goalQpos[i]
-
-            simpleSetup.setStartAndGoalStates(start, goal)
-
-            planner = og.RRTConnect(si)
-            simpleSetup.setPlanner(planner)
-            simpleSetup.solve(0.5)
-            planner.clear()
-
-            foundSolution = simpleSetup.haveSolutionPath()
+            foundSolution, path = rrtConnect(
+                model,
+                data,
+                startQpos,
+                goalQpos,
+                obstacleIds,
+                totalTime=1.0,
+                stepSize=0.1,
+                numIsteps=100,
+                tol=0.01,
+            )
 
             if foundSolution:
-                simpleSetup.simplifySolution()
-                path = simpleSetup.getSolutionPath()
-                length = path.length()
-
+                numStates = len(path)
+                qPoses = [np.array(q) for q in path]
                 energyCost = 0.0
-                numStates = path.getStateCount()
-                qPoses = []
-                for s in range(numStates):
-                    state = path.getState(s)
-                    qpos = np.zeros(numLinks)
-                    for i in range(numLinks):
-                        if isSO2[i]:
-                            qpos[i] = state[i].value
-                        else:
-                            qpos[i] = state[i][0]
-                    qPoses.append(qpos)
+                eePathLength = 0.0
 
-                totalDist = 0.0
+                totalTime = 0.0
+                data.qpos[:] = qPoses[0]
+                mujoco.mj_forward(model, data)
+                prevEE = data.site("endEffector").xpos.copy()
+                minDT = 0.001
+                maxDT = 10.0
                 for s in range(1, numStates):
-                    delta = qPoses[s] - qPoses[s - 1]
-                    totalDist += np.linalg.norm(delta)
-                if totalDist > 0:
-                    totalTime = 0.1 * length
-                    dt = totalTime / (numStates - 1)
-                    for s in range(1, numStates):
-                        q1 = qPoses[s - 1]
-                        q2 = qPoses[s]
-                        deltaQ = q2 - q1
-                        v = deltaQ / dt
+                    data.qpos[:] = qPoses[s]
+                    mujoco.mj_forward(model, data)
+                    currEE = data.site("endEffector").xpos.copy()
+                    eePathLength += np.linalg.norm(currEE - prevEE)
+                    prevEE = currEE
+
+                    q1 = qPoses[s - 1]
+                    q2 = qPoses[s]
+                    deltaQ = q2 - q1
+
+                    lowDT = minDT
+                    highDT = maxDT
+                    feasibleDT = highDT
+
+                    for _ in range(20):
+                        midDT = (lowDT + highDT) / 2.0
+                        v = deltaQ / midDT
                         qMid = (q1 + q2) / 2
                         data.qpos[:] = qMid
                         data.qvel[:] = v
-                        data.qacc[:] = 0
+                        data.qacc[:] = 0  # Assume constant vel for tau estimate
                         mujoco.mj_inverse(model, data)
                         tau = data.qfrc_inverse[:numLinks].copy()
-                        power = np.sum(np.abs(tau * v))
-                        energyCost += power * dt
-                        # print(f"Step {s}: avg |tau| = {np.mean(np.abs(tau))}, avg |dq| = {np.mean(np.abs(v))}, dt = {dt}, power = {power}")
+                        if np.all(np.abs(tau) <= np.abs(model.actuator_ctrlrange[:, 1])):
+                            feasibleDT = midDT  # Feasible, try smaller dt (faster)
+                            highDT = midDT
+                        else:
+                            lowDT = midDT  # Too fast, increase dt
+
+                    dt = feasibleDT
+                    totalTime += dt
+                    v = deltaQ / dt  # Updated realistic velocity
+
+                    data.qpos[:] = qMid 
+                    data.qvel[:] = v
+                    data.qacc[:] = 0
+                    mujoco.mj_inverse(model, data)
+                    tau = data.qfrc_inverse[:numLinks].copy()
+
+                    # Now compute power with this v
+                    power = np.sum(np.abs(tau * v))  # Reuse tau from last inverse
+                    energyCost += power * dt
+                    # print(f"Step {s}: avg |tau| = {np.mean(np.abs(tau))}, avg |dq| = {np.mean(np.abs(v))}, dt = {dt}, power = {power}")
                 self.logger.debug(f"Energy Cost: {energyCost}")
-                path.clear()
-                # print(f"Path Length Penalty: {-0.025 * length}")
-                # print(f"Accuracy Penalty: {-40 * (startError + goalError)}")
-                # # print(f"Manipulability Bonus: {0.15 * (muStart + muGoal)}")
-                # print(f"Link Number Penalty: {-0.625 * (numLinks - self.minNumLinks)}")
-                # print(f"Energy Cost Penalty: {-0.000125 * energyCost}")
-                # # reward += 100 - 0.025 * length - 40 * (startError + goalError) + 0.15 * (muStart + muGoal) - 0.3125 * (numLinks - self.minNumLinks)
-                reward += (
-                    100
-                    - 0.025 * length
-                    - 40 * (startError + goalError)
-                    - 0.625 * (numLinks - self.minNumLinks)
-                    - 0.000125 * energyCost
-                )
+                self.logger.debug(f"End Effector Path Length: {eePathLength}")
+            
+                print(f"Path Length Penalty: {-0.025 * eePathLength}")
+                print(f"Accuracy Penalty: {-40 * (startError + goalError)}")
+                print(f"Manipulability Bonus: {0.15 * (muStart + muGoal)}")
+                print(f"Link Number Penalty: {-0.625 * (numLinks - self.minNumLinks)}")
+                print(f"Energy Cost Penalty: {-0.000125 * energyCost}")
+                reward += 100 - 0.025 * eePathLength - 40 * (startError + goalError) + 0.15 * (muStart + muGoal) - 0.3125 * (numLinks - self.minNumLinks) - 0.000125 * energyCost
 
             else:
-                # pathStates = []
-                # print(f"Accuracy Penalty: {-200 * (startError + goalError)}")
-                # # print(f"Manipulability Bonus: {0.15 * (muStart + muGoal)}")
-                # print(f"Link Number Penalty: {-1.25 * (numLinks - self.minNumLinks)}")
-                # reward += 30 - 200 * (startError + goalError) + 0.15 * (muStart + muGoal) - 1.25 * (numLinks - self.minNumLinks)
-                reward += (
-                    30
-                    - 200 * (startError + goalError)
-                    - 1.25 * (numLinks - self.minNumLinks)
-                )
+                print(f"Accuracy Penalty: {-200 * (startError + goalError)}")
+                print(f"Manipulability Bonus: {0.15 * (muStart + muGoal)}")
+                print(f"Link Number Penalty: {-1.25 * (numLinks - self.minNumLinks)}")
+                reward += 30 - 200 * (startError + goalError) + 0.15 * (muStart + muGoal) - 1.25 * (numLinks - self.minNumLinks)
+                # reward += (
+                #     30
+                #     - 200 * (startError + goalError)
+                #     - 1.25 * (numLinks - self.minNumLinks)
+                # )
 
         avgReward = reward / len(self.startPos)
         self.logger.debug(f"Average reward: {avgReward}")
@@ -432,45 +390,162 @@ def manipulabilityIndex(J):
     if J is None or J.shape[0] != 3 or not np.all(np.isfinite(J)):
         return 0.0
 
-    JJT = J @ J.T
-    det = np.linalg.det(JJT)
-    if det <= 0:
-        return 0.0
-    return np.sqrt(det)
+    Sigma = np.linalg.svd(J, compute_uv=False)
+    return np.min(Sigma)
 
-def rrtConnect(model, data, qGoal, obstacleIds, totalTime=10.0, stepSize=0.1, greedyBias=0.2):
-    pathNotFound = True
+def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize=0.1, numIsteps=100, tol=0.01):
+    pathFound = False
     startTime = time.time()
-    treeA = []
-    while pathNotFound and (time.time() - startTime) < totalTime:
-        qRand = []
-        if np.random.rand() < greedyBias:
-            qRand = qGoal.copy()
-        for jnt in model.joints:
-            qRand.append(np.random.uniform(jnt.range[0], jnt.range[1]))
-        
+    treeStart = [qStart.copy()]
+    parentsTreeStart = [None]
+    treeGoal = [qGoal.copy()]
+    parentsTreeGoal = [None]
+    path = []
+
+    treeStartTurn = True
+    while not pathFound and (time.time() - startTime) < totalTime:
+        if treeStartTurn:
+            treeA = treeStart
+            parentsA = parentsTreeStart
+            treeB = treeGoal
+            parentsB = parentsTreeGoal
+        else:
+            treeA = treeGoal
+            parentsA = parentsTreeGoal
+            treeB = treeStart
+            parentsB = parentsTreeStart
+
+        qRand = np.random.uniform(model.jnt_range[:, 0], model.jnt_range[:, 1])
+      
+        # Find nearest neighbor
         nearestNeighbor = np.argmin([np.linalg.norm(np.array(q) - np.array(qRand)) for q in treeA])
         qNear = treeA[nearestNeighbor]
- 
-        qNew = qNear.copy()
-        for i in range(len(qNear)):
-            diff = qRand[i] - qNear[i]
-            step = np.min(stepSize, diff)
-            qNew[i] = qNear[i] + step
 
-        data.qpos[:] = qNew
-        mujoco.mj_forward(model, data)
-        collision = False
-        for j in range(data.ncon):
-            contact = data.contact[j]
-            if contact.geom1 in obstacleIds or contact.geom2 in obstacleIds:
-                collision = True
-                break
-        if collision:
+        qNew = takeStep(qNear, qRand, stepSize)
+
+        # Check collision along the edge
+        if not isEdgeValid(model, data, qNear, qNew, obstacleIds, numIsteps):
             continue
 
+        # Add to tree
         treeA.append(qNew)
+        parentsA.append(nearestNeighbor)
+
+        # Try to connect other tree
+        qRand = qNew.copy()
+        nearestNeighbor = np.argmin([np.linalg.norm(np.array(q) - np.array(qRand)) for q in treeB])
+        qNear = treeB[nearestNeighbor]
+
+        qNew = takeStep(qNear, qRand, stepSize)
+
+        # Check collision along the edge
+        if not isEdgeValid(model, data, qNear, qNew, obstacleIds, numIsteps):
+            continue
+
+        # Add to tree
+        treeB.append(qNew)
+        parentsB.append(nearestNeighbor)
+
+        treeStartTurn = not treeStartTurn
+
+        # Check if close enough to goal
+        if np.linalg.norm(np.array(qNew) - np.array(qRand)) < tol:
+            pathFound = True
             
+            tempPath = []
+            current = len(treeGoal) - 1
+            while current is not None:
+                tempPath.append(treeGoal[current])
+                current = parentsTreeGoal[current]
+
+            current = len(treeStart) - 1
+            while current is not None:
+                path.append(treeStart[current])
+                current = parentsTreeStart[current]
+
+            path.reverse()
+            path.extend(tempPath)
+
+            path = shortenPath(model, data, path, obstacleIds)
+            path = interpolatePath(path)
+            break
+
+    return pathFound, path
+
+def checkCollision(model, data, qPos, obstacleIds):
+    data.qpos[:] = qPos
+    mujoco.mj_forward(model, data)
+    for j in range(data.ncon):
+        contact = data.contact[j]
+        if contact.geom1 in obstacleIds or contact.geom2 in obstacleIds:
+            return True
+    return False
+
+def takeStep(qNear, qRand, stepSize):
+    diff = np.array(qRand) - np.array(qNear)
+    dist = np.linalg.norm(diff)
+    
+    if dist <= stepSize:
+        return qRand  # Reach exactly if close enough
+    else:
+        dir = diff / dist
+        return qNear + dir * stepSize
+
+def shortenPath(model, data, path, obstacleIds, numIsteps=100, maxIter=20):
+    if len(path) < 3:
+        return path  # Too short to shorten
+    
+    simplified = path[:]  # Copy
+    for _ in range(maxIter):
+        shortened = False
+        i = 0
+        while i < len(simplified) - 1:
+            j = len(simplified) - 1
+            while j > i + 1:
+                if isEdgeValid(model, data, simplified[i], simplified[j], obstacleIds, numIsteps):
+                    # Shortcut: remove i+1 to j-1
+                    simplified = simplified[:i+1] + simplified[j:]
+                    shortened = True
+                    break
+                j -= 1
+            if shortened:
+                break  # Restart from beginning after change
+            i += 1
+        if not shortened:
+            break  # No more improvements
+    return simplified
+
+def isEdgeValid(model, data, qStart, qEnd, obstacleIds, numIsteps):
+    for iStep in range(1, numIsteps + 1):
+        qIntermediate = qStart + iStep / float(numIsteps) * (qEnd - qStart)
+        if checkCollision(model, data, qIntermediate, obstacleIds):
+            return False
+    return True
+
+def interpolatePath(path, numNodes=100):
+    totalLength = 0.0
+    segmentLengths = []
+    for i in range(len(path) - 1):
+        segmentLengths.append(np.linalg.norm(np.array(path[i+1]) - np.array(path[i])))
+        totalLength += segmentLengths[i]
+
+    if totalLength == 0.0:
+        return path
+    
+    numStepsPerSegment = []
+    for i in range(len(path) - 1):
+        numStepsPerSegment.append(int(np.round((segmentLengths[i] / totalLength) * (numNodes - 1))))
+    
+    interpolatedPath = []
+
+    for i in range(len(path) - 1):
+        interpolatedPath.append(path[i])
+        for step in range(1, int(numStepsPerSegment[i])):
+            interpolatedPath.append(takeStep(path[i], path[i+1], step / numStepsPerSegment[i] * segmentLengths[i]))
+
+    interpolatedPath.append(path[-1])
+    return interpolatedPath
+
 def setupLogging():
     pid = os.getpid()
     logger = logging.getLogger(f"process{pid}")
