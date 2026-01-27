@@ -117,11 +117,9 @@ class robotArmEnv(gym.Env):
                 muGoal = 0.0
             self.logger.debug(f"Mu Goal: {muGoal}")
 
-            for i in range(len(startQpos)):
-                if isSO2[i]:
-                    startQpos[i] = np.arctan2(np.sin(startQpos[i]), np.cos(startQpos[i]))
-                    goalQpos[i] = np.arctan2(np.sin(goalQpos[i]), np.cos(goalQpos[i]))
-
+            startQpos = normalizeQ(model, startQpos)
+            goalQpos = normalizeQ(model, goalQpos)
+           
             foundSolution, path = rrtConnect(
                 model,
                 data,
@@ -130,7 +128,7 @@ class robotArmEnv(gym.Env):
                 obstacleIds,
                 totalTime=1.0,
                 stepSize=0.1,
-                numIsteps=100,
+                numIsteps=5,
                 tol=0.01,
             )
 
@@ -193,17 +191,17 @@ class robotArmEnv(gym.Env):
                 self.logger.debug(f"Energy Cost: {energyCost}")
                 self.logger.debug(f"End Effector Path Length: {eePathLength}")
             
-                print(f"Path Length Penalty: {-0.025 * eePathLength}")
-                print(f"Accuracy Penalty: {-40 * (startError + goalError)}")
-                print(f"Manipulability Bonus: {0.15 * (muStart + muGoal)}")
-                print(f"Link Number Penalty: {-0.625 * (numLinks - self.minNumLinks)}")
-                print(f"Energy Cost Penalty: {-0.000125 * energyCost}")
+                # print(f"Path Length Penalty: {-0.025 * eePathLength}")
+                # print(f"Accuracy Penalty: {-40 * (startError + goalError)}")
+                # print(f"Manipulability Bonus: {0.15 * (muStart + muGoal)}")
+                # print(f"Link Number Penalty: {-0.625 * (numLinks - self.minNumLinks)}")
+                # print(f"Energy Cost Penalty: {-0.000125 * energyCost}")
                 reward += 100 - 0.025 * eePathLength - 40 * (startError + goalError) + 0.15 * (muStart + muGoal) - 0.3125 * (numLinks - self.minNumLinks) - 0.000125 * energyCost
 
             else:
-                print(f"Accuracy Penalty: {-200 * (startError + goalError)}")
-                print(f"Manipulability Bonus: {0.15 * (muStart + muGoal)}")
-                print(f"Link Number Penalty: {-1.25 * (numLinks - self.minNumLinks)}")
+                # print(f"Accuracy Penalty: {-200 * (startError + goalError)}")
+                # print(f"Manipulability Bonus: {0.15 * (muStart + muGoal)}")
+                # print(f"Link Number Penalty: {-1.25 * (numLinks - self.minNumLinks)}")
                 reward += 30 - 200 * (startError + goalError) + 0.15 * (muStart + muGoal) - 1.25 * (numLinks - self.minNumLinks)
                 # reward += (
                 #     30
@@ -224,7 +222,7 @@ class robotArmEnv(gym.Env):
         # # TEST
         # numLinks = 2
         # lengths = np.array([0.5, 1.1999999])
-        # jointTypes = np.array([0, 0])
+        # jointTypes = np.array([1, 3])
         # # PANDA
         # numLinks = 7
         # sizeMultiplier = 2
@@ -239,73 +237,6 @@ class robotArmEnv(gym.Env):
         done = True
 
         return np.array([0.0], dtype=np.float32), reward, done, done, {}
-
-
-def dlsIK(
-    model,
-    obstacleIds,
-    target_pos: np.ndarray,
-    initialQpos: np.ndarray | None = None,
-    max_iters: int = 200,
-    tol: float = 0.01,
-    lambda_: float = 0.01,
-    alpha: float = 0.75,
-) -> tuple[np.ndarray | None, np.ndarray | None]:
-    data = mujoco.MjData(model)
-    endEffectorId = model.site("endEffector").id
-
-    if initialQpos is not None:
-        data.qpos[:] = initialQpos.copy()
-    else:
-        data.qpos[:] = np.zeros(model.nq)
-
-    mujoco.mj_forward(model, data)
-    deltaX = target_pos - data.site(endEffectorId).xpos.copy()
-
-    i = 0
-    jacp = np.zeros((3, model.nv))
-    jacr = np.zeros((3, model.nv))
-
-    while i < max_iters and np.linalg.norm(deltaX) > tol:
-        mujoco.mj_jacSite(model, data, jacp, jacr, endEffectorId)
-        J = jacp
-
-        U, Sigma, VT = np.linalg.svd(J, compute_uv=True, full_matrices=False)
-        D = np.diag(Sigma / (Sigma**2 + lambda_**2))
-
-        deltaTheta = VT.T @ D @ U.T @ deltaX
-
-        collision = True
-        al = alpha
-        originalQpos = data.qpos.copy()
-
-        while collision and al >= 0.01:
-            collision = False
-
-            data.qpos[:] = originalQpos + al * deltaTheta
-            data.qpos = np.clip(data.qpos, model.jnt_range[:, 0], model.jnt_range[:, 1])
-            mujoco.mj_forward(model, data)
-            
-            for j in range(data.ncon):
-                contact = data.contact[j]
-                if contact.geom1 in obstacleIds or contact.geom2 in obstacleIds:
-                    collision = True
-                    break
-
-            if collision:
-                al /= 2.0
-
-        if collision:
-            data.qpos[:] = originalQpos
-            mujoco.mj_forward(model, data)
-            break
-
-        deltaX = target_pos - data.site(endEffectorId).xpos.copy()
-        i += 1
-
-    mujoco.mj_jacSite(model, data, jacp, jacr, endEffectorId)
-    J = jacp
-    return data.qpos.copy(), J.copy()
 
 def generateXML(numJoints, lengths, jointTypes):
     try:
@@ -393,6 +324,21 @@ def manipulabilityIndex(J):
     Sigma = np.linalg.svd(J, compute_uv=False)
     return np.min(Sigma)
 
+# ─────────────
+# RRT-Connect
+# ─────────────
+def normalizeQ(model, q):
+    q = q.copy()
+    for i in range(len(q)):
+        if not model.jnt_limited[i]:
+            q[i] = (q[i] + np.pi) % (2 * np.pi) - np.pi
+    return q
+
+def cDist(model, q1, q2):
+    diff = np.array(q2) - np.array(q1)
+    wrappedDiff = normalizeQ(model, diff)
+    return np.linalg.norm(wrappedDiff)
+
 def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize=0.1, numIsteps=100, tol=0.01):
     pathFound = False
     startTime = time.time()
@@ -401,6 +347,14 @@ def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize
     treeGoal = [qGoal.copy()]
     parentsTreeGoal = [None]
     path = []
+
+    # Bounds
+    low = model.jnt_range[:, 0]
+    high = model.jnt_range[:, 1]
+    for i in range(len(low)):
+        if not model.jnt_limited[i]:
+            low[i] = -np.pi
+            high[i] = np.pi
 
     treeStartTurn = True
     while not pathFound and (time.time() - startTime) < totalTime:
@@ -415,14 +369,12 @@ def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize
             treeB = treeStart
             parentsB = parentsTreeStart
 
-        qRand = np.random.uniform(model.jnt_range[:, 0], model.jnt_range[:, 1])
-      
+        qRand = np.random.uniform(low, high)
         # Find nearest neighbor
-        nearestNeighbor = np.argmin([np.linalg.norm(np.array(q) - np.array(qRand)) for q in treeA])
+        nearestNeighbor = np.argmin([cDist(model, np.array(q), np.array(qRand)) for q in treeA])
         qNear = treeA[nearestNeighbor]
 
-        qNew = takeStep(qNear, qRand, stepSize)
-
+        qNew = takeStep(model, qNear, qRand, stepSize)
         # Check collision along the edge
         if not isEdgeValid(model, data, qNear, qNew, obstacleIds, numIsteps):
             continue
@@ -432,43 +384,51 @@ def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize
         parentsA.append(nearestNeighbor)
 
         # Try to connect other tree
+        terminated = False
         qRand = qNew.copy()
-        nearestNeighbor = np.argmin([np.linalg.norm(np.array(q) - np.array(qRand)) for q in treeB])
+        nearestNeighbor = np.argmin([cDist(model, np.array(q), np.array(qRand)) for q in treeB])
         qNear = treeB[nearestNeighbor]
+        while not terminated:
+            qNew = takeStep(model, qNear, qRand, stepSize)
 
-        qNew = takeStep(qNear, qRand, stepSize)
+            # Check collision along the edge
+            if not isEdgeValid(model, data, qNear, qNew, obstacleIds, numIsteps):
+                terminated = True
+                continue
 
-        # Check collision along the edge
-        if not isEdgeValid(model, data, qNear, qNew, obstacleIds, numIsteps):
-            continue
+            # Add to tree
+            treeB.append(qNew)
+            parentsB.append(nearestNeighbor)
 
-        # Add to tree
-        treeB.append(qNew)
-        parentsB.append(nearestNeighbor)
+            # Check if close enough to goal
+            if cDist(model, np.array(qNew), np.array(qRand)) < tol:
+                pathFound = True
+                
+                tempPath = []
+                current = len(treeGoal) - 1
+                while current is not None:
+                    tempPath.append(treeGoal[current])
+                    current = parentsTreeGoal[current]
+
+                current = len(treeStart) - 1
+                while current is not None:
+                    path.append(treeStart[current])
+                    current = parentsTreeStart[current]
+
+                path.reverse()
+                path.extend(tempPath)
+
+                path = shortenPath(model, data, path, obstacleIds)
+                path = interpolatePath(model, path)
+                break
+
+            if pathFound:
+                break
+
+            qNear = qNew
+            nearestNeighbor = len(treeB) - 1
 
         treeStartTurn = not treeStartTurn
-
-        # Check if close enough to goal
-        if np.linalg.norm(np.array(qNew) - np.array(qRand)) < tol:
-            pathFound = True
-            
-            tempPath = []
-            current = len(treeGoal) - 1
-            while current is not None:
-                tempPath.append(treeGoal[current])
-                current = parentsTreeGoal[current]
-
-            current = len(treeStart) - 1
-            while current is not None:
-                path.append(treeStart[current])
-                current = parentsTreeStart[current]
-
-            path.reverse()
-            path.extend(tempPath)
-
-            path = shortenPath(model, data, path, obstacleIds)
-            path = interpolatePath(path)
-            break
 
     return pathFound, path
 
@@ -481,14 +441,15 @@ def checkCollision(model, data, qPos, obstacleIds):
             return True
     return False
 
-def takeStep(qNear, qRand, stepSize):
+def takeStep(model, qNear, qRand, stepSize):
     diff = np.array(qRand) - np.array(qNear)
-    dist = np.linalg.norm(diff)
-    
+    wrappedDiff = normalizeQ(model, diff)
+    dist = np.linalg.norm(wrappedDiff)
+
     if dist <= stepSize:
         return qRand  # Reach exactly if close enough
     else:
-        dir = diff / dist
+        dir = wrappedDiff / dist
         return qNear + dir * stepSize
 
 def shortenPath(model, data, path, obstacleIds, numIsteps=100, maxIter=20):
@@ -516,17 +477,19 @@ def shortenPath(model, data, path, obstacleIds, numIsteps=100, maxIter=20):
     return simplified
 
 def isEdgeValid(model, data, qStart, qEnd, obstacleIds, numIsteps):
+    diff = qEnd - qStart
+    wrappedDiff = normalizeQ(model, diff)
     for iStep in range(1, numIsteps + 1):
-        qIntermediate = qStart + iStep / float(numIsteps) * (qEnd - qStart)
+        qIntermediate = qStart + iStep / float(numIsteps) * wrappedDiff
         if checkCollision(model, data, qIntermediate, obstacleIds):
             return False
     return True
 
-def interpolatePath(path, numNodes=100):
+def interpolatePath(model, path, numNodes=100):
     totalLength = 0.0
     segmentLengths = []
     for i in range(len(path) - 1):
-        segmentLengths.append(np.linalg.norm(np.array(path[i+1]) - np.array(path[i])))
+        segmentLengths.append(cDist(model, np.array(path[i]), np.array(path[i+1])))
         totalLength += segmentLengths[i]
 
     if totalLength == 0.0:
@@ -541,10 +504,82 @@ def interpolatePath(path, numNodes=100):
     for i in range(len(path) - 1):
         interpolatedPath.append(path[i])
         for step in range(1, int(numStepsPerSegment[i])):
-            interpolatedPath.append(takeStep(path[i], path[i+1], step / numStepsPerSegment[i] * segmentLengths[i]))
+            interpolatedPath.append(takeStep(model, path[i], path[i+1], step / numStepsPerSegment[i] * segmentLengths[i]))
 
     interpolatedPath.append(path[-1])
     return interpolatedPath
+
+# ────────────
+# IK function 
+# ────────────
+def dlsIK(
+    model,
+    obstacleIds,
+    targetQpos: np.ndarray,
+    initialQpos: np.ndarray | None = None,
+    maxIter: int = 200,
+    tol: float = 0.01,
+    lambda_: float = 0.01,
+    alpha: float = 0.75,
+) -> tuple[np.ndarray | None, np.ndarray | None]:
+    data = mujoco.MjData(model)
+    endEffectorId = model.site("endEffector").id
+
+    if initialQpos is not None:
+        data.qpos[:] = initialQpos.copy()
+    else:
+        data.qpos[:] = np.zeros(model.nq)
+
+    mujoco.mj_forward(model, data)
+    deltaX = targetQpos - data.site(endEffectorId).xpos.copy()
+
+    i = 0
+    jacp = np.zeros((3, model.nv))
+    jacr = np.zeros((3, model.nv))
+
+    while i < maxIter and np.linalg.norm(deltaX) > tol:
+        mujoco.mj_jacSite(model, data, jacp, jacr, endEffectorId)
+        J = jacp
+
+        U, Sigma, VT = np.linalg.svd(J, compute_uv=True, full_matrices=False)
+        D = np.diag(Sigma / (Sigma**2 + lambda_**2))
+
+        deltaTheta = VT.T @ D @ U.T @ deltaX
+
+        collision = True
+        al = alpha
+        originalQpos = data.qpos.copy()
+
+        while collision and al >= 0.01:
+            collision = False
+
+            data.qpos[:] = originalQpos + al * deltaTheta
+            for j in range(model.nq):
+                if model.jnt_limited[j]:
+                    data.qpos[j] = np.clip(data.qpos[j], model.jnt_range[j, 0], model.jnt_range[j, 1])
+            data.qpos = normalizeQ(model, data.qpos)
+            mujoco.mj_forward(model, data)
+            
+            for j in range(data.ncon):
+                contact = data.contact[j]
+                if contact.geom1 in obstacleIds or contact.geom2 in obstacleIds:
+                    collision = True
+                    break
+
+            if collision:
+                al /= 2.0
+
+        if collision:
+            data.qpos[:] = originalQpos
+            mujoco.mj_forward(model, data)
+            break
+
+        deltaX = targetQpos - data.site(endEffectorId).xpos.copy()
+        i += 1
+
+    mujoco.mj_jacSite(model, data, jacp, jacr, endEffectorId)
+    J = jacp
+    return data.qpos.copy(), J.copy()
 
 def setupLogging():
     pid = os.getpid()

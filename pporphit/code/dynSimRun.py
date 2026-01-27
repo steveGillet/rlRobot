@@ -7,6 +7,18 @@ from scipy.optimize import minimize
 # ─────────────
 # RRT-Connect
 # ─────────────
+def normalizeQ(model, q):
+    q = q.copy()
+    for i in range(len(q)):
+        if not model.jnt_limited[i]:
+            q[i] = (q[i] + np.pi) % (2 * np.pi) - np.pi
+    return q
+
+def cDist(model, q1, q2):
+    diff = np.array(q2) - np.array(q1)
+    wrappedDiff = normalizeQ(model, diff)
+    return np.linalg.norm(wrappedDiff)
+
 def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize=0.1, numIsteps=100, tol=0.01):
     pathFound = False
     startTime = time.time()
@@ -15,6 +27,14 @@ def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize
     treeGoal = [qGoal.copy()]
     parentsTreeGoal = [None]
     path = []
+
+    # Bounds
+    low = model.jnt_range[:, 0]
+    high = model.jnt_range[:, 1]
+    for i in range(len(low)):
+        if not model.jnt_limited[i]:
+            low[i] = -np.pi
+            high[i] = np.pi
 
     treeStartTurn = True
     while not pathFound and (time.time() - startTime) < totalTime:
@@ -29,14 +49,12 @@ def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize
             treeB = treeStart
             parentsB = parentsTreeStart
 
-        qRand = np.random.uniform(model.jnt_range[:, 0], model.jnt_range[:, 1])
-      
+        qRand = np.random.uniform(low, high)
         # Find nearest neighbor
-        nearestNeighbor = np.argmin([np.linalg.norm(np.array(q) - np.array(qRand)) for q in treeA])
+        nearestNeighbor = np.argmin([cDist(model, np.array(q), np.array(qRand)) for q in treeA])
         qNear = treeA[nearestNeighbor]
 
-        qNew = takeStep(qNear, qRand, stepSize)
-
+        qNew = takeStep(model, qNear, qRand, stepSize)
         # Check collision along the edge
         if not isEdgeValid(model, data, qNear, qNew, obstacleIds, numIsteps):
             continue
@@ -46,43 +64,51 @@ def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize
         parentsA.append(nearestNeighbor)
 
         # Try to connect other tree
+        terminated = False
         qRand = qNew.copy()
-        nearestNeighbor = np.argmin([np.linalg.norm(np.array(q) - np.array(qRand)) for q in treeB])
+        nearestNeighbor = np.argmin([cDist(model, np.array(q), np.array(qRand)) for q in treeB])
         qNear = treeB[nearestNeighbor]
+        while not terminated:
+            qNew = takeStep(model, qNear, qRand, stepSize)
 
-        qNew = takeStep(qNear, qRand, stepSize)
+            # Check collision along the edge
+            if not isEdgeValid(model, data, qNear, qNew, obstacleIds, numIsteps):
+                terminated = True
+                continue
 
-        # Check collision along the edge
-        if not isEdgeValid(model, data, qNear, qNew, obstacleIds, numIsteps):
-            continue
+            # Add to tree
+            treeB.append(qNew)
+            parentsB.append(nearestNeighbor)
 
-        # Add to tree
-        treeB.append(qNew)
-        parentsB.append(nearestNeighbor)
+            # Check if close enough to goal
+            if cDist(model, np.array(qNew), np.array(qRand)) < tol:
+                pathFound = True
+                
+                tempPath = []
+                current = len(treeGoal) - 1
+                while current is not None:
+                    tempPath.append(treeGoal[current])
+                    current = parentsTreeGoal[current]
+
+                current = len(treeStart) - 1
+                while current is not None:
+                    path.append(treeStart[current])
+                    current = parentsTreeStart[current]
+
+                path.reverse()
+                path.extend(tempPath)
+
+                path = shortenPath(model, data, path, obstacleIds)
+                path = interpolatePath(model, path)
+                break
+
+            if pathFound:
+                break
+
+            qNear = qNew
+            nearestNeighbor = len(treeB) - 1
 
         treeStartTurn = not treeStartTurn
-
-        # Check if close enough to goal
-        if np.linalg.norm(np.array(qNew) - np.array(qRand)) < tol:
-            pathFound = True
-            
-            tempPath = []
-            current = len(treeGoal) - 1
-            while current is not None:
-                tempPath.append(treeGoal[current])
-                current = parentsTreeGoal[current]
-
-            current = len(treeStart) - 1
-            while current is not None:
-                path.append(treeStart[current])
-                current = parentsTreeStart[current]
-
-            path.reverse()
-            path.extend(tempPath)
-
-            path = shortenPath(model, data, path, obstacleIds)
-            path = interpolatePath(path)
-            break
 
     return pathFound, path
 
@@ -95,14 +121,15 @@ def checkCollision(model, data, qPos, obstacleIds):
             return True
     return False
 
-def takeStep(qNear, qRand, stepSize):
+def takeStep(model, qNear, qRand, stepSize):
     diff = np.array(qRand) - np.array(qNear)
-    dist = np.linalg.norm(diff)
-    
+    wrappedDiff = normalizeQ(model, diff)
+    dist = np.linalg.norm(wrappedDiff)
+
     if dist <= stepSize:
         return qRand  # Reach exactly if close enough
     else:
-        dir = diff / dist
+        dir = wrappedDiff / dist
         return qNear + dir * stepSize
 
 def shortenPath(model, data, path, obstacleIds, numIsteps=100, maxIter=20):
@@ -130,17 +157,19 @@ def shortenPath(model, data, path, obstacleIds, numIsteps=100, maxIter=20):
     return simplified
 
 def isEdgeValid(model, data, qStart, qEnd, obstacleIds, numIsteps):
+    diff = qEnd - qStart
+    wrappedDiff = normalizeQ(model, diff)
     for iStep in range(1, numIsteps + 1):
-        qIntermediate = qStart + iStep / float(numIsteps) * (qEnd - qStart)
+        qIntermediate = qStart + iStep / float(numIsteps) * wrappedDiff
         if checkCollision(model, data, qIntermediate, obstacleIds):
             return False
     return True
 
-def interpolatePath(path, numNodes=100):
+def interpolatePath(model, path, numNodes=100):
     totalLength = 0.0
     segmentLengths = []
     for i in range(len(path) - 1):
-        segmentLengths.append(np.linalg.norm(np.array(path[i+1]) - np.array(path[i])))
+        segmentLengths.append(cDist(model, np.array(path[i]), np.array(path[i+1])))
         totalLength += segmentLengths[i]
 
     if totalLength == 0.0:
@@ -155,7 +184,7 @@ def interpolatePath(path, numNodes=100):
     for i in range(len(path) - 1):
         interpolatedPath.append(path[i])
         for step in range(1, int(numStepsPerSegment[i])):
-            interpolatedPath.append(takeStep(path[i], path[i+1], step / numStepsPerSegment[i] * segmentLengths[i]))
+            interpolatedPath.append(takeStep(model, path[i], path[i+1], step / numStepsPerSegment[i] * segmentLengths[i]))
 
     interpolatedPath.append(path[-1])
     return interpolatedPath
@@ -205,7 +234,10 @@ def dlsIK(
             collision = False
 
             data.qpos[:] = originalQpos + al * deltaTheta
-            data.qpos = np.clip(data.qpos, model.jnt_range[:, 0], model.jnt_range[:, 1])
+            for j in range(model.nq):
+                if model.jnt_limited[j]:
+                    data.qpos[j] = np.clip(data.qpos[j], model.jnt_range[j, 0], model.jnt_range[j, 1])
+            data.qpos = normalizeQ(model, data.qpos)
             mujoco.mj_forward(model, data)
             
             for j in range(data.ncon):
@@ -243,10 +275,15 @@ def generateXML(numJoints, lengths, jointTypes):
     <worldbody>
         <light diffuse=".5 .5 .5" pos="3 1 2" dir="0 0 -1" cutoff="180"/>
         <geom name="floor" type="plane" size="2 2 0.1" rgba=".9 0.5 0 1"/>
-        <geom name="mountWall" type="box" pos="0 -0.4 1.0" size="1.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
-        <geom name="shelfWall" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
-        <geom name="shelf" type="box" pos="0.0 1.35 1.0" size="2.0 0.25 0.01" rgba="0.5 0.5 0.5 1"/>
-        <body name="base" pos="0 -0.4 1.0" euler="-1.57 0 0">
+        <geom name="containerBack" type="box" pos="-2.0 0.6 1.0" size="0.01 1.0 1.0" rgba="0.5 0.5 0.5 1"/>
+        <geom name="containerLeft" type="box" pos="0 -0.4 1.0" size="2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
+        <geom name="containerRight" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
+        <geom name="containerTop" type="box" pos="0 0.6 2.0" size="2.0 1.0 0.01" rgba="0.5 0.5 0.5 1"/>
+        <!-- <geom name="mountWall" type="box" pos="0 -0.4 1.0" size="1.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/> -->
+        <!-- <geom name="shelfWall" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/> -->
+        <!-- <geom name="shelf" type="box" pos="0.0 1.35 1.0" size="2.0 0.25 0.01" rgba="0.5 0.5 0.5 1"/> -->
+        <!-- <body name="base" pos="0 -0.4 1.0" euler="-1.57 0 0"> -->
+        <body name="base" pos="0 0 0.05">
             <geom name="baseBox" type="box" size="0.1 0.1 0.05"/>
         """
         currentPos = "0 0 0.05"
@@ -312,29 +349,41 @@ def generateXML(numJoints, lengths, jointTypes):
 # ───────────────────────────────────────────────
 # Main script - now using custom RRT
 # ───────────────────────────────────────────────
+# numLinks = 2
+# lengths = np.array([0.05, 1.1999999])
+# jointTypes = np.array([1, 3])
+# PANDA
 numLinks = 7
-lengths = np.array([0.05, 0.05, 0.05, 0.05, 0.46852955, 0.05, 1.1999999])
-jointTypes = np.array([3, 0, 1, 2, 3, 3, 0])
+sizeMultiplier = 2
+lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
+jointTypes = np.array([2, 1, 2, 0, 2, 0, 2])
 
 xml = generateXML(numLinks, lengths, jointTypes)
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
 
 jointIds = [model.joint(f"joint{i}").id for i in range(numLinks)]
-obstacleNames = ["mountWall", "shelfWall", "shelf", "floor"]
+# obstacleNames = ["mountWall", "shelfWall", "shelf", "floor"]
+obstacleNames = ["containerTop", "containerBack", "containerLeft", "containerRight", "floor"]
 obstacleIds = set(model.geom(name).id for name in obstacleNames)
 
 # Example start/goal positions
-startPoses = [
-    np.array([-0.9, 1.35, 1.1], dtype=np.float32),
-    np.array([-1.4, -0.9, 0.1], dtype=np.float32)
-]
-goalPoses = [
-    np.array([1.5, -0.4, 0.2], dtype=np.float32),
-    np.array([1.75, 1.36, 1.11], dtype=np.float32)
-]
+# startPoses = [
+#     np.array([-0.9, 1.35, 1.1], dtype=np.float32),
+#     np.array([-1.4, -0.9, 0.1], dtype=np.float32)
+# ]
+# goalPoses = [
+#     np.array([1.5, -0.4, 0.2], dtype=np.float32),
+#     np.array([1.75, 1.36, 1.11], dtype=np.float32)
+# ]
+
+startPoses = [np.array([-1.8, 0.3, 0.3], dtype=np.float32), np.array([-1.8, 0.8, 0.4], dtype=np.float32)] 
+goalPoses = [np.array([1.9, 0.9, 0.4], dtype=np.float32), np.array([1.8, 0.31, 0.2], dtype=np.float32)]
 
 pathLists = []  # List of paths (each is a list of qpos arrays)
+
+startQposes = []
+goalQposes = []
 
 for startPos, goalPos in zip(startPoses, goalPoses):
     print(f"\nPlanning from {startPos} to {goalPos}...")
@@ -342,28 +391,40 @@ for startPos, goalPos in zip(startPoses, goalPoses):
     # Solve IK for start and goal
     startQpos, _ = dlsIK(model, obstacleIds, startPos)
     goalQpos, _ = dlsIK(model, obstacleIds, goalPos, initialQpos=startQpos)
+    
+    data.qpos[:] = startQpos
+    mujoco.mj_forward(model, data)
+    actual_start_pos = data.site("endEffector").xpos.copy()
+    print(f"Target start: {startPos}, Actual: {actual_start_pos}, Error: {np.linalg.norm(actual_start_pos - startPos)}")
+    print(f"Collision at start: {checkCollision(model, data, startQpos, obstacleIds)}")
+
+    # Same for goalQpos after its IK
+    data.qpos[:] = goalQpos
+    mujoco.mj_forward(model, data)
+    actual_goal_pos = data.site("endEffector").xpos.copy()
+    print(f"Target goal: {goalPos}, Actual: {actual_goal_pos}, Error: {np.linalg.norm(actual_goal_pos - goalPos)}")
+    print(f"Collision at goal: {checkCollision(model, data, goalQpos, obstacleIds)}")
 
     if startQpos is None or goalQpos is None:
         print("IK failed → skipping this pair")
         pathLists.append([])
         continue
 
-    # Normalize angles if needed (optional - your joints are limited)
-    for i in range(len(startQpos)):
-        if jointTypes[i] == 2:  # revolute that might wrap
-            startQpos[i] = np.arctan2(np.sin(startQpos[i]), np.cos(startQpos[i]))
-            goalQpos[i] = np.arctan2(np.sin(goalQpos[i]), np.cos(goalQpos[i]))
+    startQpos = normalizeQ(model, startQpos)
+    goalQpos = normalizeQ(model, goalQpos)
+
+    startQposes.append(startQpos)
+    goalQposes.append(goalQpos)
 
     # Run your RRT-Connect
     found, path = rrtConnect(
         model, data,
         startQpos, goalQpos,
         obstacleIds,
-        totalTime=15.0,      # ← increase if needed
-        stepSize=0.08,
-        greedyBias=0.25,
-        numIsteps=12,
-        tol=0.015
+        totalTime=5.0,      # ← increase if needed
+        stepSize=0.1,
+        numIsteps=5,
+        tol=0.01
     )
 
     if found:
@@ -387,6 +448,7 @@ viewer.cam.distance = model.stat.extent * 2
 viewer.cam.elevation = -35
 viewer.cam.azimuth = 145
 
+data.qpos[:] = startQposes[0]
 mujoco.mj_forward(model, data)
 viewer.sync()
 
@@ -405,7 +467,7 @@ for path in pathLists:
 
         mujoco.mj_forward(model, data)
         viewer.sync()
-        time.sleep(0.04)  # slower for better visualization
+        time.sleep(0.04)
 
 print("Simulation complete")
 
