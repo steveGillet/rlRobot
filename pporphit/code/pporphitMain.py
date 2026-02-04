@@ -62,7 +62,7 @@ if __name__ == "__main__":
         device="cpu",
     )
     ppo.learn(total_timesteps=1_000_000, callback=RewardLoggerCallback())
-    ppo.save("refactoredRRTresetCoeffs")
+    ppo.save("refactoredRRTtenLinks")
 
 # if __name__ == "__main__":
 #     env = robotArmEnv()

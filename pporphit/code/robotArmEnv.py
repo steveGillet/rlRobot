@@ -196,8 +196,7 @@ class robotArmEnv(gym.Env):
                 # print(f"Manipulability Bonus: {1 * (muStart + muGoal)}")
                 # print(f"Link Number Penalty: {-1 * (numLinks - self.minNumLinks)}")
                 # print(f"Energy Cost Penalty: {-1 * energyCost}")
-                reward += 100 - 1 * eePathLength - 1 * (startError + goalError) + 1 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks) - 1 * energyCost
-
+                reward += 100 - 1 * eePathLength - 1 * (startError + goalError) + 1 * (muStart + muGoal) - 10 * (numLinks - self.minNumLinks) - 1 * energyCost
             else:
                 # print(f"Accuracy Penalty: {-200 * (startError + goalError)}")
                 # print(f"Manipulability Bonus: {1 * (muStart + muGoal)}")

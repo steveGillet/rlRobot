@@ -2,7 +2,6 @@ import mujoco
 import mujoco.viewer
 import time
 import numpy as np
-from scipy.optimize import minimize
 
 # ─────────────
 # RRT-Connect
@@ -195,13 +194,13 @@ def interpolatePath(model, path, numNodes=100):
 def dlsIK(
     model,
     obstacleIds,
-    targetQpos: np.ndarray,
+    targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
-    maxIter: int = 200,
+    maxIter: int = 1000,
     tol: float = 0.01,
     lambda_: float = 0.01,
     alpha: float = 0.75,
-) -> tuple[np.ndarray | None, np.ndarray | None]:
+) -> tuple[np.ndarray, np.ndarray]:
     data = mujoco.MjData(model)
     endEffectorId = model.site("endEffector").id
 
@@ -211,7 +210,13 @@ def dlsIK(
         data.qpos[:] = np.zeros(model.nq)
 
     mujoco.mj_forward(model, data)
-    deltaX = targetQpos - data.site(endEffectorId).xpos.copy()
+    posError = targetPose[:3] - data.site(endEffectorId).xpos.copy()
+    currentQuat = np.zeros(4)
+    mujoco.mju_mat2Quat(currentQuat, data.site(endEffectorId).xmat.flatten())
+    targetQuat = targetPose[3:7]
+    rotError = np.zeros(3)
+    mujoco.mju_subQuat(rotError, targetQuat, currentQuat)
+    deltaX = np.concatenate([posError, rotError*0.1])
 
     i = 0
     jacp = np.zeros((3, model.nv))
@@ -219,7 +224,7 @@ def dlsIK(
 
     while i < maxIter and np.linalg.norm(deltaX) > tol:
         mujoco.mj_jacSite(model, data, jacp, jacr, endEffectorId)
-        J = jacp
+        J = np.vstack([jacp, jacr])
 
         U, Sigma, VT = np.linalg.svd(J, compute_uv=True, full_matrices=False)
         D = np.diag(Sigma / (Sigma**2 + lambda_**2))
@@ -237,7 +242,7 @@ def dlsIK(
             for j in range(model.nq):
                 if model.jnt_limited[j]:
                     data.qpos[j] = np.clip(data.qpos[j], model.jnt_range[j, 0], model.jnt_range[j, 1])
-            data.qpos = normalizeQ(model, data.qpos)
+            data.qpos[:] = normalizeQ(model, data.qpos)
             mujoco.mj_forward(model, data)
             
             for j in range(data.ncon):
@@ -254,11 +259,17 @@ def dlsIK(
             mujoco.mj_forward(model, data)
             break
 
-        deltaX = targetQpos - data.site(endEffectorId).xpos.copy()
+        posError = targetPose[:3] - data.site(endEffectorId).xpos.copy()
+        currentQuat = np.zeros(4)
+        mujoco.mju_mat2Quat(currentQuat, data.site(endEffectorId).xmat.flatten())
+        targetQuat = targetPose[3:7]
+        rotError = np.zeros(3)
+        mujoco.mju_subQuat(rotError, targetQuat, currentQuat)
+        deltaX = np.concatenate([posError, rotError*0.1])
         i += 1
 
     mujoco.mj_jacSite(model, data, jacp, jacr, endEffectorId)
-    J = jacp
+    J = np.vstack([jacp, jacr])
     return data.qpos.copy(), J.copy()
 
 
@@ -349,14 +360,14 @@ def generateXML(numJoints, lengths, jointTypes):
 # ───────────────────────────────────────────────
 # Main script - now using custom RRT
 # ───────────────────────────────────────────────
-numLinks = 2
-lengths = np.array([0.05, 1.1999999])
-jointTypes = np.array([2, 0])
-# # PANDA
-# numLinks = 7
-# sizeMultiplier = 2
-# lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
-# jointTypes = np.array([2, 1, 2, 0, 2, 0, 2])
+# numLinks = 2
+# lengths = np.array([0.05, 1.1999999])
+# jointTypes = np.array([2, 0])
+# PANDA
+numLinks = 7
+sizeMultiplier = 2
+lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
+jointTypes = np.array([2, 1, 2, 0, 2, 0, 2])
 
 xml = generateXML(numLinks, lengths, jointTypes)
 model = mujoco.MjModel.from_xml_string(xml)
@@ -377,41 +388,47 @@ obstacleIds = set(model.geom(name).id for name in obstacleNames)
 #     np.array([1.75, 1.36, 1.11], dtype=np.float32)
 # ]
 
-startPoses = [np.array([-1.8, 0.3, 0.3], dtype=np.float32), np.array([-1.8, 0.8, 0.4], dtype=np.float32)] 
-goalPoses = [np.array([1.9, 0.9, 0.4], dtype=np.float32), np.array([1.8, 0.31, 0.2], dtype=np.float32)]
+startPoses = [np.array([-1.8, 0.3, 0.3, 0.7071, 0, 0.7071, 0], dtype=np.float32), np.array([-1.8, 0.8, 0.4, 0.7071, 0, 0.7071, 0], dtype=np.float32)] 
+goalPoses = [np.array([1.9, 0.9, 0.4, 0.7071, 0, -0.7071, 0], dtype=np.float32), np.array([1.8, 0.31, 0.2, 0.7071, 0, -0.7071, 0], dtype=np.float32)]
 
 pathLists = []  # List of paths (each is a list of qpos arrays)
 
 startQposes = []
 goalQposes = []
 
-for startPos, goalPos in zip(startPoses, goalPoses):
-    print(f"\nPlanning from {startPos} to {goalPos}...")
+for startPose, goalPose in zip(startPoses, goalPoses):
+    print(f"\nPlanning from {startPose} to {goalPose}...")
 
     # Solve IK for start and goal
-    startQpos, _ = dlsIK(model, obstacleIds, startPos)
-    goalQpos, _ = dlsIK(model, obstacleIds, goalPos, initialQpos=startQpos)
+    startQpos, _ = dlsIK(model, obstacleIds, startPose)
+    goalQpos, _ = dlsIK(model, obstacleIds, goalPose, initialQpos=startQpos)
     
     data.qpos[:] = startQpos
     mujoco.mj_forward(model, data)
-    actual_start_pos = data.site("endEffector").xpos.copy()
-    print(f"Target start: {startPos}, Actual: {actual_start_pos}, Error: {np.linalg.norm(actual_start_pos - startPos)}")
+    actualStartPos = data.site("endEffector").xpos.copy()
+    actualStartQuat = np.zeros(4)
+    mujoco.mju_mat2Quat(actualStartQuat, data.site("endEffector").xmat.flatten())
+    actualStartPose = np.concatenate([actualStartPos, actualStartQuat])
+    posError = np.linalg.norm(actualStartPos - startPose[:3])
+    rotErrorVec = np.zeros(3)
+    mujoco.mju_subQuat(rotErrorVec, startPose[3:7], actualStartQuat)
+    rotError = np.linalg.norm(rotErrorVec)
+    print(f"Target start: {startPose}, Actual: {actualStartPos}, Pos Error: {posError}, Rot Error: {rotError}")
     print(f"Collision at start: {checkCollision(model, data, startQpos, obstacleIds)}")
 
     # Same for goalQpos after its IK
     data.qpos[:] = goalQpos
     mujoco.mj_forward(model, data)
-    actual_goal_pos = data.site("endEffector").xpos.copy()
-    print(f"Target goal: {goalPos}, Actual: {actual_goal_pos}, Error: {np.linalg.norm(actual_goal_pos - goalPos)}")
+    actualGoalPos = data.site("endEffector").xpos.copy()
+    actualGoalQuat = np.zeros(4)
+    mujoco.mju_mat2Quat(actualGoalQuat, data.site("endEffector").xmat.flatten())
+    actualGoalPose = np.concatenate([actualGoalPos, actualGoalQuat])
+    posError = np.linalg.norm(actualGoalPos - goalPose[:3])
+    rotErrorVec = np.zeros(3)
+    mujoco.mju_subQuat(rotErrorVec, goalPose[3:7], actualGoalQuat)
+    rotError = np.linalg.norm(rotErrorVec)
+    print(f"Target goal: {goalPose}, Actual: {actualGoalPose}, Pos Error: {posError}, Rot Error: {rotError}")
     print(f"Collision at goal: {checkCollision(model, data, goalQpos, obstacleIds)}")
-
-    if startQpos is None or goalQpos is None:
-        print("IK failed → skipping this pair")
-        pathLists.append([])
-        continue
-
-    startQpos = normalizeQ(model, startQpos)
-    goalQpos = normalizeQ(model, goalQpos)
 
     startQposes.append(startQpos)
     goalQposes.append(goalQpos)
@@ -439,8 +456,8 @@ for startPos, goalPos in zip(startPoses, goalPoses):
 # Visualization
 # ───────────────────────────────────────────────
 for i in range(len(startPoses)):
-    model.site(f'startPos{i}').pos = startPoses[i]
-    model.site(f'goalPos{i}').pos = goalPoses[i]
+    model.site(f'startPos{i}').pos = startPoses[i][:3]
+    model.site(f'goalPos{i}').pos = goalPoses[i][:3]
 
 viewer = mujoco.viewer.launch_passive(model, data)
 viewer.cam.lookat[:] = model.stat.center
