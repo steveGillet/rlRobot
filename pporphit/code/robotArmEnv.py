@@ -34,8 +34,8 @@ class robotArmEnv(gym.Env):
         #     np.array([1.75, 1.36, 1.11], dtype=np.float32),
         # ]
         # Container task
-        self.startPos = [np.array([-1.8, 0.3, 0.3], dtype=np.float32), np.array([-1.8, 0.8, 0.4], dtype=np.float32)] 
-        self.goalPos = [np.array([1.9, 0.9, 0.4], dtype=np.float32), np.array([1.8, 0.31, 0.2], dtype=np.float32)]
+        self.startPos = [np.array([-1.8, 0.3, 0.3, 0.7071, 0, -0.7071, 0], dtype=np.float32), np.array([-1.8, 0.8, 0.4, 0.7071, 0, -0.7071, 0], dtype=np.float32)] 
+        self.goalPos = [np.array([1.9, 0.9, 0.4, 0.7071, 0, 0.7071, 0], dtype=np.float32), np.array([1.8, 0.31, 0.2, 0.7071, 0, 0.7071, 0], dtype=np.float32)]
         # Simple task
         # self.startPos = [np.array([-.4, -0.4, 0.6], dtype=np.float32)]
         # self.goalPos = [np.array([0.4, 0.4, 0.8], dtype=np.float32)]
@@ -73,13 +73,19 @@ class robotArmEnv(gym.Env):
 
         reward = 0
         for startPos, goalPos in zip(self.startPos, self.goalPos):
-            startPos = startPos + np.random.normal(0, self.noise, size=3)
-            goalPos = goalPos + np.random.normal(0, self.noise, size=3)
+            noisyStartPos = startPos[:3] + np.random.normal(0, self.noise, size=3)
+            noisyStartQuat = startPos[3:] + np.random.normal(0, self.noise, size=4)
+            noisyStartQuat /= np.linalg.norm(noisyStartQuat)
+            startPos = np.concatenate([noisyStartPos, noisyStartQuat])
+            noisyGoalPos = goalPos[:3] + np.random.normal(0, self.noise, size=3)
+            noisyGoalQuat = goalPos[3:] + np.random.normal(0, self.noise, size=4)
+            noisyGoalQuat /= np.linalg.norm(noisyGoalQuat)
+            goalPos = np.concatenate([noisyGoalPos, noisyGoalQuat])
             self.logger.debug(f"Pre-IK: startPos={startPos}")
-            startQpos, jStart = dlsIK(model, obstacleIds, startPos)
+            startQpos, jStart, startError = robustDLSik(model, obstacleIds, startPos)
             self.logger.debug(f"Post Start IK: startQpos={startQpos}, jStart={jStart}")
 
-            goalQpos, jGoal = dlsIK(model, obstacleIds, goalPos, initialQpos=startQpos)
+            goalQpos, jGoal, goalError = robustDLSik(model, obstacleIds, goalPos, initialQpos=startQpos)
             self.logger.debug(f"Post Goal IK: goalQpos={goalQpos}, jGoal={jGoal}")
             # startQpos = np.array([0.2, -0.8, -0.3, 0.9])
             # goalQpos = np.array([-0.4, 0.7, 0.5, -1.0])
@@ -88,22 +94,7 @@ class robotArmEnv(gym.Env):
                 reward = -100.0
                 break
 
-            i = 0
-            for id in jointIds:
-                data.qpos[id] = goalQpos[i]
-                i += 1
-
-            mujoco.mj_forward(model, data)
-            goalError = np.linalg.norm(data.site("endEffector").xpos - goalPos)
             self.logger.debug(f"Goal Error: {goalError}")
-
-            i = 0
-            for id in jointIds:
-                data.qpos[id] = startQpos[i]
-                i += 1
-
-            mujoco.mj_forward(model, data)
-            startError = np.linalg.norm(data.site("endEffector").xpos - startPos)
             self.logger.debug(f"Start Error: {startError}")
 
             if jStart.shape[1] == numLinks:
@@ -116,9 +107,6 @@ class robotArmEnv(gym.Env):
             else:
                 muGoal = 0.0
             self.logger.debug(f"Mu Goal: {muGoal}")
-
-            startQpos = normalizeQ(model, startQpos)
-            goalQpos = normalizeQ(model, goalQpos)
            
             foundSolution, path = rrtConnect(
                 model,
@@ -193,15 +181,15 @@ class robotArmEnv(gym.Env):
             
                 # print(f"Path Length Penalty: {-1 * eePathLength}")
                 # print(f"Accuracy Penalty: {-1 * (startError + goalError)}")
-                # print(f"Manipulability Bonus: {1 * (muStart + muGoal)}")
+                # print(f"Manipulability Bonus: {10 * (muStart + muGoal)}")
                 # print(f"Link Number Penalty: {-1 * (numLinks - self.minNumLinks)}")
-                # print(f"Energy Cost Penalty: {-1 * energyCost}")
-                reward += 100 - 1 * eePathLength - 1 * (startError + goalError) + 1 * (muStart + muGoal) - 10 * (numLinks - self.minNumLinks) - 1 * energyCost
+                # print(f"Energy Cost Penalty: {-0.1 * energyCost}")
+                reward += 100 - 1 * eePathLength - 1 * (startError + goalError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks) - 0.1 * energyCost
             else:
-                # print(f"Accuracy Penalty: {-200 * (startError + goalError)}")
-                # print(f"Manipulability Bonus: {1 * (muStart + muGoal)}")
+                # print(f"Accuracy Penalty: {-1 * (startError + goalError)}")
+                # print(f"Manipulability Bonus: {10 * (muStart + muGoal)}")
                 # print(f"Link Number Penalty: {-1 * (numLinks - self.minNumLinks)}")
-                reward += 30 - 1 * (startError + goalError) + 1 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks)
+                reward += 30 - 1 * (startError + goalError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks)
                 # reward += (
                 #     30
                 #     - 200 * (startError + goalError)
@@ -317,7 +305,7 @@ def generateXML(numJoints, lengths, jointTypes):
 
 
 def manipulabilityIndex(J):
-    if J is None or J.shape[0] != 3 or not np.all(np.isfinite(J)):
+    if J is None or J.shape[0] != 6 or not np.all(np.isfinite(J)):
         return 0.0
 
     Sigma = np.linalg.svd(J, compute_uv=False)
@@ -514,13 +502,14 @@ def interpolatePath(model, path, numNodes=100):
 def dlsIK(
     model,
     obstacleIds,
-    targetQpos: np.ndarray,
+    targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
     maxIter: int = 200,
     tol: float = 0.01,
     lambda_: float = 0.01,
     alpha: float = 0.75,
-) -> tuple[np.ndarray | None, np.ndarray | None]:
+    rotWeight: float = 0.1,
+) -> tuple[np.ndarray, np.ndarray]:
     data = mujoco.MjData(model)
     endEffectorId = model.site("endEffector").id
 
@@ -530,7 +519,13 @@ def dlsIK(
         data.qpos[:] = np.zeros(model.nq)
 
     mujoco.mj_forward(model, data)
-    deltaX = targetQpos - data.site(endEffectorId).xpos.copy()
+    posError = targetPose[:3] - data.site(endEffectorId).xpos.copy()
+    currentQuat = np.zeros(4)
+    mujoco.mju_mat2Quat(currentQuat, data.site(endEffectorId).xmat.flatten())
+    targetQuat = targetPose[3:7]
+    rotError = np.zeros(3)
+    mujoco.mju_subQuat(rotError, targetQuat, currentQuat)
+    deltaX = np.concatenate([posError, rotError*rotWeight])
 
     i = 0
     jacp = np.zeros((3, model.nv))
@@ -538,7 +533,7 @@ def dlsIK(
 
     while i < maxIter and np.linalg.norm(deltaX) > tol:
         mujoco.mj_jacSite(model, data, jacp, jacr, endEffectorId)
-        J = jacp
+        J = np.vstack([jacp, jacr])
 
         U, Sigma, VT = np.linalg.svd(J, compute_uv=True, full_matrices=False)
         D = np.diag(Sigma / (Sigma**2 + lambda_**2))
@@ -556,7 +551,7 @@ def dlsIK(
             for j in range(model.nq):
                 if model.jnt_limited[j]:
                     data.qpos[j] = np.clip(data.qpos[j], model.jnt_range[j, 0], model.jnt_range[j, 1])
-            data.qpos = normalizeQ(model, data.qpos)
+            data.qpos[:] = normalizeQ(model, data.qpos)
             mujoco.mj_forward(model, data)
             
             for j in range(data.ncon):
@@ -573,12 +568,76 @@ def dlsIK(
             mujoco.mj_forward(model, data)
             break
 
-        deltaX = targetQpos - data.site(endEffectorId).xpos.copy()
+        posError = targetPose[:3] - data.site(endEffectorId).xpos.copy()
+        currentQuat = np.zeros(4)
+        mujoco.mju_mat2Quat(currentQuat, data.site(endEffectorId).xmat.flatten())
+        targetQuat = targetPose[3:7]
+        rotError = np.zeros(3)
+        mujoco.mju_subQuat(rotError, targetQuat, currentQuat)
+        deltaX = np.concatenate([posError, rotError*rotWeight])
         i += 1
 
     mujoco.mj_jacSite(model, data, jacp, jacr, endEffectorId)
-    J = jacp
+    J = np.vstack([jacp, jacr])
     return data.qpos.copy(), J.copy()
+
+def robustDLSik(
+    model,
+    obstacleIds,
+    targetPose: np.ndarray,
+    initialQpos: np.ndarray | None = None,
+    maxIter: int = 200,
+    tol: float = 0.01,
+    lambda_: float = 0.01,
+    alpha: float = 0.75,
+    numTries: int = 5,
+    rotWeight: float = 0.1,
+):
+    bestQpos, bestJ, bestError = None, None, np.inf
+
+    if initialQpos is not None:
+        initQ = initialQpos
+    else:
+        initQ = np.random.uniform(model.jnt_range[:, 0], model.jnt_range[:, 1])
+        for i in range(len(initQ)):
+            if not model.jnt_limited[i]:
+                initQ[i] = np.random.uniform(-np.pi, np.pi)
+
+    for _ in range(numTries):
+        qPos, J = dlsIK(
+            model,
+            obstacleIds,
+            targetPose,
+            initialQpos=initQ,
+            maxIter=maxIter,
+            tol=tol,
+            lambda_=lambda_,
+            alpha=alpha,
+            rotWeight=rotWeight,
+        )
+
+        data = mujoco.MjData(model)
+        data.qpos[:] = qPos
+        mujoco.mj_forward(model, data)
+        posError = targetPose[:3] - data.site("endEffector").xpos.copy()
+        currentQuat = np.zeros(4)
+        mujoco.mju_mat2Quat(currentQuat, data.site("endEffector").xmat.flatten())
+        targetQuat = targetPose[3:7]
+        rotError = np.zeros(3)
+        mujoco.mju_subQuat(rotError, targetQuat, currentQuat)
+        totalError = np.linalg.norm(posError) + np.linalg.norm(rotError) * rotWeight
+
+        if totalError < bestError:
+            bestError = totalError
+            bestQpos = qPos
+            bestJ = J
+
+        initQ = np.random.uniform(model.jnt_range[:, 0], model.jnt_range[:, 1])
+        for i in range(len(initQ)):
+            if not model.jnt_limited[i]:
+                initQ[i] = np.random.uniform(-np.pi, np.pi)
+    
+    return bestQpos, bestJ, bestError
 
 def setupLogging():
     pid = os.getpid()
