@@ -27,8 +27,8 @@
 %\usepackage{epsfig} % for postscript graphics files
 %\usepackage{mathptmx} % assumes new font selection scheme installed
 %\usepackage{times} % assumes new font selection scheme installed
-%\usepackage{amsmath} % assumes amsmath package installed
-%\usepackage{amssymb}  % assumes amsmath package installed
+\usepackage{amsmath} % assumes amsmath package installed    
+\usepackage{amssymb}  % assumes amsmath package installed
 \usepackage{url}
 
 \title{\LARGE \bf
@@ -66,7 +66,7 @@ PPO is ideal for this task because it can efficiently optimize over the continuo
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{INTRODUCTION}
+\section{Introduction}
 
 Imagine a factory where every employee has to be trained on and work every job in the plant.
 Imagine how inefficient that would be.
@@ -93,7 +93,7 @@ The research questions to be answered: Can PPO be used to generate more efficien
 
 Most of the research in this area codesigns morphology and control of atomic, modular robots. 
 \cite{bhatia2023reinforcement} shows that PPO can be used to generate freeform morphologies optimized for locomotion tasks from a set of atomic modules.
-\cite{tjanaka2023co} shows that reinforcement learning can be used to co-optimize morphology and control for a modular robot that outperforms optimizing motion on a fixed morphology in a simulated environment. 
+\cite{tjanaka2023co} shows that reinforcement learning can be used on a modular robot to co-optimize morphology and control and outperform optimized control on a fixed morphology. 
 \cite{spielberg2025accelerated} also uses reinforcement learning to co-optimize with the addition of a pretrained foundation model to accelerate the training process and improve results.
 
 Most pertinently to this paper, \cite{kalimuthu2023} shows that PPO and A3C can be used to generate optimal morphologies that improve performance of reconfigurable robots,
@@ -102,54 +102,77 @@ This background motivates the approach of this paper which is going to use simpl
 FANUC 6-DOF series of manipulators are the most commonly used in industry today \cite{patentpc2025toprobotics}\cite{standardbots2025fanucprice} and so their morphology will be used as a baseline for comparison.
 Given the same environment, task, and controllers which morphologies will perform better?
 
-\section{MATH}
+\section{Problem Formulation}
 
-Before you begin to format your paper, first write and save the content as a separate text file. Keep your text and graphic files separate until after the text has been formatted and styled. Do not use hard tabs, and limit use of hard returns to only one return at the end of a paragraph. Do not add any kind of pagination anywhere in the paper. Do not number text heads-the template will do that for you.
+The task is formulated as a single-step reinforcement learning problem in a MuJoCo simulated environment.
+A morphology $\theta$ is chosen, run through the simulation, and then evaluated based on weighted reward function terms.
 
-Finally, complete content and organizational editing before formatting. Please take note of the following items when proofreading spelling and grammar:
+\subsection{Morphology Parameterization}
 
-\subsection{Abbreviations and Acronyms} Define abbreviations and acronyms the first time they are used in the text, even after they have been defined in the abstract. Abbreviations such as IEEE, SI, MKS, CGS, sc, dc, and rms do not have to be defined. Do not use abbreviations in the title or heads unless they are unavoidable.
-
-\subsection{Units}
-
+A candidate morphology is defined by the tuple
+\[
+\theta = (n, l, j),
+\]
+where
 \begin{itemize}
-
-\item Use either SI (MKS) or CGS as primary units. (SI units are encouraged.) English units may be used as secondary units (in parentheses). An exception would be the use of English units as identifiers in trade, such as "3.5-inch disk drive".
-\item Avoid combining SI and CGS units, such as current in amperes and magnetic field in oersteds. This often leads to confusion because equations do not balance dimensionally. If you must use mixed units, clearly state the units for each quantity that you use in an equation.
-\item Do not mix complete spellings and abbreviations of units: $Wb/m$ or "webers per square meter", not "webers/m2".  Spell out units when they appear in text: ". . . a few henries", not ". . . a few H".
-\item Use a zero before decimal points: "0.25", not ".25". Use "cm3", not "cc". (bullet list)
-
+    \item $n \in \{2, \dots, 7\}$ is the number of links,
+    \item $l = [l_1, \dots, l_n] \in [0.05, 1.2]^n$ are the link lengths (m),
+    \item $j = [j_1, \dots, j_n] \in \{0,1,2,3\}^n$ are the joint types (0: revolute about x, 1: about y, 2: about z, 3: slide in z).
 \end{itemize}
+The action space of the RL agent is the continuous box
+\[
+\mathcal{A} = [0,1]^{1 + 7 + 7},
+\]
+from which $n$, $l$, and $j$ are decoded.
 
+\subsection{Task Specification}
 
-\subsection{Equations}
+The robot must transport objects between start poses $\mathbf{s}_i$ and goal poses $\mathbf{g}_i$ (position + unit quaternion) inside a cluttered workspace containing fixed obstacles (container walls and floor). We use the \emph{container task} (see Fig.~\ref{fig:task}), which captures typical manufacturing constraints: narrow access, tight tolerances, and collision risks. Poses are corrupted with Gaussian noise ($\sigma=0.05$) at test time to encourage robust designs.
 
-The equations are an exception to the prescribed specifications of this template. You will need to determine whether or not your equation should be typed using either the Times New Roman or the Symbol font (please no other font). To create multileveled equations, it may be necessary to treat the equation as a graphic and insert it into the text after your paper is styled. Number equations consecutively. Equation numbers, within parentheses, are to position flush right, as in (1), using a right tab stop. To make your equations more compact, you may use the solidus ( / ), the exp function, or appropriate exponents. Italicize Roman symbols for quantities and variables, but not Greek symbols. Use a long dash rather than a hyphen for a minus sign. Punctuate equations with commas or periods when they are part of a sentence, as in
+\subsection{Evaluation Pipeline}
 
-$$
-\alpha + \beta = \chi \eqno{(1)}
-$$
+Given a morphology $\theta$, we evaluate it via the deterministic procedure $\texttt{eval}(\theta)$:
+\begin{enumerate}
+    \item Generate a MuJoCo XML model (dynamic link/joint assembly).
+    \item Solve inverse kinematics for all start and goal poses using robust damped least-squares (DLS) with collision-aware line search.
+    \item If any IK fails (error $>0.1$ rad/m), return reward $-100$.
+    \item Plan a collision-free path using RRT-Connect.
+    \item If no path is found, return reward $30 - 100 \times \text{IK error}$.
+    \item Otherwise, compute:
+    \begin{itemize}
+        \item End-effector path length $p = \sum \|\mathbf{x}_{ee}^{t+1} - \mathbf{x}_{ee}^t\|$,
+        \item Manipulability $\mu = \min(\sigma(\mathbf{J}))$ at start and goal (Yoshikawa, 1985),
+        \item Energy $E = \sum \|\boldsymbol{\tau} \odot \mathbf{v}\| \cdot \Delta t$ along the path (inverse dynamics at constant velocity segments).
+    \end{itemize}
+\end{enumerate}
 
-Note that the equation is centered using a center tab stop. Be sure that the symbols in your equation have been defined before or immediately following the equation. Use "(1)", not "Eq. (1)" or "equation (1)", except at the beginning of a sentence: "Equation (1) is . . ."
+\subsection{Reward Function}
 
-\subsection{Some Common Mistakes}
-\begin{itemize}
+The scalar reward is
+\[
+r(\theta) = \frac{1}{N} \sum_{i=1}^N \Bigl[ 
+100 \cdot \mathbb{I}[\text{success}] 
+- p_i 
+- 100 \cdot (e_{\text{start},i} + e_{\text{goal},i})
++ 10 \cdot (\mu_{\text{start},i} + \mu_{\text{goal},i})
+- (n - 2)
+- 0.01 \cdot E_i 
+\Bigr],
+\]
+where $N=2$ is the number of start–goal pairs, success is a valid IK + RRT path, and the weights were tuned to balance the competing objectives (reachability, shortness, dexterity, simplicity, efficiency). The final optimization problem is therefore
+\[
+\theta^* = \arg\max_{\theta} \mathbb{E}_{\pi(\cdot|\phi)} \bigl[ r(\theta) \bigr],
+\]
+where $\pi$ is a PPO policy with parameters $\phi$ that directly outputs morphologies.
 
+% \begin{figure}[t]
+%     \centering
+%     \includegraphics[width=0.9\columnwidth]{figures/task_visualization.pdf}
+%     \caption{Container task used for morphology evaluation. Start (blue) and goal (red) poses with obstacle geometry.}
+%     \label{fig:task}
+% \end{figure}
 
-\item The word "data" is plural, not singular.
-\item The subscript for the permeability of vacuum ?0, and other common scientific constants, is zero with subscript formatting, not a lowercase letter "o".
-\item In American English, commas, semi-/colons, periods, question and exclamation marks are located within quotation marks only when a complete thought or name is cited, such as a title or full quotation. When quotation marks are used, instead of a bold or italic typeface, to highlight a word or phrase, punctuation should appear outside of the quotation marks. A parenthetical phrase or statement at the end of a sentence is punctuated outside of the closing parenthesis (like this). (A parenthetical sentence is punctuated within the parentheses.)
-\item A graph within a graph is an "inset", not an "insert". The word alternatively is preferred to the word "alternately" (unless you really mean something that alternates).
-\item Do not use the word "essentially" to mean "approximately" or "effectively".
-\item In your paper title, if the words "that uses" can accurately replace the word "using", capitalize the "u"; if not, keep using lower-cased.
-\item Be aware of the different meanings of the homophones "affect" and "effect", "complement" and "compliment", "discreet" and "discrete", "principal" and "principle".
-\item Do not confuse "imply" and "infer".
-\item The prefix "non" is not a word; it should be joined to the word it modifies, usually without a hyphen.
-\item There is no period after the "et" in the Latin abbreviation "et al.".
-\item The abbreviation "i.e." means "that is", and the abbreviation "e.g." means "for example".
-
-\end{itemize}
-
+This formulation directly encodes the industrial challenges outlined in Section~I: overactuation (penalized via link count and energy), lack of specialization (task-specific reward), and energy inefficiency (explicit power term). By optimizing the morphology itself as the RL action, we obtain designs that are provably better matched to the task than any fixed industrial arm (e.g., the 7-DoF Panda baseline we compare against).
 
 \section{USING THE TEMPLATE}
 
