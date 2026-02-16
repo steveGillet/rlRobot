@@ -1,15 +1,15 @@
 # Fdb version 4
-["bibtex irosSubmission"] 1771126900.92073 "irosSubmission.aux" "irosSubmission.bbl" "irosSubmission" 1771126901.40469 0
-  "./references.bib" 1771125489.00203 6276 88ad66194283f1b9abfcfeb161352225 ""
+["bibtex irosSubmission"] 1771214574.21672 "irosSubmission.aux" "irosSubmission.bbl" "irosSubmission" 1771214574.68708 0
+  "./references.bib" 1771186311.32246 6439 3d9a489ebd765eb182702dff89df9755 ""
   "/usr/share/texlive/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1440712899 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "irosSubmission.aux" 1771126901.22838 2063 161d13dcbffa4bef38d1966e3154fc70 "pdflatex"
+  "irosSubmission.aux" 1771214574.52064 2717 2e34f6353ee125908137ea50e5c79d5c "pdflatex"
   (generated)
   "irosSubmission.bbl"
   "irosSubmission.blg"
   (rewritten before read)
-["pdflatex"] 1771126900.99017 "/home/steve-gillet/Desktop/rlRobot/pporphit/iros/irosSubmission.tex" "irosSubmission.pdf" "irosSubmission" 1771126901.40481 0
+["pdflatex"] 1771214574.29458 "/home/steve-gillet/Desktop/rlRobot/pporphit/iros/irosSubmission.tex" "irosSubmission.pdf" "irosSubmission" 1771214574.6872 0
   "/etc/texmf/web2c/texmf.cnf" 1757467394.77312 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/steve-gillet/Desktop/rlRobot/pporphit/iros/irosSubmission.tex" 1771126899.90287 14260 1e8ec53515227af4c3020049377fb828 ""
+  "/home/steve-gillet/Desktop/rlRobot/pporphit/iros/irosSubmission.tex" 1771214573.18264 17580 b4bba18e235ed3743b915c8b212604de ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/courier/pcrr7t.tfm" 1136768653 960 379cc0019370a9e0208a0a3f949f847a ""
@@ -52,14 +52,15 @@
   "/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def" 1704491087 30006 57b07afb710ee2f649c65cfbafda39c1 ""
   "/usr/share/texlive/texmf-dist/tex/latex/psnfss/ot1pcr.fd" 1137110629 985 1ed784d7bfe47179f3550d2303b073f8 ""
   "/usr/share/texlive/texmf-dist/tex/latex/psnfss/ot1ptm.fd" 1137110629 961 15056f4a61917ceed3a44e4ac11fcc52 ""
+  "/usr/share/texlive/texmf-dist/tex/latex/url/url.sty" 1388531844 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
   "/usr/share/texlive/texmf-dist/web2c/texmf.cnf" 1707919699 40399 f2c302f7d2af602abb742093540a5834 ""
   "/usr/share/texmf/web2c/texmf.cnf" 1707919699 40399 f2c302f7d2af602abb742093540a5834 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1757467420.83173 5472669 54eaf61a88b6b7896ebd0dac973cb29c ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1757467474 8213095 4eae99bc70fd5a29aaa73b459517d883 ""
   "ieeeconf.cls" 1771090149.30205 202167 7b37f8353df61c9733ed46143eff807a ""
-  "irosSubmission.aux" 1771126901.22838 2063 161d13dcbffa4bef38d1966e3154fc70 "pdflatex"
-  "irosSubmission.bbl" 1771126900.98738 1270 8632aed3586ae38b8ad2e8e98602a546 "bibtex irosSubmission"
-  "irosSubmission.tex" 1771126899.90287 14260 1e8ec53515227af4c3020049377fb828 ""
+  "irosSubmission.aux" 1771214574.52064 2717 2e34f6353ee125908137ea50e5c79d5c "pdflatex"
+  "irosSubmission.bbl" 1771214574.29164 4781 8fc4f37e1fbcc9b76b10e492b8ae1614 "bibtex irosSubmission"
+  "irosSubmission.tex" 1771214573.18264 17580 b4bba18e235ed3743b915c8b212604de ""
   (generated)
   "irosSubmission.aux"
   "irosSubmission.log"

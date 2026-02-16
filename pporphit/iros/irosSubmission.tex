@@ -29,6 +29,7 @@
 %\usepackage{times} % assumes new font selection scheme installed
 %\usepackage{amsmath} % assumes amsmath package installed
 %\usepackage{amssymb}  % assumes amsmath package installed
+\usepackage{url}
 
 \title{\LARGE \bf
 PMorph: A Task-Specialized Robot Manipulator Morphology Optimizer 
@@ -70,20 +71,36 @@ PPO is ideal for this task because it can efficiently optimize over the continuo
 Imagine a factory where every employee has to be trained on and work every job in the plant.
 Imagine how inefficient that would be.
 Every employee would have general knowledge and ability, but no one would have a chance to specialize and become very good at any particular job.
-This is exactly the state of robotics in manufacturing today where high costs, lack of tailorability, and lack of retrofitting are some of the most cited problems for the adoption of robotics \cite{mckinsey2019industrial}.
+This is exactly the state of robotics in manufacturing today where high costs and lack of tailorability are some of the most cited problems for the adoption of robotics \cite{mckinsey2019industrial}\cite{patel2024}.
+To make matters worse \cite{russo2021task} and \cite{he2019underactuated} show that most manipulators are overactuated, less cost-efficient, and less effective for most tasks they are used in today.
 
+This paper seeks to address these issues by using a PPO agent to optimize the morphology of a robotic manipulator to the particular task it is being used for.
+This ensures that the robot is as simple, efficient, and capable as possible for its particular job while still allowing the user to specify the level of robustness by tuning the reward function.
 
+PPO was chosen for its ability to explore the continuous action space that is morphology and it has been shown to do so efficiently and robustly \cite{schulman2017proximal}.
+The core method is to use stable\_baselines3 PPO implementation to iterate on the design parameters (number of links, joint types (X, Y, Z hinge, and Z actuation), and link lengths), use MuJoCo to simulate that iteration on a simple task using RRTConnect and damped least squares (DLS) inverse kinematics (IK) for the path planning, feed the results (success, efficiency, and manipulability index) back into the PPO model.
+RRTConnect was chosen for simplicity and it has been shown to be faster than other methods \cite{kuffner2000rrt} which enables faster and more robust training.
+DLS IK was chosen for a similar reason, it has been shown to be robust especially in situations where the target position is out of reach \cite{buss2004introduction} which is inevitable when exploring morphologies, some of which will be too small or otherwise poorly suited to the task as the agent learns.
 
-\section{PROCEDURE FOR PAPER SUBMISSION}
+The evaluation signals will be successful path planning, path length, energy cost, and manipulability index.
+The manipulability index is a measure of a manipulators ability to arbitrarily change the position and orientation of the end effector at a particular point, borrowed from \cite{yoshikawa1985manipulability}.
+The tasks will be kept simple but varied in ways to test different types of movements like moving near the base, moving from near to far, different elevations, more linear movements, and different obstacle contraints.
+One might imagine that a lot of pick and place tasks are mostly linear and so might largely be done by linear actuators more efficiently for example.
 
-\subsection{Selecting a Template (Heading 2)}
+The research questions to be answered: Can PPO be used to generate more efficient morphologies? Can morphologies be generated for tasks that generalized manipulators cannot do or cannot perform well? Can more simple morphologies (less DOF) be generated that can perform the same tasks with similar levels of accuracy?
 
-First, confirm that you have the correct template for your paper size. This template has been tailored for output on the US-letter paper size. 
-It may be used for A4 paper size if the paper size setting is suitably modified.
+\section{Related Work}
 
-\subsection{Maintaining the Integrity of the Specifications}
+Most of the research in this area codesigns morphology and control of atomic, modular robots. 
+\cite{bhatia2023reinforcement} shows that PPO can be used to generate freeform morphologies optimized for locomotion tasks from a set of atomic modules.
+\cite{tjanaka2023co} shows that reinforcement learning can be used to co-optimize morphology and control for a modular robot that outperforms optimizing motion on a fixed morphology in a simulated environment. 
+\cite{spielberg2025accelerated} also uses reinforcement learning to co-optimize with the addition of a pretrained foundation model to accelerate the training process and improve results.
 
-The template is used to format your paper and style the text. All margins, column widths, line spaces, and text fonts are prescribed; please do not alter them. You may note peculiarities. For example, the head margin in this template measures proportionately more than is customary. This measurement and others are deliberate, using specifications that anticipate your paper as one part of the entire proceedings, and not as an independent document. Please do not revise any of the current designations
+Most pertinently to this paper, \cite{kalimuthu2023} shows that PPO and A3C can be used to generate optimal morphologies that improve performance of reconfigurable robots,
+\cite{ding2024modular} uses DDQN to co-optimize morphology and control for modular robotic manipulators, and \cite{luck2019data} uses soft actor critic for co-optimization showing that the approach resulted in drastically less design prototypes.
+This background motivates the approach of this paper which is going to use simple controllers and similar reinforcement learning techniques to maximize morphological potential.
+FANUC 6-DOF series of manipulators are the most commonly used in industry today \cite{patentpc2025toprobotics}\cite{standardbots2025fanucprice} and so their morphology will be used as a baseline for comparison.
+Given the same environment, task, and controllers which morphologies will perform better?
 
 \section{MATH}
 
