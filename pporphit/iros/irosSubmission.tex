@@ -249,6 +249,75 @@ The reward terms are averaged over that test set to assess performance.
 A comparison is made using the baseline FANUC-like arm morphology.
 Based on the most commonly used model (FANUC LR Mate 200iD \cite{fanuc2024lrmate}), the baseline has 6 links, with lengths of 0.165, 0.330, 0.08, 0.285, 0.05, 0.05 (meters), and joint types of 2, 0, 0, 2, 0, 2 (revolute about z, x, x, z, x, z).
 
+\section{Experimental Setup}
+
+To evaluate PMorph, we conducted experiments in the MuJoCo simulation environment (version 3.3.7) using the container task defined in Section~\ref{sec:task}. All training and evaluation used the same evaluation pipeline (XML generation, robust DLS IK, RRT-Connect) and reward function from Section~\ref{sec:eval}.
+
+\subsection{Tasks}
+
+The primary task is the \emph{container task} (Fig.~\ref{fig:containerTask}), which models a realistic manufacturing pick-and-place scenario inside a confined workspace (2m × 1m × 1m) with fixed obstacles (walls, ceiling, floor). The robot must transport objects between two noisy start--goal pose pairs:
+\begin{itemize}
+    \item Start 1: \([-1.8, 0.3, 0.3, 0.7071, 0, -0.7071, 0]\)
+    \item Goal 1: \([1.9, 0.9, 0.4, 0.7071, 0, 0.7071, 0]\)
+    \item Start 2: \([-1.8, 0.8, 0.4, 0.7071, 0, -0.7071, 0]\)
+    \item Goal 2: \([1.8, 0.31, 0.2, 0.7071, 0, 0.7071, 0]\)
+\end{itemize}
+Poses are corrupted with Gaussian noise \(\sigma=0.05\) to promote robust morphologies. 
+
+For broader validation, we also tested on three variants (from the original task set):
+\begin{enumerate}
+    \item \textbf{Basic}: Linear motion at average height/distance.
+    \item \textbf{Shelf}: Vertical motion with intermediate obstacle.
+    \item \textbf{Multi-task}: Four opposing motions (near/far, low/high).
+\end{enumerate}
+
+\subsection{Baselines}
+
+We compare against two fixed industrial morphologies:
+\begin{itemize}
+    \item \textbf{FANUC LR Mate 200iD} (most common 6-DoF model, 70,000+ installed \cite{fanuc2024lrmate}): \(n=6\), lengths \([0.165, 0.330, 0.08, 0.285, 0.05, 0.05]\) m (scaled from official datasheet), joint types \([2, 0, 0, 2, 0, 2]\) (all revolute).
+    \item \textbf{Franka Panda} (7-DoF research standard): \(n=7\), lengths \(2\times[0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01]\) m, joint types \([2, 1, 2, 0, 2, 0, 2]\).
+\end{itemize}
+
+All baselines use identical IK, planning, and reward computation for fair comparison.
+
+\subsection{Metrics}
+
+Performance is measured by the average reward \(r(\theta)\) over 100 test episodes (with fresh noise). We also report component-wise breakdowns:
+\begin{itemize}
+    \item Success rate: fraction of valid IK + RRT paths.
+    \item Path length \(p\) (m).
+    \item Energy \(E\) (J).
+    \item Manipulability \(\mu\) (min singular value).
+    \item Link count \(n\).
+\end{itemize}
+Results are averaged over 3 random seeds with 95\% confidence intervals.
+
+\subsection{Implementation and Compute}
+
+Training used Stable Baselines3 PPO (1M timesteps, single-step episodes) on an NVIDIA RTX 4060 GPU (or CPU fallback: 11th Gen Intel i9-11900KF). The environment was vectorized with 24 parallel instances (`SubprocVecEnv`). Full hyperparameters are in Table~\ref{tab:hyperparams}.
+
+\begin{table}[H]
+\caption{PPO Hyperparameters}
+\label{tab:hyperparams}
+\centering
+\begin{tabular}{ll}
+\hline
+\textbf{Parameter} & \textbf{Value} \\
+\hline
+Learning rate & 0.001 \\
+Horizon (\(n_\text{steps}\)) & 256 \\
+Batch size & 512 \\
+Epochs per update & 4 \\
+Discount factor (\(\gamma\)) & 0.98 \\
+Clip ratio (\(\epsilon\)) & 0.2 \\
+Value loss coefficient (\(\beta\)) & 0.5 \\
+Entropy coefficient & 0.0 \\
+\hline
+\end{tabular}
+\end{table}
+All code, models, and logs are available in the supplementary material.
+
 \section{CONCLUSIONS}
 
 A conclusion section is not required. Although a conclusion may review the main points of the paper, do not replicate the abstract as the conclusion. A conclusion might elaborate on the importance of the work or suggest applications and extensions. 
