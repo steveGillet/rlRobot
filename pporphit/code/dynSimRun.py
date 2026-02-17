@@ -417,14 +417,19 @@ def generateXML(numJoints, lengths, jointTypes):
 # ─────────────
 # Main script
 # ─────────────
-numLinks = 2
-lengths = np.array([0.77285725, 1.1999999])
-jointTypes = np.array([1, 0])
+# numLinks = 2
+# lengths = np.array([0.77285725, 1.1999999])
+# jointTypes = np.array([1, 0])
 # # PANDA
 # numLinks = 7
 # sizeMultiplier = 2
 # lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
 # jointTypes = np.array([2, 1, 2, 0, 2, 0, 2])
+# FANUC
+numLinks = 6
+sizeMultiplier = 2
+lengths = sizeMultiplier * np.array([0.165, 0.330, 0.08, 0.285, 0.05, 0.05])
+jointTypes = np.array([2, 0, 0, 2, 0, 2])
 
 xml = generateXML(numLinks, lengths, jointTypes)
 model = mujoco.MjModel.from_xml_string(xml)

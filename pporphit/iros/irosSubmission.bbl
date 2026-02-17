@@ -76,4 +76,17 @@ K.~S. Luck, H.~B. Amor, R.~Calandra, and J.~Peters, ``Data-efficient co-adaptati
 {Standard Bots}, ``Fanuc robot prices: Cost, models, and buying insights in 2025,'' 2025. [Online]. Available: \url{https://standardbots.com/blog/fanuc-robot-price}
 \BIBentrySTDinterwordspacing
 
+\bibitem{klein1987dexterity}
+\BIBentryALTinterwordspacing
+C.~A. Klein and B.~E. Blaho, ``Dexterity measures for the design and control of kinematically redundant manipulators,'' \emph{The International Journal of Robotics Research}, vol.~6, no.~2, pp. 72--83, June 1987. [Online]. Available: \url{https://doi.org/10.1177/027836498700600206}
+\BIBentrySTDinterwordspacing
+
+\bibitem{schulman2015high}
+J.~Schulman, P.~Moritz, S.~Levine, M.~I. Jordan, and P.~Abbeel, ``High-dimensional continuous control using generalized advantage estimation,'' \emph{arXiv preprint arXiv:1506.02438}, 2015.
+
+\bibitem{fanuc2024lrmate}
+\BIBentryALTinterwordspacing
+F.~America, ``Lr mate 200id data sheet,'' 2024. [Online]. Available: \url{https://www.fanucamerica.com/docs/default-source/robotics-files/lr-mate/lr-mate-200id-data-sheet.pdf}
+\BIBentrySTDinterwordspacing
+
 \end{thebibliography}

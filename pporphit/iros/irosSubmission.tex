@@ -30,6 +30,9 @@
 \usepackage{amsmath} % assumes amsmath package installed    
 \usepackage{amssymb}  % assumes amsmath package installed
 \usepackage{url}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{algorithm,algpseudocode}
 
 \title{\LARGE \bf
 PMorph: A Task-Specialized Robot Manipulator Morphology Optimizer 
@@ -72,14 +75,14 @@ Imagine a factory where every employee has to be trained on and work every job i
 Imagine how inefficient that would be.
 Every employee would have general knowledge and ability, but no one would have a chance to specialize and become very good at any particular job.
 This is exactly the state of robotics in manufacturing today where high costs and lack of tailorability are some of the most cited problems for the adoption of robotics \cite{mckinsey2019industrial}\cite{patel2024}.
-To make matters worse \cite{russo2021task} and \cite{he2019underactuated} show that most manipulators are overactuated, less cost-efficient, and less effective for most tasks they are used in today.
+To make matters worse \cite{russo2021task} and \cite{he2019underactuated} show that most manipulators are overactuated, inefficient, and ineffective for most tasks they are used in today.
 
 This paper seeks to address these issues by using a PPO agent to optimize the morphology of a robotic manipulator to the particular task it is being used for.
-This ensures that the robot is as simple, efficient, and capable as possible for its particular job while still allowing the user to specify the level of robustness by tuning the reward function.
+This ensures that the robot is as simple, efficient, and capable as possible for its particular job while still allowing the designer to specify the level of robustness.
 
 PPO was chosen for its ability to explore the continuous action space that is morphology and it has been shown to do so efficiently and robustly \cite{schulman2017proximal}.
-The core method is to use stable\_baselines3 PPO implementation to iterate on the design parameters (number of links, joint types (X, Y, Z hinge, and Z actuation), and link lengths), use MuJoCo to simulate that iteration on a simple task using RRTConnect and damped least squares (DLS) inverse kinematics (IK) for the path planning, feed the results (success, efficiency, and manipulability index) back into the PPO model.
-RRTConnect was chosen for simplicity and it has been shown to be faster than other methods \cite{kuffner2000rrt} which enables faster and more robust training.
+The core method is to use Stable Baselines3 PPO implementation to iterate on the design parameters (number of links, joint types (X, Y, Z hinge, and Z actuation), and link lengths), use MuJoCo to simulate that iteration on a simple task using RRT-Connect and damped least squares (DLS) inverse kinematics (IK) for the path planning, feed the results (success, efficiency, and manipulability index) back into the PPO model.
+RRT-Connect was chosen for simplicity and it has been shown to be faster than other methods \cite{kuffner2000rrt} which enables faster and more robust training.
 DLS IK was chosen for a similar reason, it has been shown to be robust especially in situations where the target position is out of reach \cite{buss2004introduction} which is inevitable when exploring morphologies, some of which will be too small or otherwise poorly suited to the task as the agent learns.
 
 The evaluation signals will be successful path planning, path length, energy cost, and manipulability index.
@@ -127,94 +130,124 @@ from which $n$, $l$, and $j$ are decoded.
 
 \subsection{Task Specification}
 
-The robot must transport objects between start poses $\mathbf{s}_i$ and goal poses $\mathbf{g}_i$ (position + unit quaternion) inside a cluttered workspace containing fixed obstacles (container walls and floor). We use the \emph{container task} (see Fig.~\ref{fig:task}), which captures typical manufacturing constraints: narrow access, tight tolerances, and collision risks. Poses are corrupted with Gaussian noise ($\sigma=0.05$) at test time to encourage robust designs.
+The robot has to move from start poses to goal poses (position + unit quaternion) in a cluttered workspace with fixed obstacles (walls, shelves, ceilings).
+An example of such an environment may be seen in Figure \ref{fig:containerTask}, which shows the container task where two sets of start and goal poses are set at either ends of a shipping-container-like workspace with the arm positioned in the middle.
+The poses are modified with Gaussian noise ($\sigma=0.05$) at evaluation in order to encourage robust designs.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\columnwidth]{containerTask.png}
+  \caption{Container task. Start and goal positions represented with blue and red dots surrounded by wall and ceiling obstacles.}
+  \label{fig:containerTask}
+\end{figure}
 
 \subsection{Evaluation Pipeline}
 
-Given a morphology $\theta$, we evaluate it via the deterministic procedure $\texttt{eval}(\theta)$:
+Morphology $\theta$ is evaluated as follows:
 \begin{enumerate}
-    \item Generate a MuJoCo XML model (dynamic link/joint assembly).
-    \item Solve inverse kinematics for all start and goal poses using robust damped least-squares (DLS) with collision-aware line search.
-    \item If any IK fails (error $>0.1$ rad/m), return reward $-100$.
-    \item Plan a collision-free path using RRT-Connect.
-    \item If no path is found, return reward $30 - 100 \times \text{IK error}$.
-    \item Otherwise, compute:
+    \item A MuJoCo XML model is generated with $\theta$ and the task poses/obstacles.
+    \item Inverse Kinematics is solved for the start and goal poses using Damped Least Squares.
+    \item A path between the start and goal configurations is computed using RRT-Connect.
+    \item If a path connect be found, return reward $30 - 100 \times \text{IK error}$.
+    \item Otherwise, calculate the other reward terms and return the weighted sum:
     \begin{itemize}
-        \item End-effector path length $p = \sum \|\mathbf{x}_{ee}^{t+1} - \mathbf{x}_{ee}^t\|$,
-        \item Manipulability $\mu = \min(\sigma(\mathbf{J}))$ at start and goal (Yoshikawa, 1985),
-        \item Energy $E = \sum \|\boldsymbol{\tau} \odot \mathbf{v}\| \cdot \Delta t$ along the path (inverse dynamics at constant velocity segments).
+        \item End-effector path length $p = \sum \|\mathbf{x}_{ee}^{t+1} - \mathbf{x}_{ee}^t\|$ (Euclidean distance between each point along path),
+        \item Manipulability $\mu = \min(\sigma(\mathbf{J}))$ (minimum singular value of manipulability jacobian at start and goal \cite{klein1987dexterity}),
+        \item Energy $E = \sum \|\boldsymbol{\tau} \odot \mathbf{v}\| \cdot \Delta t$ (MuJoCo inverse dynamics using constant velocity segments along path at torque limits).
     \end{itemize}
 \end{enumerate}
 
 \subsection{Reward Function}
 
 The scalar reward is
-\[
-r(\theta) = \frac{1}{N} \sum_{i=1}^N \Bigl[ 
-100 \cdot \mathbb{I}[\text{success}] 
-- p_i 
-- 100 \cdot (e_{\text{start},i} + e_{\text{goal},i})
-+ 10 \cdot (\mu_{\text{start},i} + \mu_{\text{goal},i})
-- (n - 2)
-- 0.01 \cdot E_i 
-\Bigr],
-\]
-where $N=2$ is the number of start–goal pairs, success is a valid IK + RRT path, and the weights were tuned to balance the competing objectives (reachability, shortness, dexterity, simplicity, efficiency). The final optimization problem is therefore
+\begin{align}
+r(\theta) &= \frac{1}{N} \sum_{i=1}^{N} \Biggl[ 
+    w_0 \cdot \text{success}_i 
+    - w_1 \cdot p_i \notag \\
+    &\quad - w_2 \cdot (e_{\text{start},i} + e_{\text{goal},i}) 
+    + w_3 \cdot (\mu_{\text{start},i} + \mu_{\text{goal},i}) \notag \\
+    &\quad - w_4 \cdot (n - 2) 
+    - w_5 \cdot E_i 
+\Biggr]
+\label{eq:reward}
+\end{align}
+where $N$ is the number of start–goal pairs, $e$ is IK error, success is valid path, and the weights ($w_k$) are tuned to balance the competing objectives (accuracy vs. efficiency vs. manipulability). 
+The final optimization problem is therefore
 \[
 \theta^* = \arg\max_{\theta} \mathbb{E}_{\pi(\cdot|\phi)} \bigl[ r(\theta) \bigr],
 \]
-where $\pi$ is a PPO policy with parameters $\phi$ that directly outputs morphologies.
+where $\pi$ is the PPO policy given the parameters $\phi$.
 
-% \begin{figure}[t]
-%     \centering
-%     \includegraphics[width=0.9\columnwidth]{figures/task_visualization.pdf}
-%     \caption{Container task used for morphology evaluation. Start (blue) and goal (red) poses with obstacle geometry.}
-%     \label{fig:task}
-% \end{figure}
+This formulation encodes the challenges outlined in Section 1:
+\begin{enumerate}
+    \item Energy efficiency via the energy term.
+    \item Task specialization via the success, accuracy, and manipulability terms.
+    \item And simplicity via the link number and path length terms.
+\end{enumerate}
 
-This formulation directly encodes the industrial challenges outlined in Section~I: overactuation (penalized via link count and energy), lack of specialization (task-specific reward), and energy inefficiency (explicit power term). By optimizing the morphology itself as the RL action, we obtain designs that are provably better matched to the task than any fixed industrial arm (e.g., the 7-DoF Panda baseline we compare against).
+\section{Method}
 
-\section{USING THE TEMPLATE}
+\subsection{PPO Action Decoding}
 
-Use this sample document as your LaTeX source file to create your document. Save this file as {\bf root.tex}. You have to make sure to use the cls file that came with this distribution. If you use a different style file, you cannot expect to get required margins. Note also that when you are creating your out PDF file, the source file is only part of the equation. {\it Your \TeX\ $\rightarrow$ PDF filter determines the output file size. Even if you make all the specifications to output a letter file in the source - if your filter is set to produce A4, you will only get A4 output. }
+The PPO agent selects an action $a \in [0,1]^{15}$ which is then decoded into morphology parameters $\theta$ as shown in Algorithm \ref{alg:decode}.
 
-It is impossible to account for all possible situation, one would encounter using \TeX. If you are using multiple \TeX\ files you must make sure that the ``MAIN`` source file is called root.tex - this is particularly important if your conference is using PaperPlaza's built in \TeX\ to PDF conversion tool.
+\begin{algorithm}[H]
+\caption{Morphology Decoding from PPO Action}
+\label{alg:decode}
+\begin{algorithmic}[1]
+\State \textbf{Input:} action \(a \in [0,1]^{15}\)
+\State \(n \gets \text{round}(a_0 \cdot (7-2) + 2)\) \Comment{links: 2--7}
+\State \({l} \gets a_{1:8} \cdot (1.2 - 0.05) + 0.05\) \Comment{lengths (m)}
+\State \({j} \gets \text{round}(a_{8:15} \cdot 3)\) \Comment{types: 0--3 (hinge X/Y/Z, slide Z)}
+\State \textbf{Return:} \(\theta = (n, {l}_{:n}, {j}_{:n})\)
+\end{algorithmic}
+\end{algorithm}
 
-\subsection{Headings, etc}
+\subsection{Simulation}
 
-Text heads organize the topics on a relational, hierarchical basis. For example, the paper title is the primary text head because all subsequent material relates and elaborates on this one topic. If there are two or more sub-topics, the next level head (uppercase Roman numerals) should be used and, conversely, if there are not at least two sub-topics, then no subheads should be introduced. Styles named "Heading 1", "Heading 2", "Heading 3", and "Heading 4" are prescribed.
+$\theta$ is then passed into the evaluation environment, which is implemented as a Gymnasium class `robotArmEnv'.
 
-\subsection{Figures and Tables}
+\begin{enumerate}
+    \item \textbf{XML Generation}: A dynamic MuJoCo model is built via `generateXML($n$, $l$, $j$)', which assembles the links sequentially according to the parameter specifications using revolute/slide joints and capsule geoms (mass = $l_i$). Fixed obstacles (walls, ceiling, shelves, floor) are included as per the task set up.
+    \item \textbf{Path Planning}: Damped least-squares IK (robust variant with collision-aware line search) solves for start/goal configurations. RRT-Connect then finds a collision-free joint-space path \cite{kuffner2000rrt}, using constant-velocity segments for energy estimation via MuJoCo inverse dynamics.
+    \item \textbf{Reward Computation}: \(r(\theta)\) from Eq.~\eqref{eq:reward} is returned with \(N\) being the number of sets of start and goal poses in the task and noise (\(\sigma=0.05\)) added to poses for robustness.
+\end{enumerate}
 
-Positioning Figures and Tables: Place figures and tables at the top and bottom of columns. Avoid placing them in the middle of columns. Large figures and tables may span across both columns. Figure captions should be below the figures; table heads should appear above the tables. Insert figures and tables after they are cited in the text. Use the abbreviation "Fig. 1", even at the beginning of a sentence.
+\subsection{Training}
 
-\begin{table}[h]
-\caption{An Example of a Table}
-\label{table_example}
-\begin{center}
-\begin{tabular}{|c||c|}
-\hline
-One & Two\\
-\hline
-Three & Four\\
-\hline
-\end{tabular}
-\end{center}
-\end{table}
+Training follows the standard PPO loop over 1M timesteps (single-step episodes):
 
+\begin{algorithm}[H]
+\caption{PMorph Training}
+\label{alg:train}
+\begin{algorithmic}[1]
+\State Initialize PPO policy \(\pi_\phi\)
+\For{each episode \(t = 1\) to 1M}
+    \State Sample \(\theta \sim \pi_\phi(\cdot|\phi)\)
+    \State \(r \gets \texttt{eval}(\theta)\) \Comment{Section FILLIN}
+    \State Store \((\theta, r)\) in buffer
+    \State Update \(\phi\) via the clipped surrogate loss \cite{schulman2017proximal}:
+    \[
+    \begin{aligned}
+    \mathcal{L}(\phi) &= \hat{\mathbb{E}}_t \Bigl[ 
+        \min\bigl( r_t(\phi) \hat{A}_t,\; \\
+        &\quad \text{clip}\bigl(r_t(\phi), 1-\epsilon, 1+\epsilon\bigr) \hat{A}_t \bigr) \Bigr] \\
+        &\quad + S[\pi_\phi](s_t) - \beta \cdot \mathbb{E}_t \bigl[ (\hat{V}_\phi(s_t) - V_t^{\text{targ}})^2 \bigr]
+    \end{aligned}
+    \]
+    \Comment{\(\epsilon=0.2\), GAE advantages \cite{schulman2015high}}
+\EndFor
+\end{algorithmic}
+\end{algorithm}
 
-   \begin{figure}[thpb]
-      \centering
-      \framebox{\parbox{3in}{We suggest that you use a text box to insert a graphic (which is ideally a 300 dpi TIFF or EPS file, with all fonts embedded) because, in an document, this method is somewhat more stable than directly inserting a picture.
-}}
-      %\includegraphics[scale=1.0]{figurefile}
-      \caption{Inductance of oscillation winding on amorphous
-       magnetic core versus DC bias magnetic field}
-      \label{figurelabel}
-   \end{figure}
-   
+Hyperparameters: \(\epsilon=0.2\) (clip ratio) and \(\beta=0.5\) (value loss weight)
 
-Figure Labels: Use 8 point Times New Roman for Figure labels. Use words rather than symbols or abbreviations when writing Figure axis labels to avoid confusing the reader. As an example, write the quantity "Magnetization", or "Magnetization, M", not just "M". If including units in the label, present them within parentheses. Do not label axes only with units. In the example, write "Magnetization (A/m)" or "Magnetization {A[m(1)]}", not just "A/m". Do not label axes with a ratio of quantities and units. For example, write "Temperature (K)", not "Temperature/K."
+\subsection{Evaluation}
+
+After training, the optimized morphology \(\theta^*\) is evaluated on a test set of start/goal pairs with noise.
+The reward terms are averaged over that test set to assess performance.
+A comparison is made using the baseline FANUC-like arm morphology.
+Based on the most commonly used model (FANUC LR Mate 200iD \cite{fanuc2024lrmate}), the baseline has 6 links, with lengths of 0.165, 0.330, 0.08, 0.285, 0.05, 0.05 (meters), and joint types of 2, 0, 0, 2, 0, 2 (revolute about z, x, x, z, x, z).
 
 \section{CONCLUSIONS}
 
