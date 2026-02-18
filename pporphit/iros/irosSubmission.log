@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.9.9)  16 FEB 2026 21:51
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.9.9)  18 FEB 2026 03:54
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -284,51 +284,53 @@ Underfull \hbox (badness 1755) in paragraph at lines 54--54
 <containerTask.png, id=12, 1967.35pt x 1404.24625pt>
 File: containerTask.png Graphic file (type png)
 <use containerTask.png>
-Package pdftex.def Info: containerTask.png  used on input line 139.
+Package pdftex.def Info: containerTask.png  used on input line 141.
 (pdftex.def)             Requested size: 221.14479pt x 157.8316pt.
  [2 <./containerTask.png>]
+<wallMountTask.png, id=29, 1967.35pt x 1404.24625pt>
+File: wallMountTask.png Graphic file (type png)
+<use wallMountTask.png>
+Package pdftex.def Info: wallMountTask.png  used on input line 302.
+(pdftex.def)             Requested size: 221.14479pt x 157.8316pt.
+ [3 <./wallMountTask.png>]
+<shelfTask.png, id=34, 1967.35pt x 1404.24625pt>
+File: shelfTask.png Graphic file (type png)
+<use shelfTask.png>
+Package pdftex.def Info: shelfTask.png  used on input line 343.
+(pdftex.def)             Requested size: 221.14479pt x 157.8316pt.
 
-LaTeX Warning: Reference `sec:task' on page 3 undefined on input line 254.
-
-
-LaTeX Warning: Reference `sec:eval' on page 3 undefined on input line 254.
-
-LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 258.
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd
-File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
-)
-Underfull \hbox (badness 10000) in paragraph at lines 271--272
-[]\OT1/ptm/b/n/10 Multi-task\OT1/ptm/m/n/10 : Four op-pos-ing mo-tions (near/far,
- []
-
-
-Underfull \hbox (badness 1642) in paragraph at lines 278--279
+Underfull \hbox (badness 1642) in paragraph at lines 421--422
 []\OT1/ptm/b/n/10 FANUC LR Mate 200iD \OT1/ptm/m/n/10 (most com-mon 6-DoF
  []
 
 
-Underfull \hbox (badness 1939) in paragraph at lines 278--279
+Underfull \hbox (badness 1939) in paragraph at lines 421--422
 \OT1/ptm/m/n/10 model, 70,000+ in-stalled [[]]): $\OML/cmm/m/it/10 n \OT1/cmr/m/n/10 = 6$\OT1/ptm/m/n/10 , lengths
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 279--280
+Underfull \hbox (badness 10000) in paragraph at lines 422--423
 []\OT1/ptm/b/n/10 Franka Panda \OT1/ptm/m/n/10 (7-DoF re-search
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 279--280
+Underfull \hbox (badness 10000) in paragraph at lines 422--423
 \OT1/ptm/m/n/10 stan-dard): $\OML/cmm/m/it/10 n \OT1/cmr/m/n/10 = 7$\OT1/ptm/m/n/10 , lengths $\OT1/cmr/m/n/10 2 \OMS/cmsy/m/n/10 ^^B
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 279--280
+Underfull \hbox (badness 10000) in paragraph at lines 422--423
 \OT1/cmr/m/n/10 [0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 333\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 316\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 0825\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 0825\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 384\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 088\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 01]$
  []
 
-[3] (./irosSubmission.bbl
+[4 <./shelfTask.png>] (./irosSubmission.bbl
 Underfull \hbox (badness 10000) in paragraph at lines 25--27
 \OT1/ptm/m/n/8 / / www . mckinsey . com / business-[]functions / operations / our-[]insights /
+ []
+
+
+Underfull \hbox (badness 1675) in paragraph at lines 83--84
+[]\OT1/ptm/m/n/8 A. A. Oliva, F. Spindler, P. R. Gior-dano, and F. Chaumette,
  []
 
 )
@@ -343,29 +345,25 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the US letter (8.5in X 11in) paper size.
 
-[4] (./irosSubmission.aux)
+[5] (./irosSubmission.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
-
-
-LaTeX Warning: There were undefined references.
-
  ) 
 Here is how much of TeX's memory you used:
  4057 strings out of 474222
- 62271 string characters out of 5748734
+ 62456 string characters out of 5748734
  1946975 words of memory out of 5000000
- 26250 multiletter control sequences out of 15000+600000
- 608206 words of font info for 143 fonts, out of 8000000 for 9000
+ 26254 multiletter control sequences out of 15000+600000
+ 607892 words of font info for 142 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 57i,13n,65p,492b,344s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 57i,13n,65p,492b,404s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on irosSubmission.pdf (4 pages, 511735 bytes).
+Output written on irosSubmission.pdf (5 pages, 1045495 bytes).
 PDF statistics:
- 111 PDF objects out of 1000 (max. 8388607)
- 66 compressed objects within 1 object stream
+ 118 PDF objects out of 1000 (max. 8388607)
+ 68 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 6 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 16 words of extra memory for PDF output out of 10000 (max. 10000000)
 

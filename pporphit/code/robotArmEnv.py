@@ -180,17 +180,17 @@ class robotArmEnv(gym.Env):
                 self.logger.debug(f"Energy Cost: {energyCost}")
                 self.logger.debug(f"End Effector Path Length: {eePathLength}")
             
-                print(f"Path Length Penalty: {-1 * eePathLength}")
-                print(f"Accuracy Penalty: {-100 * (startError + goalError)}")
-                print(f"Manipulability Bonus: {10 * (muStart + muGoal)}")
-                print(f"Link Number Penalty: {-1 * (numLinks - self.minNumLinks)}")
-                print(f"Energy Cost Penalty: {-0.01 * energyCost}")
-                reward += 100 - 1 * eePathLength - 100 * (startError + goalError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks) - 0.01 * energyCost
+                # print(f"Path Length Penalty: {-0.1 * eePathLength}")
+                # print(f"Accuracy Penalty: {-100 * (startError + goalError)}")
+                # print(f"Manipulability Bonus: {1 * (muStart + muGoal)}")
+                # print(f"Link Number Penalty: {-0.1 * (numLinks - self.minNumLinks)}")
+                # print(f"Energy Cost Penalty: {-0.001 * energyCost}")
+                reward += 100 - 0.1 * eePathLength - 100 * (startError + goalError) + 1 * (muStart + muGoal) - 0.1 * (numLinks - self.minNumLinks) - 0.001 * energyCost
             else:
-                print(f"Accuracy Penalty: {-100 * (startError + goalError)}")
-                print(f"Manipulability Bonus: {10 * (muStart + muGoal)}")
-                print(f"Link Number Penalty: {-1 * (numLinks - self.minNumLinks)}")
-                reward += 30 - 100 * (startError + goalError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks)
+                # print(f"Accuracy Penalty: {-100 * (startError + goalError)}")
+                # print(f"Manipulability Bonus: {1 * (muStart + muGoal)}")
+                # print(f"Link Number Penalty: {-0.1 * (numLinks - self.minNumLinks)}")
+                reward += 30 - 100 * (startError + goalError) + 1 * (muStart + muGoal) - 0.1 * (numLinks - self.minNumLinks)
                 # reward += (
                 #     30
                 #     - 200 * (startError + goalError)
@@ -203,19 +203,19 @@ class robotArmEnv(gym.Env):
         return avgReward
 
     def step(self, action):
-        # # PPO GENERATED
-        # numLinks = int(np.round(action[0] * (self.maxNumLinks - self.minNumLinks) + self.minNumLinks))
-        # lengths = (action[1:(self.maxNumLinks + 1)] * (self.maxLength - self.minLength) + self.minLength)[:numLinks]
-        # jointTypes = np.round(action[(1 + self.maxNumLinks):] * 3)[:numLinks].astype(int)
+        # PPO GENERATED
+        numLinks = int(np.round(action[0] * (self.maxNumLinks - self.minNumLinks) + self.minNumLinks))
+        lengths = (action[1:(self.maxNumLinks + 1)] * (self.maxLength - self.minLength) + self.minLength)[:numLinks]
+        jointTypes = np.round(action[(1 + self.maxNumLinks):] * 3)[:numLinks].astype(int)
         # # TEST
         # numLinks = 2
         # lengths = np.array([0.77285725, 1.1999999])
         # jointTypes = np.array([1, 0])
-        # PANDA
-        numLinks = 7
-        sizeMultiplier = 2
-        lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
-        jointTypes = np.array([2, 1, 2, 0, 2, 0, 2])
+        # # PANDA
+        # numLinks = 7
+        # sizeMultiplier = 2
+        # lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
+        # jointTypes = np.array([2, 1, 2, 0, 2, 0, 2])
 
         # print("Num Links: ", numLinks)
         # print("Lengths: ", lengths)

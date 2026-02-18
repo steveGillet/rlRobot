@@ -15,10 +15,13 @@
 \citation{luck2019data}
 \citation{patentpc2025toprobotics}
 \citation{standardbots2025fanucprice}
+\citation{haddadin2022franka}
+\citation{oliva2022franksim}
 \@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {II}Related Work}{1}{}\protected@file@percent }
 \citation{klein1987dexterity}
 \@writefile{toc}{\contentsline {section}{\numberline {III}Problem Formulation}{2}{}\protected@file@percent }
+\newlabel{sec:problem}{{III}{2}{}{}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {III-A}Morphology Parameterization}{2}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {III-B}Task Specification}{2}{}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Container task. Start and goal positions represented with blue and red dots surrounded by wall and ceiling obstacles.}}{2}{}\protected@file@percent }
@@ -34,7 +37,7 @@
 \citation{schulman2017proximal}
 \citation{schulman2015high}
 \citation{fanuc2024lrmate}
-\citation{fanuc2024lrmate}
+\citation{franka2024research3}
 \@writefile{toc}{\contentsline {subsection}{\numberline {IV-B}Simulation}{3}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {IV-C}Training}{3}{}\protected@file@percent }
 \@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces PMorph Training}}{3}{}\protected@file@percent }
@@ -42,9 +45,30 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {IV-D}Evaluation}{3}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {V}Experimental Setup}{3}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {V-A}Tasks}{3}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {V-B}Baselines}{3}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {V-C}Metrics}{3}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {V-D}Implementation and Compute}{3}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Container Task Poses}}{3}{}\protected@file@percent }
+\newlabel{tab:containerPoses}{{I}{3}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Container Task Obstacles}}{3}{}\protected@file@percent }
+\newlabel{tab:containerObstacles}{{II}{3}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Wall Mount task.}}{3}{}\protected@file@percent }
+\newlabel{fig:wallMountTask}{{2}{3}{}{}{}}
+\citation{fanuc2024lrmate}
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Wall Mount Task Poses}}{4}{}\protected@file@percent }
+\newlabel{tab:wallMountPoses}{{III}{4}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Wall Mount Task Obstacles}}{4}{}\protected@file@percent }
+\newlabel{tab:wallMountObstacles}{{IV}{4}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Shelf task.}}{4}{}\protected@file@percent }
+\newlabel{fig:shelfTask}{{3}{4}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces Shelf Task Poses}}{4}{}\protected@file@percent }
+\newlabel{tab:simpleShelfPoses}{{V}{4}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces Shelf Task Obstacles}}{4}{}\protected@file@percent }
+\newlabel{tab:simpleShelfObstacles}{{VI}{4}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces Near-Base Outreach Task Poses}}{4}{}\protected@file@percent }
+\newlabel{tab:near-base-poses}{{VII}{4}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VIII}{\ignorespaces Side-to-Side Task Poses}}{4}{}\protected@file@percent }
+\newlabel{tab:side-to-side-poses}{{VIII}{4}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {V-B}Baselines}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {V-C}Metrics}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {V-D}Implementation and Compute}{4}{}\protected@file@percent }
 \bibstyle{IEEEtran}
 \bibdata{references}
 \bibcite{mckinsey2019industrial}{1}
@@ -63,11 +87,14 @@
 \bibcite{luck2019data}{14}
 \bibcite{patentpc2025toprobotics}{15}
 \bibcite{standardbots2025fanucprice}{16}
-\bibcite{klein1987dexterity}{17}
-\bibcite{schulman2015high}{18}
-\bibcite{fanuc2024lrmate}{19}
-\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces PPO Hyperparameters}}{4}{}\protected@file@percent }
-\newlabel{tab:hyperparams}{{I}{4}{}{}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {VI}CONCLUSIONS}{4}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{References}{4}{}\protected@file@percent }
-\gdef \@abspage@last{4}
+\bibcite{haddadin2022franka}{17}
+\bibcite{oliva2022franksim}{18}
+\bibcite{klein1987dexterity}{19}
+\bibcite{schulman2015high}{20}
+\bibcite{fanuc2024lrmate}{21}
+\bibcite{franka2024research3}{22}
+\@writefile{lot}{\contentsline {table}{\numberline {IX}{\ignorespaces PPO Hyperparameters}}{5}{}\protected@file@percent }
+\newlabel{tab:hyperparams}{{IX}{5}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {VI}CONCLUSIONS}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{5}{}\protected@file@percent }
+\gdef \@abspage@last{5}

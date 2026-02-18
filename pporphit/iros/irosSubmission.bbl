@@ -76,6 +76,12 @@ K.~S. Luck, H.~B. Amor, R.~Calandra, and J.~Peters, ``Data-efficient co-adaptati
 {Standard Bots}, ``Fanuc robot prices: Cost, models, and buying insights in 2025,'' 2025. [Online]. Available: \url{https://standardbots.com/blog/fanuc-robot-price}
 \BIBentrySTDinterwordspacing
 
+\bibitem{haddadin2022franka}
+S.~Haddadin \emph{et~al.}, ``The franka emika robot: A reference platform for robotics research and education,'' \emph{IEEE Robotics \& Automation Magazine}, vol.~29, no.~2, pp. 46--64, 2022.
+
+\bibitem{oliva2022franksim}
+A.~A. Oliva, F.~Spindler, P.~R. Giordano, and F.~Chaumette, ``Frankasim: A dynamic simulator for the franka emika robot with visual-servoing enabled capabilities,'' in \emph{ICARCV 2022 - 17th International Conference on Control, Automation, Robotics and Vision}, Singapore, Singapore, Dec 2022, pp. 1--7.
+
 \bibitem{klein1987dexterity}
 \BIBentryALTinterwordspacing
 C.~A. Klein and B.~E. Blaho, ``Dexterity measures for the design and control of kinematically redundant manipulators,'' \emph{The International Journal of Robotics Research}, vol.~6, no.~2, pp. 72--83, June 1987. [Online]. Available: \url{https://doi.org/10.1177/027836498700600206}
@@ -87,6 +93,11 @@ J.~Schulman, P.~Moritz, S.~Levine, M.~I. Jordan, and P.~Abbeel, ``High-dimension
 \bibitem{fanuc2024lrmate}
 \BIBentryALTinterwordspacing
 F.~America, ``Lr mate 200id data sheet,'' 2024. [Online]. Available: \url{https://www.fanucamerica.com/docs/default-source/robotics-files/lr-mate/lr-mate-200id-data-sheet.pdf}
+\BIBentrySTDinterwordspacing
+
+\bibitem{franka2024research3}
+\BIBentryALTinterwordspacing
+{Franka Robotics GmbH}, \emph{Product Manual Franka Research 3}, release 1.0~ed., Mar 2024, document number: R02210. [Online]. Available: \url{https://franka.de/hubfs/Product%20Manual%20Franka%20Research%203_R02210_1.0_EN.pdf?hsLang=en}
 \BIBentrySTDinterwordspacing
 
 \end{thebibliography}

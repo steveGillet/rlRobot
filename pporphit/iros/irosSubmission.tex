@@ -103,9 +103,11 @@ Most pertinently to this paper, \cite{kalimuthu2023} shows that PPO and A3C can 
 \cite{ding2024modular} uses DDQN to co-optimize morphology and control for modular robotic manipulators, and \cite{luck2019data} uses soft actor critic for co-optimization showing that the approach resulted in drastically less design prototypes.
 This background motivates the approach of this paper which is going to use simple controllers and similar reinforcement learning techniques to maximize morphological potential.
 FANUC 6-DOF series of manipulators are the most commonly used in industry today \cite{patentpc2025toprobotics}\cite{standardbots2025fanucprice} and so their morphology will be used as a baseline for comparison.
+The other baseline will be the 7-DOF Franka Emika Panda because it is considered a standard in research \cite{haddadin2022franka}\cite{oliva2022franksim}.
 Given the same environment, task, and controllers which morphologies will perform better?
 
 \section{Problem Formulation}
+\label{sec:problem}
 
 The task is formulated as a single-step reinforcement learning problem in a MuJoCo simulated environment.
 A morphology $\theta$ is chosen, run through the simulation, and then evaluated based on weighted reward function terms.
@@ -224,7 +226,7 @@ Training follows the standard PPO loop over 1M timesteps (single-step episodes):
 \State Initialize PPO policy \(\pi_\phi\)
 \For{each episode \(t = 1\) to 1M}
     \State Sample \(\theta \sim \pi_\phi(\cdot|\phi)\)
-    \State \(r \gets \texttt{eval}(\theta)\) \Comment{Section FILLIN}
+    \State \(r \gets \texttt{eval}(\theta)\) \Comment{Section~\ref{sec:problem} pipeline}
     \State Store \((\theta, r)\) in buffer
     \State Update \(\phi\) via the clipped surrogate loss \cite{schulman2017proximal}:
     \[
@@ -246,30 +248,171 @@ Hyperparameters: \(\epsilon=0.2\) (clip ratio) and \(\beta=0.5\) (value loss wei
 
 After training, the optimized morphology \(\theta^*\) is evaluated on a test set of start/goal pairs with noise.
 The reward terms are averaged over that test set to assess performance.
-A comparison is made using the baseline FANUC-like arm morphology.
+A comparison is made using the baseline Panda and FANUC-like arm morphology.
 Based on the most commonly used model (FANUC LR Mate 200iD \cite{fanuc2024lrmate}), the baseline has 6 links, with lengths of 0.165, 0.330, 0.08, 0.285, 0.05, 0.05 (meters), and joint types of 2, 0, 0, 2, 0, 2 (revolute about z, x, x, z, x, z).
+The Panda approximation similarly taken from the product manual \cite{franka2024research3} has 7 links, lengths of 0.333, 0.316, 0.0825, 0.0825, 0.384, 0.107, 0.05 (meters), and joint types of 2, 0, 2, 0, 2, 0, 2 (revolute about z, x, z, x, z, x, z).
 
 \section{Experimental Setup}
 
-To evaluate PMorph, we conducted experiments in the MuJoCo simulation environment (version 3.3.7) using the container task defined in Section~\ref{sec:task}. All training and evaluation used the same evaluation pipeline (XML generation, robust DLS IK, RRT-Connect) and reward function from Section~\ref{sec:eval}.
+To evaluate PMorph, the MuJoCo (version 3.3.7) physics engine was used across a set of tasks specified below using the reward function defined in Equation \eqref{eq:reward} and the evaluation pipeline described in Section~\ref{sec:problem}.
 
 \subsection{Tasks}
 
-The primary task is the \emph{container task} (Fig.~\ref{fig:containerTask}), which models a realistic manufacturing pick-and-place scenario inside a confined workspace (2m × 1m × 1m) with fixed obstacles (walls, ceiling, floor). The robot must transport objects between two noisy start--goal pose pairs:
-\begin{itemize}
-    \item Start 1: \([-1.8, 0.3, 0.3, 0.7071, 0, -0.7071, 0]\)
-    \item Goal 1: \([1.9, 0.9, 0.4, 0.7071, 0, 0.7071, 0]\)
-    \item Start 2: \([-1.8, 0.8, 0.4, 0.7071, 0, -0.7071, 0]\)
-    \item Goal 2: \([1.8, 0.31, 0.2, 0.7071, 0, 0.7071, 0]\)
-\end{itemize}
-Poses are corrupted with Gaussian noise \(\sigma=0.05\) to promote robust morphologies. 
+5 tasks were chosen to test different types of motions (different axes, rotations, and positions w.r.t. the base) and obstacle contraints to create a thorough and practical evaluation. 
+All tasks use a workspace centered at the robot base (0, 0, 0) except for the "Wall Mount" task where the base is moved to the middle of the near wall (0, -0.4, 1.0) and rotated $\pi/2$ about the x-axis to face outward from the wall.
+The tasks are as follows:
 
-For broader validation, we also tested on three variants (from the original task set):
 \begin{enumerate}
-    \item \textbf{Basic}: Linear motion at average height/distance.
-    \item \textbf{Shelf}: Vertical motion with intermediate obstacle.
-    \item \textbf{Multi-task}: Four opposing motions (near/far, low/high).
+    \item \textbf{Container Task}: The robot is positioned on the floor of a shipping-container-like environment in the middle and slightly to one side with walls and a ceiling (2m x 1m x 1m) all around and one open end. The start poses are near and facing the back of the container and the goal poses toward and near the open end (see Figure \ref{fig:containerTask}):
+
+    \begin{table}[H]
+        \centering
+        \caption{Container Task Poses}
+        \label{tab:containerPoses}
+        \begin{tabular}{lll}
+        \hline
+        \textbf{Name} & \textbf{Position} & \textbf{Quaternion} \\
+        \hline
+        Start 1 & [-1.8, 0.3, 0.3] & [0.7071, 0, -0.7071, 0] \\
+        Goal 1 & [1.9, 0.9, 0.4] & [0.7071, 0, 0.7071, 0] \\
+        Start 2 & [-1.8, 0.8, 0.4] & [0.7071, 0, -0.7071, 0] \\
+        Goal 2 & [1.8, 0.31, 0.2] & [0.7071, 0, 0.7071, 0] \\
+        \hline
+        \end{tabular}
+    \end{table}
+
+    \begin{table}[H]
+        \centering
+        \caption{Container Task Obstacles}
+        \label{tab:containerObstacles}
+        \begin{tabular}{lll}
+        \hline
+        \textbf{Name} & \textbf{Position} & \textbf{Size} \\
+        \hline
+        Back Wall & [-2.0, 0.6, 1.0] & [0.01, 1.0, 1.0] \\
+        Left Wall & [0, -0.4, 1.0] & [2.0, 0.01, 1.0] \\
+        Right Wall & [0, 1.6, 1.0] & [2.0, 0.01, 1.0] \\
+        Ceiling & [0, 0.6, 2.0] & [2.0, 1.0, 0.01] \\
+        \hline
+        \end{tabular}
+    \end{table}
+
+    \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\columnwidth]{wallMountTask.png}
+    \caption{Wall Mount task.}
+    \label{fig:wallMountTask}
+    \end{figure}
+
+    \item \textbf{Wall Mount Task}: The robot is mounted on the middle of a wall facing an opposing wall with a shelf mounted in the middle. One start pose is to the side of the mount wall facing down and the corresponding goal pose is on top of the shelf facing toward that wall.
+    The other set is the opposite where the start pose is on the shelf facing the wall and the goal is to the side facing down (Figure \ref{fig:wallMountTask}):
+
+    \begin{table}[H]
+        \centering
+        \caption{Wall Mount Task Poses}
+        \label{tab:wallMountPoses}
+        \begin{tabular}{lll}
+        \hline
+        \textbf{Name} & \textbf{Position} & \textbf{Quaternion} \\
+        \hline
+        Start 1 & [-1.4, -0.4, 0.1] & [-0.7071, -0.7071, 0, 0] \\
+        Goal 1 & [1.75, 1.36, 1.11] & [1, 0, 0, 0] \\
+        Start 2 & [-0.9, 1.35, 1.1] & [1, 0, 0, 0] \\
+        Goal 2 & [1.5, -0.4, 0.2] & [-0.7071, -0.7071, 0, 0] \\
+        \hline
+        \end{tabular}
+    \end{table}
+
+    \begin{table}[H]
+        \centering
+        \caption{Wall Mount Task Obstacles}
+        \label{tab:wallMountObstacles}
+        \begin{tabular}{lll}
+        \hline
+        \textbf{Name} & \textbf{Position} & \textbf{Size} \\
+        \hline
+        Mount Wall & [0, -0.4, 1.0] & [1.0, 0.01, 1.0] \\
+        Shelf Wall & [0, 1.6, 1.0] & [2.0, 0.01, 1.0] \\
+        Shelf & [0.0, 1.35, 1.0] & [2.0, 0.25, 0.01] \\
+        \hline
+        \end{tabular}
+    \end{table}
+
+    \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\columnwidth]{shelfTask.png}
+    \caption{Shelf task.}
+    \label{fig:shelfTask}
+    \end{figure}
+
+    \item \textbf{Shelf Task}: A single shelf obstacle is placed off to the side of the robot at 0.5m height.
+    There are two sets of start and goal poses alternately above and below the shelf all facing in the positive x direction.
+
+    \begin{table}[H]
+        \centering
+        \caption{Shelf Task Poses}
+        \label{tab:simpleShelfPoses}
+        \begin{tabular}{lll}
+        \hline
+        \textbf{Name} & \textbf{Position} & \textbf{Quaternion} \\
+        \hline
+        Start 1 & [1.1, -0.31, 0.6] & [0.7071, 0, 0.7071, 0] \\
+        Goal 1 & [0.9, -0.71, 0.4] & [0.7071, 0, 0.7071, 0] \\
+        Start 2 & [0.95, -0.29, 0.4] & [0.7071, 0, 0.7071, 0] \\
+        Goal 2 & [1.05, -0.69, 0.6] & [0.7071, 0, 0.7071, 0] \\
+        \hline
+        \end{tabular}
+    \end{table}
+
+    \begin{table}[H]
+        \centering
+        \caption{Shelf Task Obstacles}
+        \label{tab:simpleShelfObstacles}
+        \begin{tabular}{lll}
+        \hline
+        \textbf{Name} & \textbf{Position} & \textbf{Size} \\
+        \hline
+        Shelf & [1.0, -0.5, 0.5] & [0.25, 0.5, 0.01] \\
+        \hline
+        \end{tabular}
+    \end{table}
+
+    \item \textbf{Near-Base Outreach Task}: No obstacles; motion from near the base outward in one direction (e.g., positive x):
+
+    \begin{table}[H]
+        \centering
+        \caption{Near-Base Outreach Task Poses}
+        \label{tab:near-base-poses}
+        \begin{tabular}{lll}
+        \hline
+        \textbf{Name} & \textbf{Position} & \textbf{Quaternion} \\
+        \hline
+        Start & [0.1, 0, 0.1] & [1, 0, 0, 0] \\
+        Goal & [1.0, 0, 0.5] & [1, 0, 0, 0] \\
+        \hline
+        \end{tabular}
+    \end{table}
+
+    \item \textbf{Side-to-Side Task}: No obstacles; poses on either side of the base (e.g., left and right in y-direction):
+
+    \begin{table}[H]
+        \centering
+        \caption{Side-to-Side Task Poses}
+        \label{tab:side-to-side-poses}
+        \begin{tabular}{lll}
+        \hline
+        \textbf{Name} & \textbf{Position} & \textbf{Quaternion} \\
+        \hline
+        Start 1 & [0, -0.5, 0.3] & [1, 0, 0, 0] \\
+        Goal 1 & [0, 0.5, 0.3] & [1, 0, 0, 0] \\
+        Start 2 & [0, 0.5, 0.5] & [1, 0, 0, 0] \\
+        Goal 2 & [0, -0.5, 0.5] & [1, 0, 0, 0] \\
+        \hline
+        \end{tabular}
+    \end{table}
 \end{enumerate}
+
+For broader validation, we report results on all tasks, with the container task as the primary benchmark.
 
 \subsection{Baselines}
 
