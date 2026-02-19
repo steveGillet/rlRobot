@@ -178,3 +178,96 @@ def generateWallXML(numJoints, lengths, jointTypes):
     except Exception as e:
         print(f"Mujoco XML Generation Error: {e}")
         raise
+
+def generateShelfXML(numJoints, lengths, jointTypes):
+    try:
+        # --- Procedural High-Res Cone Mesh ---
+        sides = 16
+        vertices = ["0 0 1"]
+        for i in range(sides):
+            angle = 2 * math.pi * i / sides
+            vertices.append(f"{0.05 * math.cos(angle):.4f} {0.05 * math.sin(angle):.4f} 0")
+        vertices.append("0 0 0")
+        vertex_str = "  ".join(vertices)
+        
+        faces = []
+        for i in range(sides):
+            v1, v2 = i + 1, (i + 1) % sides + 1
+            faces.append(f"0 {v1} {v2}")
+            faces.append(f"{sides + 1} {v2} {v1}")
+        face_str = "  ".join(faces)
+
+        xml = f"""
+<mujoco>
+    <compiler angle="radian" />
+    <option gravity="0 0 -9.81" />
+
+    <visual>
+        <quality shadowsize="8192" numslices="32" numquads="4"/>
+        <map shadowscale="0.4" shadowclip="5.0"/>
+        <global offwidth="3840" offheight="2160" />
+    </visual>
+
+    <asset>
+        <texture name="grid" type="2d" builtin="checker" rgb1="0.95 0.95 0.95" rgb2="0.9 0.9 0.9" width="512" height="512" />
+        <material name="floorMat" texture="grid" texrepeat="15 15" specular="0.1" shininess="0.1" reflectance="0.01" />
+        <texture type="skybox" builtin="gradient" rgb1="1 1 1" rgb2="0.85 0.85 0.9" width="512" height="512"/>
+
+        <material name="robotMat" rgba="0.3 0.35 0.4 1" specular="0.7" shininess="0.8" reflectance="0.2" />
+        <material name="shelfMat" rgba="0.4 0.25 0.15 1" specular="0.2" shininess="0.1" />
+        <material name="startMat" rgba="0 0.6 1 0.6" emission="0.4" />
+        <material name="goalMat" rgba="1 0.2 0.2 0.6" emission="0.4" />
+        
+        <mesh name="coneMesh" vertex="{vertex_str}" face="{face_str}" scale="0.4 0.4 0.15" /> 
+    </asset>
+
+    <worldbody>
+        <light name="shadow_caster" directional="true" pos="0 0 5" dir="-1 -1 -2" diffuse="0.4 0.4 0.4" specular="0.1 0.1 0.1" castshadow="true" />
+        
+        <light name="ambient_pool" pos="0 0 4" dir="0 0 -1" diffuse="0.5 0.5 0.5" specular="0.3 0.3 0.3" castshadow="false" cutoff="60" />
+        
+        <light name="rim" pos="-3 -3 3" dir="1 1 -1" diffuse="0.2 0.2 0.2" castshadow="false" />
+
+        <camera name="paper_cam" pos="2.5 -2.0 1.5" xyaxes="0.7 0.7 0.0 -0.3 0.3 0.9" />
+
+        <geom name="floor" type="plane" size="5 5 0.1" material="floorMat" />
+        <geom name="floatingShelf" type="box" pos="1 -0.5 0.5" size="0.25 0.5 0.01" material="shelfMat" />
+
+        <body name="base" pos="0 0 0.06">
+            <geom name="baseBox" type="box" size="0.12 0.12 0.06" material="robotMat" />
+        """
+
+        currentPos = "0 0 0.06"
+        numCloses = 0
+        for i in range(numJoints):
+            axis = "1 0 0" if jointTypes[i] == 0 else ("0 1 0" if jointTypes[i] == 1 else "0 0 1")
+            jtype = "slide" if jointTypes[i] == 3 else "hinge"
+            
+            xml += f"""
+            <body name="link{i}" pos="{currentPos}">
+                <joint name="joint{i}" type="{jtype}" axis="{axis}" damping="1.0" />
+                <geom name="capsule{i}" type="capsule" size="0.025" fromto="0 0 0 0 0 {lengths[i]}" material="robotMat" />
+            """
+            currentPos = f"0 0 {lengths[i]}"
+            numCloses += 1
+
+        xml += f'<site name="endEffector" pos="{currentPos}" size="0.015" rgba="0.2 1 0.2 1" />'
+        xml += "</body>" * numCloses
+        
+        marker_cfg = 'type="mesh" mesh="coneMesh" contype="0" conaffinity="0" group="1"'
+        xml += f"""
+        </body>
+        <body name="start0" pos="1.1 -0.31 0.61" quat="0.707 0 0.707 0"><geom {marker_cfg} material="startMat"/></body>
+        <body name="start1" pos="0.95 -0.29 0.41" quat="0.707 0 0.707 0"><geom {marker_cfg} material="startMat"/></body>
+        <body name="goal0" pos="0.9 -0.71 0.41" quat="0.707 0 0.707 0"><geom {marker_cfg} material="goalMat"/></body>
+        <body name="goal1" pos="1.05 -0.69 0.61" quat="0.707 0 0.707 0"><geom {marker_cfg} material="goalMat"/></body>
+    </worldbody>
+    <actuator>
+        """
+        for i in range(numJoints):
+            xml += f'<motor name="motor{i}" joint="joint{i}" ctrlrange="-10 10"/>'
+        xml += "</actuator></mujoco>"
+        return xml
+    except Exception as e:
+        print(f"Mujoco XML Generation Error: {e}")
+        raise

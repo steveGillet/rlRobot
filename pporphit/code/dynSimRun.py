@@ -2,6 +2,7 @@ import mujoco
 import mujoco.viewer
 import time
 import numpy as np
+import math
 
 # ─────────────
 # RRT-Connect
@@ -50,7 +51,7 @@ def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize
 
         qRand = np.random.uniform(low, high)
         # Find nearest neighbor
-        nearestNeighbor = np.argmin([cDist(model, np.array(q), np.array(qRand)) for q in treeA])
+        nearestNeighbor = findNearest(model, treeA, qRand)
         qNear = treeA[nearestNeighbor]
 
         qNew = takeStep(model, qNear, qRand, stepSize)
@@ -65,7 +66,7 @@ def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize
         # Try to connect other tree
         terminated = False
         qRand = qNew.copy()
-        nearestNeighbor = np.argmin([cDist(model, np.array(q), np.array(qRand)) for q in treeB])
+        nearestNeighbor = findNearest(model, treeB, qRand)
         qNear = treeB[nearestNeighbor]
         while not terminated:
             qNew = takeStep(model, qNear, qRand, stepSize)
@@ -188,11 +189,31 @@ def interpolatePath(model, path, numNodes=100):
     interpolatedPath.append(path[-1])
     return interpolatedPath
 
+def findNearest(model, tree, qRand):
+    # Convert the entire tree list to a 2D NumPy array
+    treeArray = np.array(tree)
+    
+    # Broadcast subtraction: calculates difference for every node at once
+    diff = qRand - treeArray
+    
+    # Create a boolean mask for joints that don't have limits
+    unlimitedMask = ~np.array(model.jnt_limited[:len(qRand)], dtype=bool)
+    
+    # Apply angle wrapping strictly to the unlimited joints across all nodes
+    diff[:, unlimitedMask] = (diff[:, unlimitedMask] + np.pi) % (2 * np.pi) - np.pi
+    
+    # Compute the Euclidean distance across the rows (axis=1)
+    distances = np.linalg.norm(diff, axis=1)
+    
+    # Return the index of the minimum distance
+    return np.argmin(distances)
+
 # ────────────
 # IK function 
 # ────────────
 def dlsIK(
     model,
+    data,  # <--- ADDED
     obstacleIds,
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
@@ -200,9 +221,8 @@ def dlsIK(
     tol: float = 0.01,
     lambda_: float = 0.01,
     alpha: float = 0.75,
-    rotWeight: float = 0.1,
+    rotWeight: float = 0.2,
 ) -> tuple[np.ndarray, np.ndarray]:
-    data = mujoco.MjData(model)
     endEffectorId = model.site("endEffector").id
 
     if initialQpos is not None:
@@ -217,7 +237,7 @@ def dlsIK(
     targetQuat = targetPose[3:7]
     rotError = np.zeros(3)
     mujoco.mju_subQuat(rotError, targetQuat, currentQuat)
-    deltaX = np.concatenate([posError, rotError*rotWeight])
+    deltaX = np.concatenate([posError, rotError * rotWeight])
 
     i = 0
     jacp = np.zeros((3, model.nv))
@@ -266,7 +286,7 @@ def dlsIK(
         targetQuat = targetPose[3:7]
         rotError = np.zeros(3)
         mujoco.mju_subQuat(rotError, targetQuat, currentQuat)
-        deltaX = np.concatenate([posError, rotError*rotWeight])
+        deltaX = np.concatenate([posError, rotError * rotWeight])
         i += 1
 
     mujoco.mj_jacSite(model, data, jacp, jacr, endEffectorId)
@@ -275,6 +295,7 @@ def dlsIK(
 
 def robustDLSik(
     model,
+    data,  # <--- ADDED
     obstacleIds,
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
@@ -283,7 +304,7 @@ def robustDLSik(
     lambda_: float = 0.01,
     alpha: float = 0.75,
     numTries: int = 5,
-    rotWeight: float = 0.1,
+    rotWeight: float = 0.2,
 ):
     bestQpos, bestJ, bestError = None, None, np.inf
 
@@ -298,6 +319,7 @@ def robustDLSik(
     for _ in range(numTries):
         qPos, J = dlsIK(
             model,
+            data,  # <--- PASSED DOWN
             obstacleIds,
             targetPose,
             initialQpos=initQ,
@@ -308,7 +330,7 @@ def robustDLSik(
             rotWeight=rotWeight,
         )
 
-        data = mujoco.MjData(model)
+        # Removed redundant mujoco.MjData(model) allocation here
         data.qpos[:] = qPos
         mujoco.mj_forward(model, data)
         posError = targetPose[:3] - data.site("endEffector").xpos.copy()
@@ -334,9 +356,95 @@ def robustDLSik(
 # ───────────────
 # XML generation
 # ───────────────
-import math
 
-def generateXML(numJoints, lengths, jointTypes):
+import math
+import numpy as np
+
+# A central registry of all tasks defined in the paper
+TASK_REGISTRY = {
+"container": {
+        "basePos": "0 0 0.06",
+        "baseEuler": "0 0 0",
+        "lightPos": "0 0 5",        # Default overhead position
+        "lightDir": "-1 -1 -2",     # Default angled down
+        "obstacles": [
+            # Forest green: 0.13 0.35 0.13 1
+            {"name": "backWall", "pos": "-2.0 0.6 1.0", "size": "0.01 1.0 1.0", "rgba": "0.13 0.35 0.13 1"},
+            {"name": "leftWall", "pos": "0 -0.4 1.0", "size": "2.0 0.01 1.0", "rgba": "0.13 0.35 0.13 1"},
+            {"name": "rightWall", "pos": "0 1.6 1.0", "size": "2.0 0.01 1.0", "rgba": "0.13 0.35 0.13 1"},
+            {"name": "ceiling", "pos": "0 0.6 2.0", "size": "2.0 1.0 0.01", "rgba": "0.13 0.35 0.13 1"},
+        ],
+        "starts": [
+            [-1.8, 0.3, 0.3, 0.7071, 0, -0.7071, 0],
+            [-1.8, 0.8, 0.4, 0.7071, 0, -0.7071, 0]
+        ],
+        "goals": [
+            [1.9, 0.9, 0.4, 0.7071, 0, 0.7071, 0],
+            [1.8, 0.31, 0.2, 0.7071, 0, 0.7071, 0]
+        ]
+    },
+    "wallMount": {
+        "basePos": "0 -0.4 1.0",
+        "baseEuler": "-1.5708 0 0",
+        "lightPos": "2.0 -2.0 3.0",   # Moved up, back, and to the side
+        "lightDir": "-1 1 -1",        # Pointing diagonally down toward the center
+        "obstacles": [
+            # Industrial tan: 0.82 0.70 0.54 1
+            {"name": "mountWall", "pos": "0 -0.4 1.0", "size": "1.0 0.01 1.0", "rgba": "0.82 0.70 0.54 1"},
+            {"name": "shelfWall", "pos": "0 1.6 1.0", "size": "2.0 0.01 1.0", "rgba": "0.82 0.70 0.54 1"},  
+            {"name": "shelf", "pos": "0.0 1.35 1.0", "size": "2.0 0.25 0.01", "rgba": "0.4 0.25 0.15 1"},
+        ],
+        "starts": [
+            [-1.4, -0.4, 0.1, 0, 0, 1, 0],
+            [-0.9, 1.35, 1.1, 0.7071, -0.7071, 0, 0]
+        ],
+        "goals": [
+            [1.75, 1.36, 1.11, 0.7071, -0.7071, 0, 0],
+            [1.5, -0.4, 0.2, 0, 0, 1, 0]
+        ]
+    },
+    "shelf": {
+        "basePos": "0 0 0.06",
+        "baseEuler": "0 0 0",
+        "obstacles": [
+            {"name": "shelf", "pos": "1.0 -0.5 0.5", "size": "0.25 0.5 0.01"},
+        ],
+        "starts": [
+            [1.1, -0.31, 0.6, 0.7071, 0, 0.7071, 0],
+            [0.95, -0.29, 0.4, 0.7071, 0, 0.7071, 0]
+        ],
+        "goals": [
+            [0.9, -0.71, 0.4, 0.7071, 0, 0.7071, 0],
+            [1.05, -0.69, 0.6, 0.7071, 0, 0.7071, 0]
+        ]
+    },
+    "outreach": {
+        "basePos": "0 0 0.06",
+        "baseEuler": "0 0 0",
+        "obstacles": [], # No obstacles
+        "starts": [
+            [0.25, -0.25, 0.1, 0.7071, 0, 0.7071, 0]
+        ],
+        "goals": [
+            [1.0, -0.25, 0.1, 0.7071, 0, 0.7071, 0]
+        ]
+    },
+    "sideToSide": {
+        "basePos": "0 0 0.06",
+        "baseEuler": "0 0 0",
+        "obstacles": [], # No obstacles
+        "starts": [
+            [0, -0.5, 0.3, 0.7071, 0.7071, 0, 0],
+            [0, 0.5, 0.5, 0.7071, -0.7071, 0, 0]
+        ],
+        "goals": [
+            [0, 0.5, 0.3, 0.7071, -0.7071, 0, 0],
+            [0, -0.5, 0.5, 0.7071, 0.7071, 0, 0]
+        ]
+    }
+}
+
+def generateXML(numJoints, lengths, jointTypes, taskConfig, numGhosts=0, activePathIndex=None, solidStart=False):
     try:
         # --- Procedural High-Res Cone Mesh ---
         sides = 16
@@ -345,15 +453,16 @@ def generateXML(numJoints, lengths, jointTypes):
             angle = 2 * math.pi * i / sides
             vertices.append(f"{0.05 * math.cos(angle):.4f} {0.05 * math.sin(angle):.4f} 0")
         vertices.append("0 0 0")
-        vertex_str = "  ".join(vertices)
+        vertexStr = "  ".join(vertices)
         
         faces = []
         for i in range(sides):
             v1, v2 = i + 1, (i + 1) % sides + 1
             faces.append(f"0 {v1} {v2}")
             faces.append(f"{sides + 1} {v2} {v1}")
-        face_str = "  ".join(faces)
+        faceStr = "  ".join(faces)
 
+        # Base XML setup
         xml = f"""
 <mujoco>
     <compiler angle="radian" />
@@ -371,58 +480,103 @@ def generateXML(numJoints, lengths, jointTypes):
         <texture type="skybox" builtin="gradient" rgb1="1 1 1" rgb2="0.85 0.85 0.9" width="512" height="512"/>
 
         <material name="robotMat" rgba="0.3 0.35 0.4 1" specular="0.7" shininess="0.8" reflectance="0.2" />
-        <material name="shelfMat" rgba="0.4 0.25 0.15 1" specular="0.2" shininess="0.1" />
+        <material name="ghostMat" rgba="0.3 0.35 0.4 0.15" specular="0.2" reflectance="0.0" /> 
+        <material name="obstacleMat" rgba="0.4 0.25 0.15 1" specular="0.2" shininess="0.1" />
         <material name="startMat" rgba="0 0.6 1 0.6" emission="0.4" />
         <material name="goalMat" rgba="1 0.2 0.2 0.6" emission="0.4" />
         
-        <mesh name="coneMesh" vertex="{vertex_str}" face="{face_str}" scale="0.4 0.4 0.15" /> 
-    </asset>
+        <mesh name="coneMesh" vertex="{vertexStr}" face="{faceStr}" scale="0.4 0.4 0.15" /> 
+    </asset>"""
+        lightPos = taskConfig.get("lightPos", "0 0 5")
+        lightDir = taskConfig.get("lightDir", "-1 -1 -2")
 
-    <worldbody>
-        <light name="shadow_caster" directional="true" pos="0 0 5" dir="-1 -1 -2" diffuse="0.4 0.4 0.4" specular="0.1 0.1 0.1" castshadow="true" />
-        
-        <light name="ambient_pool" pos="0 0 4" dir="0 0 -1" diffuse="0.5 0.5 0.5" specular="0.3 0.3 0.3" castshadow="false" cutoff="60" />
-        
-        <light name="rim" pos="-3 -3 3" dir="1 1 -1" diffuse="0.2 0.2 0.2" castshadow="false" />
-
-        <camera name="paper_cam" pos="2.5 -2.0 1.5" xyaxes="0.7 0.7 0.0 -0.3 0.3 0.9" />
-
-        <geom name="floor" type="plane" size="5 5 0.1" material="floorMat" />
-        <geom name="floatingShelf" type="box" pos="1 -0.5 0.5" size="0.25 0.5 0.01" material="shelfMat" />
-
-        <body name="base" pos="0 0 0.06">
-            <geom name="baseBox" type="box" size="0.12 0.12 0.06" material="robotMat" />
-        """
-
-        currentPos = "0 0 0.06"
-        numCloses = 0
-        for i in range(numJoints):
-            axis = "1 0 0" if jointTypes[i] == 0 else ("0 1 0" if jointTypes[i] == 1 else "0 0 1")
-            jtype = "slide" if jointTypes[i] == 3 else "hinge"
-            
-            xml += f"""
-            <body name="link{i}" pos="{currentPos}">
-                <joint name="joint{i}" type="{jtype}" axis="{axis}" damping="1.0" />
-                <geom name="capsule{i}" type="capsule" size="0.025" fromto="0 0 0 0 0 {lengths[i]}" material="robotMat" />
-            """
-            currentPos = f"0 0 {lengths[i]}"
-            numCloses += 1
-
-        xml += f'<site name="endEffector" pos="{currentPos}" size="0.015" rgba="0.2 1 0.2 1" />'
-        xml += "</body>" * numCloses
-        
-        marker_cfg = 'type="mesh" mesh="coneMesh" contype="0" conaffinity="0" group="1"'
         xml += f"""
-        </body>
-        <body name="start0" pos="1.1 -0.31 0.61" quat="0.707 0 0.707 0"><geom {marker_cfg} material="startMat"/></body>
-        <body name="start1" pos="0.95 -0.29 0.41" quat="0.707 0 0.707 0"><geom {marker_cfg} material="startMat"/></body>
-        <body name="goal0" pos="0.9 -0.71 0.41" quat="0.707 0 0.707 0"><geom {marker_cfg} material="goalMat"/></body>
-        <body name="goal1" pos="1.05 -0.69 0.61" quat="0.707 0 0.707 0"><geom {marker_cfg} material="goalMat"/></body>
-    </worldbody>
-    <actuator>
+    <worldbody>
+        <light name="shadowCaster" directional="true" pos="{lightPos}" dir="{lightDir}" diffuse="0.4 0.4 0.4" specular="0.1 0.1 0.1" castshadow="true" />
+        <light name="ambientPool" pos="0 0 4" dir="0 0 -1" diffuse="0.5 0.5 0.5" specular="0.3 0.3 0.3" castshadow="false" cutoff="60" />
+        <geom name="floor" type="plane" size="5 5 0.1" material="floorMat" />
         """
+
+        # Inject dynamic obstacles with custom colors
+        for obs in taskConfig["obstacles"]:
+            # If the registry has an RGBA string, use it. Otherwise, use the default material.
+            colorStr = f'rgba="{obs["rgba"]}"' if "rgba" in obs else 'material="obstacleMat"'
+            xml += f'<geom name="{obs["name"]}" type="box" pos="{obs["pos"]}" size="{obs["size"]}" {colorStr} />\n'
+
+        # --- Helper function to stamp out robots ---
+        def buildArm(prefix, matName, disableCollision, addSite=False):
+            colStr = 'contype="0" conaffinity="0"' if disableCollision else ''
+            
+            # Keep camelCase clean: if prefix is "start", make it "startBase", else "base"
+            baseName = f"{prefix}Base" if prefix else "base"
+            boxName = f"{prefix}BaseBox" if prefix else "baseBox"
+            
+            armXml = f"""
+            <body name="{baseName}" pos="{taskConfig['basePos']}" euler="{taskConfig['baseEuler']}">
+                <geom name="{boxName}" type="box" size="0.12 0.12 0.06" material="{matName}" {colStr}/>
+            """
+            currentPos = "0 0 0.06"
+            hingeLimit = 7 * math.pi / 8 
+            
+            for i in range(numJoints):
+                li = lengths[i]
+                jCode = jointTypes[i]
+                
+                if jCode == 0:
+                    axis, jtype, limitStr = "1 0 0", "hinge", f'limited="true" range="{-hingeLimit:.4f} {hingeLimit:.4f}"'
+                elif jCode == 1:
+                    axis, jtype, limitStr = "0 1 0", "hinge", f'limited="true" range="{-hingeLimit:.4f} {hingeLimit:.4f}"'
+                elif jCode == 2:
+                    axis, jtype, limitStr = "0 0 1", "hinge", 'limited="false"'
+                elif jCode == 3:
+                    axis, jtype, limitStr = "0 0 1", "slide", f'limited="true" range="0 {li:.4f}"'
+                
+                linkName = f"{prefix}Link{i}" if prefix else f"link{i}"
+                jointName = f"{prefix}Joint{i}" if prefix else f"joint{i}"
+                geomName = f"{prefix}Capsule{i}" if prefix else f"capsule{i}"
+                
+                armXml += f"""
+                <body name="{linkName}" pos="{currentPos}">
+                    <joint name="{jointName}" type="{jtype}" axis="{axis}" damping="1.0" {limitStr} />
+                    <geom name="{geomName}" type="capsule" size="0.025" fromto="0 0 0 0 0 {li:.4f}" material="{matName}" {colStr}/>
+                """
+                currentPos = f"0 0 {li:.4f}"
+            
+            if addSite:
+                siteName = f"{prefix}EndEffector" if prefix else "endEffector"
+                armXml += f'<site name="{siteName}" pos="{currentPos}" size="0.015" rgba="0.2 1 0.2 1" />'
+                
+            armXml += "</body>\n" * numJoints
+            armXml += "</body>\n"
+            return armXml
+
+        # 1. Build the Main robot (Goal State - Opaque, Has Physics)
+        xml += buildArm("", "robotMat", disableCollision=False, addSite=True)
+
+        # 2. Build the Start robot (Start State - Opaque, No Physics)
+        if solidStart:
+            xml += buildArm("start", "robotMat", disableCollision=True, addSite=False)
+
+        # 3. Build the Ghost robots (Intermediate States - Transparent, No Physics)
+        for g in range(numGhosts):
+            xml += buildArm(f"ghost{g}", "ghostMat", disableCollision=True, addSite=False)
+
+        # Inject Start and Goal markers
+        markerCfg = 'type="mesh" mesh="coneMesh" contype="0" conaffinity="0" group="1"'
+        if activePathIndex is not None:
+            startPose = taskConfig["starts"][activePathIndex]
+            goalPose = taskConfig["goals"][activePathIndex]
+            xml += f'<body name="startMarker{activePathIndex}" pos="{startPose[0]} {startPose[1]} {startPose[2]}" quat="{startPose[3]} {startPose[4]} {startPose[5]} {startPose[6]}"><geom {markerCfg} material="startMat"/></body>\n'
+            xml += f'<body name="goalMarker{activePathIndex}" pos="{goalPose[0]} {goalPose[1]} {goalPose[2]}" quat="{goalPose[3]} {goalPose[4]} {goalPose[5]} {goalPose[6]}"><geom {markerCfg} material="goalMat"/></body>\n'
+        else:
+            for i, startPose in enumerate(taskConfig["starts"]):
+                xml += f'<body name="startMarker{i}" pos="{startPose[0]} {startPose[1]} {startPose[2]}" quat="{startPose[3]} {startPose[4]} {startPose[5]} {startPose[6]}"><geom {markerCfg} material="startMat"/></body>\n'
+            for i, goalPose in enumerate(taskConfig["goals"]):
+                xml += f'<body name="goalMarker{i}" pos="{goalPose[0]} {goalPose[1]} {goalPose[2]}" quat="{goalPose[3]} {goalPose[4]} {goalPose[5]} {goalPose[6]}"><geom {markerCfg} material="goalMat"/></body>\n'
+
+        xml += "</worldbody><actuator>\n"
         for i in range(numJoints):
-            xml += f'<motor name="motor{i}" joint="joint{i}" ctrlrange="-10 10"/>'
+            xml += f'<motor name="motor{i}" joint="joint{i}" ctrlrange="-10 10"/>\n'
         xml += "</actuator></mujoco>"
         return xml
     except Exception as e:
@@ -442,41 +596,52 @@ def generateXML(numJoints, lengths, jointTypes):
 # jointTypes = np.array([2, 1, 2, 0, 2, 0, 2])
 # FANUC
 numLinks = 6
-sizeMultiplier = 2
+sizeMultiplier = 3
 lengths = sizeMultiplier * np.array([0.165, 0.330, 0.08, 0.285, 0.05, 0.05])
 jointTypes = np.array([2, 0, 0, 2, 0, 2])
 
-xml = generateXML(numLinks, lengths, jointTypes)
+taskConfig = TASK_REGISTRY["container"]
+xml = generateXML(numLinks, lengths, jointTypes, taskConfig)
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
 
 jointIds = [model.joint(f"joint{i}").id for i in range(numLinks)]
-# obstacleNames = ["mountWall", "shelfWall", "shelf", "floor"]
-obstacleNames = ["floatingShelf", "floor"]
+obstacleNames = ["floor"] + [obs["name"] for obs in taskConfig["obstacles"]]
 obstacleIds = set(model.geom(name).id for name in obstacleNames)
 
 # # wall mount task
 # startPoses = [
-#     np.array([-1.4, -0.4, 0.1, -0.717, -0.717, 0, 0], dtype=np.float32),
+#     np.array([-1.4, -0.4, 0.1, -0.7071, -0.7071, 0, 0], dtype=np.float32),
 #     np.array([-0.9, 1.35, 1.1, 1, 0, 0, 0], dtype=np.float32)  
 # ]
 # goalPoses = [
 #     np.array([1.75, 1.36, 1.11, 1, 0, 0, 0], dtype=np.float32),
-#     np.array([1.5, -0.4, 0.2, -0.717, -0.717, 0, 0], dtype=np.float32)
+#     np.array([1.5, -0.4, 0.2, -0.7071, -0.7071, 0, 0], dtype=np.float32)
 # ]
 
 # startPoses = [np.array([-1.8, 0.3, 0.3, 0.7071, 0, -0.7071, 0], dtype=np.float32), np.array([-1.8, 0.8, 0.4, 0.7071, 0, -0.7071, 0], dtype=np.float32)] 
 # goalPoses = [np.array([1.9, 0.9, 0.4, 0.7071, 0, 0.7071, 0], dtype=np.float32), np.array([1.8, 0.31, 0.2, 0.7071, 0, 0.7071, 0], dtype=np.float32)]
 
-# Simple Shelf Task
-startPoses = [
-    np.array([1.1, -0.31, 0.6, 0.717, 0, 0.717, 0], dtype=np.float32),
-    np.array([0.95, -0.29, 0.4, 0.717, 0, 0.717, 0], dtype=np.float32),
-]
-goalPoses = [
-    np.array([0.9, -0.71, 0.4, 0.717, 0, 0.717, 0], dtype=np.float32),
-    np.array([1.05, -0.69, 0.6, 0.717, 0, 0.717, 0], dtype=np.float32),
-]
+# # Simple Shelf Task
+# startPoses = [
+#     np.array([1.1, -0.31, 0.6, 0.7071, 0, 0.7071, 0], dtype=np.float32),
+#     np.array([0.95, -0.29, 0.4, 0.7071, 0, 0.7071, 0], dtype=np.float32),
+# ]
+# goalPoses = [
+#     np.array([0.9, -0.71, 0.4, 0.7071, 0, 0.7071, 0], dtype=np.float32),
+#     np.array([1.05, -0.69, 0.6, 0.7071, 0, 0.7071, 0], dtype=np.float32),
+# ]
+
+# # Outreach Task
+# startPoses = [
+#     np.array([0.25, -0.25, 0.1, 0.7071, 0.0, 0.7071, 0.0], dtype=np.float32)
+# ]
+# goalPoses = [
+#     np.array([1.0, -0.25, 0.1, 0.7071, 0.0, 0.7071, 0.0], dtype=np.float32)
+# ]
+
+startPoses = [np.array(p, dtype=np.float32) for p in taskConfig["starts"]]
+goalPoses = [np.array(p, dtype=np.float32) for p in taskConfig["goals"]]
 
 pathLists = []  # List of paths (each is a list of qpos arrays)
 
@@ -487,8 +652,8 @@ for startPose, goalPose in zip(startPoses, goalPoses):
     print(f"\nPlanning from {startPose} to {goalPose}...")
 
     # Solve IK for start and goal
-    startQpos, _, startError = robustDLSik(model, obstacleIds, startPose)
-    goalQpos, _, goalError = robustDLSik(model, obstacleIds, goalPose, initialQpos=startQpos)
+    startQpos, _, startError = robustDLSik(model, data, obstacleIds, startPose)
+    goalQpos, _, goalError = robustDLSik(model, data, obstacleIds, goalPose, initialQpos=startQpos)
     
     # Start Error
     data.qpos[:] = startQpos
@@ -524,42 +689,108 @@ for startPose, goalPose in zip(startPoses, goalPoses):
         pathLists.append([])
 
 
+# # ───────────────────────────────────────────────
+# # Visualization
+# # ───────────────────────────────────────────────
+
+# viewer = mujoco.viewer.launch_passive(model, data)
+# viewer.cam.lookat[:] = model.stat.center
+# viewer.cam.distance = model.stat.extent * 2
+# viewer.cam.elevation = -35
+# viewer.cam.azimuth = 145
+
+# data.qpos[:] = startQposes[0]
+# mujoco.mj_forward(model, data)
+# viewer.sync()
+
+# input("Press Enter to play paths...")
+
+# for path in pathLists:
+#     if not path:
+#         continue
+
+#     for qpos in path:
+#         if not viewer.is_running():
+#             break
+
+#         for i, jid in enumerate(jointIds):
+#             data.qpos[jid] = qpos[i]
+
+#         mujoco.mj_forward(model, data)
+#         viewer.sync()
+#         time.sleep(0.04)
+
+# print("Simulation complete")
+
+# while viewer.is_running():
+#     viewer.sync()
+#     time.sleep(0.02)
+
 # ───────────────────────────────────────────────
-# Visualization
+# Static Ghost Diorama Visualization
 # ───────────────────────────────────────────────
-# for i in range(len(startPoses)):
-#     model.site(f'startPos{i}').pos = startPoses[i][:3]
-#     model.site(f'goalPos{i}').pos = goalPoses[i][:3]
+NUM_GHOSTS = 4  # Intermediate faded steps
+SOLID_START = False # Set this flag here so we can use it in both places
 
-viewer = mujoco.viewer.launch_passive(model, data)
-viewer.cam.lookat[:] = model.stat.center
-viewer.cam.distance = model.stat.extent * 2
-viewer.cam.elevation = -35
-viewer.cam.azimuth = 145
-
-data.qpos[:] = startQposes[0]
-mujoco.mj_forward(model, data)
-viewer.sync()
-
-input("Press Enter to play paths...")
-
-for path in pathLists:
+for pathIndex, path in enumerate(pathLists):
     if not path:
+        print(f"Skipping visualization for Task {pathIndex + 1} (No path found).")
         continue
 
-    for qpos in path:
-        if not viewer.is_running():
-            break
+    print(f"\n--- Generating Diorama for Task {pathIndex + 1} ---")
+    
+    # 1. Sample evenly spaced indices (excluding start and end)
+    if len(path) > 2:
+        indices = np.linspace(1, len(path)-2, NUM_GHOSTS, dtype=int)
+        sampledGhostStates = [path[i] for i in indices]
+    else:
+        sampledGhostStates = []
 
-        for i, jid in enumerate(jointIds):
-            data.qpos[jid] = qpos[i]
+    # 2. Generate Diorama XML
+    actualGhosts = len(sampledGhostStates)
+    dioramaXml = generateXML(
+        numLinks, 
+        lengths, 
+        jointTypes, 
+        taskConfig, 
+        numGhosts=actualGhosts, 
+        activePathIndex=pathIndex,
+        solidStart=SOLID_START # Pass the flag here
+    )
+    
+    dioModel = mujoco.MjModel.from_xml_string(dioramaXml)
+    dioData = mujoco.MjData(dioModel)
 
-        mujoco.mj_forward(model, data)
-        viewer.sync()
-        time.sleep(0.04)
+    # 3. Apply coordinates to the Main Robot (Goal state)
+    finalQpos = path[-1]
+    for i in range(numLinks):
+        jointId = dioModel.joint(f"joint{i}").id
+        dioData.qpos[jointId] = finalQpos[i]
 
-print("Simulation complete")
+    # 4. Apply coordinates to the Solid Start Robot (ONLY if it exists)
+    if SOLID_START:
+        startQpos = path[0]
+        for i in range(numLinks):
+            jointId = dioModel.joint(f"startJoint{i}").id
+            dioData.qpos[jointId] = startQpos[i]
 
-while viewer.is_running():
-    viewer.sync()
-    time.sleep(0.02)
+    # 5. Apply coordinates to the Ghost Robots (Intermediate states)
+    for g, ghostQpos in enumerate(sampledGhostStates):
+        for i in range(numLinks):
+            jointId = dioModel.joint(f"ghost{g}Joint{i}").id
+            dioData.qpos[jointId] = ghostQpos[i]
+
+    # 6. Calculate forward kinematics ONCE
+    mujoco.mj_forward(dioModel, dioData)
+
+    # 7. Open Viewer
+    print(f"Viewer opened for Task {pathIndex + 1}. Adjust camera, take your screenshot, then close the window to continue.")
+    with mujoco.viewer.launch_passive(dioModel, dioData) as viewer:
+        viewer.cam.lookat[:] = dioModel.stat.center
+        viewer.cam.distance = dioModel.stat.extent * 1.5
+        viewer.cam.elevation = -30
+        viewer.cam.azimuth = 135
+        
+        while viewer.is_running():
+            viewer.sync()
+            time.sleep(0.05)

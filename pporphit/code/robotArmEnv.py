@@ -43,6 +43,7 @@ class robotArmEnv(gym.Env):
         self.logger = setupLogging()
 
     def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
         return np.array([0.0], dtype=np.float32), {}
 
     def _evaluate(self, numLinks, lengths, jointTypes):
@@ -82,10 +83,10 @@ class robotArmEnv(gym.Env):
             noisyGoalQuat /= np.linalg.norm(noisyGoalQuat)
             goalPos = np.concatenate([noisyGoalPos, noisyGoalQuat])
             self.logger.debug(f"Pre-IK: startPos={startPos}")
-            startQpos, jStart, startError = robustDLSik(model, obstacleIds, startPos)
+            startQpos, jStart, startError = robustDLSik(model, data, obstacleIds, startPos)
             self.logger.debug(f"Post Start IK: startQpos={startQpos}, jStart={jStart}")
 
-            goalQpos, jGoal, goalError = robustDLSik(model, obstacleIds, goalPos, initialQpos=startQpos)
+            goalQpos, jGoal, goalError = robustDLSik(model, data, obstacleIds, goalPos, initialQpos=startQpos)
             self.logger.debug(f"Post Goal IK: goalQpos={goalQpos}, jGoal={jGoal}")
             # startQpos = np.array([0.2, -0.8, -0.3, 0.9])
             # goalQpos = np.array([-0.4, 0.7, 0.5, -1.0])
@@ -502,6 +503,7 @@ def interpolatePath(model, path, numNodes=100):
 # ────────────
 def dlsIK(
     model,
+    data,
     obstacleIds,
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
@@ -511,7 +513,6 @@ def dlsIK(
     alpha: float = 0.75,
     rotWeight: float = 0.1,
 ) -> tuple[np.ndarray, np.ndarray]:
-    data = mujoco.MjData(model)
     endEffectorId = model.site("endEffector").id
 
     if initialQpos is not None:
@@ -526,7 +527,7 @@ def dlsIK(
     targetQuat = targetPose[3:7]
     rotError = np.zeros(3)
     mujoco.mju_subQuat(rotError, targetQuat, currentQuat)
-    deltaX = np.concatenate([posError, rotError*rotWeight])
+    deltaX = np.concatenate([posError, rotError * rotWeight])
 
     i = 0
     jacp = np.zeros((3, model.nv))
@@ -575,7 +576,7 @@ def dlsIK(
         targetQuat = targetPose[3:7]
         rotError = np.zeros(3)
         mujoco.mju_subQuat(rotError, targetQuat, currentQuat)
-        deltaX = np.concatenate([posError, rotError*rotWeight])
+        deltaX = np.concatenate([posError, rotError * rotWeight])
         i += 1
 
     mujoco.mj_jacSite(model, data, jacp, jacr, endEffectorId)
@@ -584,6 +585,7 @@ def dlsIK(
 
 def robustDLSik(
     model,
+    data,
     obstacleIds,
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
@@ -607,6 +609,7 @@ def robustDLSik(
     for _ in range(numTries):
         qPos, J = dlsIK(
             model,
+            data,
             obstacleIds,
             targetPose,
             initialQpos=initQ,
@@ -617,7 +620,6 @@ def robustDLSik(
             rotWeight=rotWeight,
         )
 
-        data = mujoco.MjData(model)
         data.qpos[:] = qPos
         mujoco.mj_forward(model, data)
         posError = targetPose[:3] - data.site("endEffector").xpos.copy()

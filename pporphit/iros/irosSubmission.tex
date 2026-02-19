@@ -33,6 +33,7 @@
 \usepackage{float}
 \usepackage{graphicx}
 \usepackage{algorithm,algpseudocode}
+\usepackage{subcaption}
 
 \title{\LARGE \bf
 PMorph: A Task-Specialized Robot Manipulator Morphology Optimizer 
@@ -137,10 +138,22 @@ An example of such an environment may be seen in Figure \ref{fig:containerTask},
 The poses are modified with Gaussian noise ($\sigma=0.05$) at evaluation in order to encourage robust designs.
 
 \begin{figure}[H]
-  \centering
-  \includegraphics[width=0.9\columnwidth]{containerTask.png}
-  \caption{Container task. Start and goal positions represented with blue and red dots surrounded by wall and ceiling obstacles.}
-  \label{fig:containerTask}
+    \centering
+    \begin{subfigure}[b]{0.48\columnwidth}
+        \centering
+        \includegraphics[width=\textwidth]{containerTask1.png}
+        \caption{Task 1: Deep Extraction}
+        \label{fig:container_1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\columnwidth}
+        \centering
+        \includegraphics[width=\textwidth]{containerTask2.png}
+        \caption{Task 2: Shallow Extraction}
+        \label{fig:container_2}
+    \end{subfigure}
+    \caption{\textbf{Container task evaluation.} The manipulator is tasked with reaching deep into a constrained, container-like environment (start poses in blue) and extracting to an open area (goal poses in red). This highly constrained task tests the morphology's compactness and ability to perform high-reach tasks without colliding with ceiling or wall constraints.}
+    \label{fig:containerTask}
 \end{figure}
 
 \subsection{Evaluation Pipeline}
@@ -298,10 +311,22 @@ The tasks are as follows:
     \end{table}
 
     \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\columnwidth]{wallMountTask.png}
-    \caption{Wall Mount task.}
-    \label{fig:wallMountTask}
+        \centering
+        \begin{subfigure}[b]{0.48\columnwidth}
+            \centering
+            \includegraphics[width=\textwidth]{wallMountTask1.png}
+            \caption{Task 1: Mount Wall to Shelf}
+            \label{fig:wallMount_1}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[b]{0.48\columnwidth}
+            \centering
+            \includegraphics[width=\textwidth]{wallMountTask2.png}
+            \caption{Task 2: Shelf to Mount Wall}
+            \label{fig:wallMount_2}
+        \end{subfigure}
+        \caption{\textbf{Wall Mount task evaluation.} The manipulator, mounted horizontally on the near wall, must navigate to and from the opposing shelf. Faded overlays represent the RRT-generated trajectory. This configuration evaluates a morphology's ability to resist gravity in atypical base orientations while navigating constrained pick-and-place trajectories.}
+        \label{fig:wallMountTask}
     \end{figure}
 
     \item \textbf{Wall Mount Task}: The robot is mounted on the middle of a wall facing an opposing wall with a shelf mounted in the middle. One start pose is to the side of the mount wall facing down and the corresponding goal pose is on top of the shelf facing toward that wall.
@@ -339,14 +364,26 @@ The tasks are as follows:
     \end{table}
 
     \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\columnwidth]{shelfTask.png}
-    \caption{Shelf task.}
-    \label{fig:shelfTask}
+        \centering
+        \begin{subfigure}[b]{0.48\columnwidth}
+            \centering
+            \includegraphics[width=\textwidth]{shelfTask1.png}
+            \caption{Task 1: Top to Bottom}
+            \label{fig:shelfTask_1}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[b]{0.48\columnwidth}
+            \centering
+            \includegraphics[width=\textwidth]{shelfTask2.png}
+            \caption{Task 2: Bottom to Top}
+            \label{fig:shelfTask_2}
+        \end{subfigure}
+        \caption{\textbf{Shelf task evaluation.} The manipulator navigates around a floating shelf obstacle, moving from a start pose (blue marker) to a goal pose (red marker). Transparent models illustrate the intermediate joint-space trajectory, concluding at the opaque target configuration. This task specifically tests the morphology's capability to maneuver through vertically constrained spaces and perform complex over-and-under reaching motions typical in industrial pick-and-place operations.}
+        \label{fig:shelfTask}
     \end{figure}
 
     \item \textbf{Shelf Task}: A single shelf obstacle is placed off to the side of the robot at 0.5m height.
-    There are two sets of start and goal poses alternately above and below the shelf all facing in the positive x direction.
+    There are two sets of start and goal poses alternately above and below the shelf all facing in the positive x direction (Figure \ref{fig:shelfTask}).
 
     \begin{table}[H]
         \centering
@@ -377,28 +414,54 @@ The tasks are as follows:
         \end{tabular}
     \end{table}
 
-    \item \textbf{Near-Base Outreach Task}: No obstacles; motion from near the base outward in one direction (e.g., positive x):
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\columnwidth]{outreachTask.png}
+        \caption{\textbf{Near-Base Outreach task evaluation.} The manipulator extends from a configuration near its base (blue marker) to a distant target coordinate (red marker). Transparent overlays depict the collision-free joint-space trajectory generated by RRT-Connect, terminating at the opaque goal configuration. This obstacle-free environment specifically isolates and evaluates a morphology's maximum functional reach and extension efficiency.}
+        \label{fig:outreachTask}
+    \end{figure}
+
+    \item \textbf{Outreach Task}: There are no obstacles in this task, the robot is on an open floor, the start pose is near the base facing out and the goal pose is out near the limits of reach for the baseline models (Figure \ref{fig:outreachTask}).
 
     \begin{table}[H]
         \centering
         \caption{Near-Base Outreach Task Poses}
-        \label{tab:near-base-poses}
+        \label{tab:outreachPoses}
         \begin{tabular}{lll}
         \hline
         \textbf{Name} & \textbf{Position} & \textbf{Quaternion} \\
         \hline
-        Start & [0.1, 0, 0.1] & [1, 0, 0, 0] \\
-        Goal & [1.0, 0, 0.5] & [1, 0, 0, 0] \\
+        Start & [0.25, -0.25, 0.1] & [0.7071, 0, 0.7071, 0] \\
+        Goal & [1.0, -0.25, 0.1] & [0.7071, 0, 0.7071, 0] \\
         \hline
         \end{tabular}
     \end{table}
 
-    \item \textbf{Side-to-Side Task}: No obstacles; poses on either side of the base (e.g., left and right in y-direction):
+    \begin{figure}[H]
+        \centering
+        \begin{subfigure}[b]{0.48\columnwidth}
+            \centering
+            \includegraphics[width=\textwidth]{sideToSideTask1.png}
+            \caption{Task 1: Left to Right}
+            \label{fig:sideToSide_1}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[b]{0.48\columnwidth}
+            \centering
+            \includegraphics[width=\textwidth]{sideToSideTask2.png}
+            \caption{Task 2: Right to Left}
+            \label{fig:sideToSide_2}
+        \end{subfigure}
+        \caption{\textbf{Side-to-Side outreach evaluation.} The manipulator navigates from the start pose (blue marker) to the goal pose (red marker) across the workspace. Faded models illustrate the intermediate trajectory states discovered by RRT-Connect. This task evaluates the morphology's ability to maximize lateral reach and avoid collision with its own base.}
+        \label{fig:sideToSideTask}
+    \end{figure}
+
+    \item \textbf{Side-to-Side Task}: Similar to Outreach Task in that there are no obstacles and robot is on open floor, there are two sets of start and goal poses that are alternately on either side of and facing away from the robot (Figure \ref{fig:sideToSideTask}).:
 
     \begin{table}[H]
         \centering
         \caption{Side-to-Side Task Poses}
-        \label{tab:side-to-side-poses}
+        \label{tab:sideToSidePoses}
         \begin{tabular}{lll}
         \hline
         \textbf{Name} & \textbf{Position} & \textbf{Quaternion} \\
@@ -411,8 +474,6 @@ The tasks are as follows:
         \end{tabular}
     \end{table}
 \end{enumerate}
-
-For broader validation, we report results on all tasks, with the container task as the primary benchmark.
 
 \subsection{Baselines}
 

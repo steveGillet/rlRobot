@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.9.9)  18 FEB 2026 03:54
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.9.9)  18 FEB 2026 23:56
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -215,39 +215,70 @@ Document Style algorithmicx 1.2 - a greatly improved `algorithmic' style
 \ALG@tmplength=\skip59
 )
 Document Style - pseudocode environments for use with the `algorithmicx' style
+) (/usr/share/texlive/texmf-dist/tex/latex/caption/subcaption.sty
+Package: subcaption 2023/07/28 v1.6b Sub-captions (AR)
+ (/usr/share/texlive/texmf-dist/tex/latex/caption/caption.sty
+Package: caption 2023/08/05 v3.6o Customizing captions (AR)
+ (/usr/share/texlive/texmf-dist/tex/latex/caption/caption3.sty
+Package: caption3 2023/07/31 v2.4d caption3 kernel (AR)
+\caption@tempdima=\dimen162
+\captionmargin=\dimen163
+\caption@leftmargin=\dimen164
+\caption@rightmargin=\dimen165
+\caption@width=\dimen166
+\caption@indent=\dimen167
+\caption@parindent=\dimen168
+\caption@hangindent=\dimen169
+Package caption Info: Unknown document class (or package),
+(caption)             standard defaults will be used.
+Package caption Info: \@makecaption = \long macro:#1#2->\ifx \@captype \@IEEEtablestring \begin {center}{\footnotesize #1}\\{\footnotesize \scshape #2}\end {center}\@IEEEtablecaptionsepspace \else \@IEEEfigurecaptionsepspace \setbox \@tempboxa \hbox {\footnotesize #1.~~ #2}\ifdim \wd \@tempboxa >\hsize \setbox \@tempboxa \hbox {\footnotesize #1.~~ }\parbox [t]{\hsize }{\footnotesize \noindent \unhbox \@tempboxa #2}\else \ifcenterfigcaptions \hbox to\hsize {\footnotesize \hfil \box \@tempboxa \hfil }\else \hbox to\hsize {\footnotesize \box \@tempboxa \hfil }\fi \fi \fi  on input line 1175.
+)
+
+Package caption Warning: Unknown document class (or package),
+(caption)                standard defaults will be used.
+See the caption package documentation for explanation.
+
+\c@caption@flags=\count286
+\c@continuedfloat=\count287
+Package caption Info: float package is loaded.
+)
+Package caption Info: New subtype `subfigure' on input line 238.
+\c@subfigure=\count288
+Package caption Info: New subtype `subtable' on input line 238.
+\c@subtable=\count289
 ) (/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2024-01-04 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count286
+\l__color_backend_stack_int=\count290
 \l__pdf_internal_box=\box56
 ) (./irosSubmission.aux)
 \openout1 = `irosSubmission.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 50.
-LaTeX Font Info:    ... okay on input line 50.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 50.
-LaTeX Font Info:    ... okay on input line 50.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 50.
-LaTeX Font Info:    ... okay on input line 50.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 50.
-LaTeX Font Info:    ... okay on input line 50.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 50.
-LaTeX Font Info:    ... okay on input line 50.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 50.
-LaTeX Font Info:    ... okay on input line 50.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 50.
-LaTeX Font Info:    ... okay on input line 50.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 51.
+LaTeX Font Info:    ... okay on input line 51.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 51.
+LaTeX Font Info:    ... okay on input line 51.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 51.
+LaTeX Font Info:    ... okay on input line 51.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 51.
+LaTeX Font Info:    ... okay on input line 51.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 51.
+LaTeX Font Info:    ... okay on input line 51.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 51.
+LaTeX Font Info:    ... okay on input line 51.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 51.
+LaTeX Font Info:    ... okay on input line 51.
  (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count287
-\scratchdimen=\dimen162
+\scratchcounter=\count291
+\scratchdimen=\dimen170
 \scratchbox=\box57
-\nofMPsegments=\count288
-\nofMParguments=\count289
+\nofMPsegments=\count292
+\nofMParguments=\count293
 \everyMPshowfont=\toks27
-\MPscratchCnt=\count290
-\MPscratchDim=\dimen163
-\MPnumerator=\count291
-\makeMPintoPDFobject=\count292
+\MPscratchCnt=\count294
+\MPscratchDim=\dimen171
+\MPnumerator=\count295
+\makeMPintoPDFobject=\count296
 \everyMPtoPDFconversion=\toks28
 ) (/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
@@ -255,25 +286,27 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 48
  (/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
-LaTeX Font Info:    Calculating math sizes for size <11> on input line 54.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 54.
+Package caption Info: Begin \AtBeginDocument code.
+Package caption Info: End \AtBeginDocument code.
+LaTeX Font Info:    Calculating math sizes for size <11> on input line 55.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 55.
  (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 54.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 55.
  (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
-LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 54.
+LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 55.
  (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ot1pcr.fd
 File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 )
-Underfull \hbox (badness 5533) in paragraph at lines 54--54
+Underfull \hbox (badness 5533) in paragraph at lines 55--55
 [][][]$[]$\OT1/ptm/m/n/8 Stephen Gillet is a Mas-ter's stu-dent with the Robotic Pro-
  []
 
 
-Underfull \hbox (badness 1755) in paragraph at lines 54--54
+Underfull \hbox (badness 1755) in paragraph at lines 55--55
 \OT1/ptm/m/n/8 gram, Uni-ver-sity of Col-orado Boul-der, Boul-der, CO 80309, U.S.A.
  []
 
@@ -281,49 +314,79 @@ Underfull \hbox (badness 1755) in paragraph at lines 54--54
 
 
 ]
-<containerTask.png, id=12, 1967.35pt x 1404.24625pt>
-File: containerTask.png Graphic file (type png)
-<use containerTask.png>
-Package pdftex.def Info: containerTask.png  used on input line 141.
+<containerTask1.png, id=12, 1967.35pt x 1404.24625pt>
+File: containerTask1.png Graphic file (type png)
+<use containerTask1.png>
+Package pdftex.def Info: containerTask1.png  used on input line 144.
+(pdftex.def)             Requested size: 117.94363pt x 84.16542pt.
+<containerTask2.png, id=14, 1967.35pt x 1404.24625pt>
+File: containerTask2.png Graphic file (type png)
+<use containerTask2.png>
+Package pdftex.def Info: containerTask2.png  used on input line 151.
+(pdftex.def)             Requested size: 117.94363pt x 84.16542pt.
+ [2 <./containerTask1.png> <./containerTask2.png>]
+<wallMountTask1.png, id=31, 1967.35pt x 1404.24625pt>
+File: wallMountTask1.png Graphic file (type png)
+<use wallMountTask1.png>
+Package pdftex.def Info: wallMountTask1.png  used on input line 317.
+(pdftex.def)             Requested size: 117.94363pt x 84.16542pt.
+<wallMountTask2.png, id=32, 1967.35pt x 1404.24625pt>
+File: wallMountTask2.png Graphic file (type png)
+<use wallMountTask2.png>
+Package pdftex.def Info: wallMountTask2.png  used on input line 324.
+(pdftex.def)             Requested size: 117.94363pt x 84.16542pt.
+ [3 <./wallMountTask1.png> <./wallMountTask2.png>]
+<shelfTask1.png, id=38, 1967.35pt x 1404.24625pt>
+File: shelfTask1.png Graphic file (type png)
+<use shelfTask1.png>
+Package pdftex.def Info: shelfTask1.png  used on input line 370.
+(pdftex.def)             Requested size: 117.94363pt x 84.16542pt.
+<shelfTask2.png, id=39, 1967.35pt x 1404.24625pt>
+File: shelfTask2.png Graphic file (type png)
+<use shelfTask2.png>
+Package pdftex.def Info: shelfTask2.png  used on input line 377.
+(pdftex.def)             Requested size: 117.94363pt x 84.16542pt.
+<outreachTask.png, id=40, 1967.35pt x 1404.24625pt>
+File: outreachTask.png Graphic file (type png)
+<use outreachTask.png>
+Package pdftex.def Info: outreachTask.png  used on input line 419.
 (pdftex.def)             Requested size: 221.14479pt x 157.8316pt.
- [2 <./containerTask.png>]
-<wallMountTask.png, id=29, 1967.35pt x 1404.24625pt>
-File: wallMountTask.png Graphic file (type png)
-<use wallMountTask.png>
-Package pdftex.def Info: wallMountTask.png  used on input line 302.
-(pdftex.def)             Requested size: 221.14479pt x 157.8316pt.
- [3 <./wallMountTask.png>]
-<shelfTask.png, id=34, 1967.35pt x 1404.24625pt>
-File: shelfTask.png Graphic file (type png)
-<use shelfTask.png>
-Package pdftex.def Info: shelfTask.png  used on input line 343.
-(pdftex.def)             Requested size: 221.14479pt x 157.8316pt.
-
-Underfull \hbox (badness 1642) in paragraph at lines 421--422
+<sideToSideTask1.png, id=41, 1967.35pt x 1404.24625pt>
+File: sideToSideTask1.png Graphic file (type png)
+<use sideToSideTask1.png>
+Package pdftex.def Info: sideToSideTask1.png  used on input line 444.
+(pdftex.def)             Requested size: 117.94363pt x 84.16542pt.
+<sideToSideTask2.png, id=42, 1967.35pt x 1404.24625pt>
+File: sideToSideTask2.png Graphic file (type png)
+<use sideToSideTask2.png>
+Package pdftex.def Info: sideToSideTask2.png  used on input line 451.
+(pdftex.def)             Requested size: 117.94363pt x 84.16542pt.
+ [4 <./shelfTask1.png> <./shelfTask2.png> <./outreachTask.png> <./sideToSideTask1.png> <./sideToSideTask2.png>]
+Underfull \hbox (badness 1642) in paragraph at lines 482--483
 []\OT1/ptm/b/n/10 FANUC LR Mate 200iD \OT1/ptm/m/n/10 (most com-mon 6-DoF
  []
 
 
-Underfull \hbox (badness 1939) in paragraph at lines 421--422
+Underfull \hbox (badness 1939) in paragraph at lines 482--483
 \OT1/ptm/m/n/10 model, 70,000+ in-stalled [[]]): $\OML/cmm/m/it/10 n \OT1/cmr/m/n/10 = 6$\OT1/ptm/m/n/10 , lengths
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 422--423
+Underfull \hbox (badness 10000) in paragraph at lines 483--484
 []\OT1/ptm/b/n/10 Franka Panda \OT1/ptm/m/n/10 (7-DoF re-search
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 422--423
+Underfull \hbox (badness 10000) in paragraph at lines 483--484
 \OT1/ptm/m/n/10 stan-dard): $\OML/cmm/m/it/10 n \OT1/cmr/m/n/10 = 7$\OT1/ptm/m/n/10 , lengths $\OT1/cmr/m/n/10 2 \OMS/cmsy/m/n/10 ^^B
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 422--423
+Underfull \hbox (badness 10000) in paragraph at lines 483--484
 \OT1/cmr/m/n/10 [0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 333\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 316\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 0825\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 0825\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 384\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 088\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 01]$
  []
 
-[4 <./shelfTask.png>] (./irosSubmission.bbl
+(./irosSubmission.bbl
 Underfull \hbox (badness 10000) in paragraph at lines 25--27
 \OT1/ptm/m/n/8 / / www . mckinsey . com / business-[]functions / operations / our-[]insights /
  []
@@ -333,7 +396,7 @@ Underfull \hbox (badness 1675) in paragraph at lines 83--84
 []\OT1/ptm/m/n/8 A. A. Oliva, F. Spindler, P. R. Gior-dano, and F. Chaumette,
  []
 
-)
+[5])
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -345,25 +408,27 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the US letter (8.5in X 11in) paper size.
 
-[5] (./irosSubmission.aux)
+[6
+
+] (./irosSubmission.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 4057 strings out of 474222
- 62456 string characters out of 5748734
- 1946975 words of memory out of 5000000
- 26254 multiletter control sequences out of 15000+600000
- 607892 words of font info for 142 fonts, out of 8000000 for 9000
+ 5579 strings out of 474222
+ 91963 string characters out of 5748734
+ 1950975 words of memory out of 5000000
+ 27767 multiletter control sequences out of 15000+600000
+ 607246 words of font info for 141 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 57i,13n,65p,492b,404s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 67i,13n,77p,681b,576s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on irosSubmission.pdf (5 pages, 1045495 bytes).
+Output written on irosSubmission.pdf (6 pages, 3427954 bytes).
 PDF statistics:
- 118 PDF objects out of 1000 (max. 8388607)
- 68 compressed objects within 1 object stream
+ 133 PDF objects out of 1000 (max. 8388607)
+ 70 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 16 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 46 words of extra memory for PDF output out of 10000 (max. 10000000)
 
