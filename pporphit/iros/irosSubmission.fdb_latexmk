@@ -1,15 +1,15 @@
 # Fdb version 4
-["bibtex irosSubmission"] 1771484181.09077 "irosSubmission.aux" "irosSubmission.bbl" "irosSubmission" 1771484184.09532 0
-  "./references.bib" 1771391635.27954 8316 9e20d07eba86fe58443ec81b30c01157 ""
+["bibtex irosSubmission"] 1771539408.0735 "irosSubmission.aux" "irosSubmission.bbl" "irosSubmission" 1771543406.99227 0
+  "./references.bib" 1771539407.92609 8668 b5637d4d19f801af871e6eafd7d92c8b ""
   "/usr/share/texlive/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1440712899 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "irosSubmission.aux" 1771484183.79531 8963 fe2af9dd1cfc9ea56e44c36721648889 "pdflatex"
+  "irosSubmission.aux" 1771543406.80367 8834 30e1923b3574b698a18d2a7862a9c4d8 "pdflatex"
   (generated)
   "irosSubmission.bbl"
   "irosSubmission.blg"
   (rewritten before read)
-["pdflatex"] 1771484181.26078 "/home/steve-gillet/Desktop/rlRobot/pporphit/iros/irosSubmission.tex" "irosSubmission.pdf" "irosSubmission" 1771484184.09549 0
+["pdflatex"] 1771543405.16025 "/home/steve-gillet/Desktop/rlRobot/pporphit/iros/irosSubmission.tex" "irosSubmission.pdf" "irosSubmission" 1771543406.9924 0
   "/etc/texmf/web2c/texmf.cnf" 1757467394.77312 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/steve-gillet/Desktop/rlRobot/pporphit/iros/irosSubmission.tex" 1771484177.40725 29900 adeadd1694f3c322f486e2917bfd1e18 ""
+  "/home/steve-gillet/Desktop/rlRobot/pporphit/iros/irosSubmission.tex" 1771543404.99643 29159 5f65e5f6c68245f02b515adfcc1fb3b5 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/courier/pcrr7t.tfm" 1136768653 960 379cc0019370a9e0208a0a3f949f847a ""
@@ -110,19 +110,19 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1707919699 40399 f2c302f7d2af602abb742093540a5834 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1757467420.83173 5472669 54eaf61a88b6b7896ebd0dac973cb29c ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1757467474 8213095 4eae99bc70fd5a29aaa73b459517d883 ""
-  "containerTask1.png" 1771483660.28542 315015 4b8930ed61cb402b7a1dbd1f4b80ac16 ""
-  "containerTask2.png" 1771483782.24111 329149 bb884702aa34a8277a9312f7ce87c994 ""
+  "containerTask1.png" 1771538951.10308 300857 1034b47db7d4d10344d9a783076955cf ""
+  "containerTask2.png" 1771539115.37043 351989 bffde92f021aa590bf68eecdf46ee544 ""
   "ieeeconf.cls" 1771090149.30205 202167 7b37f8353df61c9733ed46143eff807a ""
-  "irosSubmission.aux" 1771484183.79531 8963 fe2af9dd1cfc9ea56e44c36721648889 "pdflatex"
-  "irosSubmission.bbl" 1771484181.25691 6514 f7cdc78ae2878714f172f6df9ae19350 "bibtex irosSubmission"
-  "irosSubmission.tex" 1771484177.40725 29900 adeadd1694f3c322f486e2917bfd1e18 ""
-  "outreachTask.png" 1771476097.09571 577416 9635cc185d561abcfeafdb0be9b6d2e3 ""
-  "shelfTask1.png" 1771476749.87272 335721 990db5294f9c1ff3c638b79cc24a2fd9 ""
-  "shelfTask2.png" 1771476473.82408 361339 d0e224665833cb1ab306e703b20f59e3 ""
-  "sideToSideTask1.png" 1771473384.78979 484682 5ed1b259ca7a96cd68a81649180398a0 ""
-  "sideToSideTask2.png" 1771473461.57646 420462 5617377d2bb7ea26249aee72c071768c ""
-  "wallMountTask1.png" 1771482339.99636 301274 9bedb8e54f87cf502236f6e2fb03da3d ""
-  "wallMountTask2.png" 1771482044.10969 318853 0d9522c8670f1fa2f3abca54cbef3858 ""
+  "irosSubmission.aux" 1771543406.80367 8834 30e1923b3574b698a18d2a7862a9c4d8 "pdflatex"
+  "irosSubmission.bbl" 1771539408.14978 6514 f7cdc78ae2878714f172f6df9ae19350 "bibtex irosSubmission"
+  "irosSubmission.tex" 1771543404.99643 29159 5f65e5f6c68245f02b515adfcc1fb3b5 ""
+  "outreachTask.png" 1771541837.06075 414696 da0f5e10e85a4dd0903962f1d81476e9 ""
+  "shelfTask1.png" 1771540950.9453 422815 36b506f4c9e032d102344a9e48463a91 ""
+  "shelfTask2.png" 1771541028.34563 295369 325b0ce4b4674d0b1e512d0f2a42c2dc ""
+  "sideToSideTask1.png" 1771541382.90514 383148 308c22c0f6b60e8cd7c911b76662aefb ""
+  "sideToSideTask2.png" 1771541338.01743 372396 36b607e8360a2eea3f3d6cfeb4e10b49 ""
+  "wallMountTask1.png" 1771540154.47384 315343 4abae5d5555ed021af84763b2afbc5a9 ""
+  "wallMountTask2.png" 1771540741.74614 356092 8ca23e6c18ca5d6bbade5710e886529a ""
   (generated)
   "irosSubmission.aux"
   "irosSubmission.log"

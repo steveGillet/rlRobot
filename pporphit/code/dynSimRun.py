@@ -365,81 +365,79 @@ TASK_REGISTRY = {
 "container": {
         "basePos": "0 0 0.06",
         "baseEuler": "0 0 0",
-        "lightPos": "0 0 5",        # Default overhead position
-        "lightDir": "-1 -1 -2",     # Default angled down
+        "lightPos": "0 0 3",
+        "lightDir": "-1 -1 -2",
         "obstacles": [
-            # Forest green: 0.13 0.35 0.13 1
-            {"name": "backWall", "pos": "-2.0 0.6 1.0", "size": "0.01 1.0 1.0", "rgba": "0.13 0.35 0.13 1"},
-            {"name": "leftWall", "pos": "0 -0.4 1.0", "size": "2.0 0.01 1.0", "rgba": "0.13 0.35 0.13 1"},
-            {"name": "rightWall", "pos": "0 1.6 1.0", "size": "2.0 0.01 1.0", "rgba": "0.13 0.35 0.13 1"},
-            {"name": "ceiling", "pos": "0 0.6 2.0", "size": "2.0 1.0 0.01", "rgba": "0.13 0.35 0.13 1"},
+            {"name": "backWall", "pos": "-0.6 0.2 0.4", "size": "0.01 0.4 0.4", "rgba": "0.13 0.35 0.13 1"},
+            {"name": "leftWall", "pos": "0 -0.2 0.4", "size": "0.6 0.01 0.4", "rgba": "0.13 0.35 0.13 1"},
+            {"name": "rightWall", "pos": "0 0.6 0.4", "size": "0.6 0.01 0.4", "rgba": "0.13 0.35 0.13 1"},
+            {"name": "ceiling", "pos": "0 0.2 0.8", "size": "0.6 0.4 0.01", "rgba": "0.13 0.35 0.13 1"},
         ],
         "starts": [
-            [-1.8, 0.3, 0.3, 0.7071, 0, -0.7071, 0],
-            [-1.8, 0.8, 0.4, 0.7071, 0, -0.7071, 0]
+            [-0.45, 0.0, 0.2, 0.7071, 0, -0.7071, 0],
+            [-0.45, 0.4, 0.3, 0.7071, 0, -0.7071, 0]
         ],
         "goals": [
-            [1.9, 0.9, 0.4, 0.7071, 0, 0.7071, 0],
-            [1.8, 0.31, 0.2, 0.7071, 0, 0.7071, 0]
+            [0.45, 0.4, 0.3, 0.7071, 0, 0.7071, 0],
+            [0.45, 0.0, 0.1, 0.7071, 0, 0.7071, 0]
         ]
     },
     "wallMount": {
-        "basePos": "0 -0.4 1.0",
+        "basePos": "0 -0.2 0.6",
         "baseEuler": "-1.5708 0 0",
-        "lightPos": "2.0 -2.0 3.0",   # Moved up, back, and to the side
-        "lightDir": "-1 1 -1",        # Pointing diagonally down toward the center
+        "lightPos": "1.0 -1.0 2.0",   
+        "lightDir": "-1 1 -1",       
         "obstacles": [
-            # Industrial tan: 0.82 0.70 0.54 1
-            {"name": "mountWall", "pos": "0 -0.4 1.0", "size": "1.0 0.01 1.0", "rgba": "0.82 0.70 0.54 1"},
-            {"name": "shelfWall", "pos": "0 1.6 1.0", "size": "2.0 0.01 1.0", "rgba": "0.82 0.70 0.54 1"},  
-            {"name": "shelf", "pos": "0.0 1.35 1.0", "size": "2.0 0.25 0.01", "rgba": "0.4 0.25 0.15 1"},
+            {"name": "mountWall", "pos": "0 -0.2 0.6", "size": "0.3 0.01 0.6", "rgba": "0.82 0.70 0.54 1"},
+            {"name": "shelfWall", "pos": "0 0.6 0.6", "size": "0.6 0.01 0.6", "rgba": "0.82 0.70 0.54 1"},  
+            {"name": "shelf", "pos": "0.0 0.5 0.6", "size": "0.6 0.1 0.01", "rgba": "0.4 0.25 0.15 1"},
         ],
         "starts": [
-            [-1.4, -0.4, 0.1, 0, 0, 1, 0],
-            [-0.9, 1.35, 1.1, 0.7071, -0.7071, 0, 0]
+            [-0.4, -0.2, 0.2, 0, 1, 0, 0],            
+            [-0.2, 0.4, 0.7, 0.7071, -0.7071, 0, 0]    
         ],
         "goals": [
-            [1.75, 1.36, 1.11, 0.7071, -0.7071, 0, 0],
-            [1.5, -0.4, 0.2, 0, 0, 1, 0]
+            [0.5, 0.4, 0.7, 0.7071, -0.7071, 0, 0],   
+            [0.4, -0.2, 0.2, 0, 1, 0, 0]              
         ]
     },
     "shelf": {
         "basePos": "0 0 0.06",
         "baseEuler": "0 0 0",
         "obstacles": [
-            {"name": "shelf", "pos": "1.0 -0.5 0.5", "size": "0.25 0.5 0.01"},
+            {"name": "shelf", "pos": "0.4 -0.2 0.3", "size": "0.1 0.2 0.01"},
         ],
         "starts": [
-            [1.1, -0.31, 0.6, 0.7071, 0, 0.7071, 0],
-            [0.95, -0.29, 0.4, 0.7071, 0, 0.7071, 0]
+            [0.45, -0.1, 0.4, 0.7071, 0, 0.7071, 0],
+            [0.35, -0.1, 0.2, 0.7071, 0, 0.7071, 0]
         ],
         "goals": [
-            [0.9, -0.71, 0.4, 0.7071, 0, 0.7071, 0],
-            [1.05, -0.69, 0.6, 0.7071, 0, 0.7071, 0]
+            [0.35, -0.3, 0.2, 0.7071, 0, 0.7071, 0],
+            [0.45, -0.3, 0.4, 0.7071, 0, 0.7071, 0]
         ]
     },
     "outreach": {
         "basePos": "0 0 0.06",
         "baseEuler": "0 0 0",
-        "obstacles": [], # No obstacles
+        "obstacles": [], 
         "starts": [
-            [0.25, -0.25, 0.1, 0.7071, 0, 0.7071, 0]
+            [0.2, 0.2, 0.12, 0.7071, 0, 0.7071, 0]
         ],
         "goals": [
-            [1.0, -0.25, 0.1, 0.7071, 0, 0.7071, 0]
+            [0.65, 0.2, 0.12, 0.7071, 0, 0.7071, 0]
         ]
     },
     "sideToSide": {
         "basePos": "0 0 0.06",
         "baseEuler": "0 0 0",
-        "obstacles": [], # No obstacles
+        "obstacles": [], 
         "starts": [
-            [0, -0.5, 0.3, 0.7071, 0.7071, 0, 0],
-            [0, 0.5, 0.5, 0.7071, -0.7071, 0, 0]
+            [0, -0.4, 0.3, 0.7071, 0.7071, 0, 0],
+            [0, 0.4, 0.4, 0.7071, -0.7071, 0, 0]
         ],
         "goals": [
-            [0, 0.5, 0.3, 0.7071, -0.7071, 0, 0],
-            [0, -0.5, 0.5, 0.7071, 0.7071, 0, 0]
+            [0, 0.4, 0.3, 0.7071, -0.7071, 0, 0],
+            [0, -0.4, 0.4, 0.7071, 0.7071, 0, 0]
         ]
     }
 }
@@ -596,11 +594,11 @@ def generateXML(numJoints, lengths, jointTypes, taskConfig, numGhosts=0, activeP
 # jointTypes = np.array([2, 1, 2, 0, 2, 0, 2])
 # FANUC
 numLinks = 6
-sizeMultiplier = 3
+sizeMultiplier = 1
 lengths = sizeMultiplier * np.array([0.165, 0.330, 0.08, 0.285, 0.05, 0.05])
 jointTypes = np.array([2, 0, 0, 2, 0, 2])
 
-taskConfig = TASK_REGISTRY["container"]
+taskConfig = TASK_REGISTRY["outreach"]
 xml = generateXML(numLinks, lengths, jointTypes, taskConfig)
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)

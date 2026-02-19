@@ -33,9 +33,9 @@ class RewardLoggerCallback(BaseCallback):
         return True
 
 
-def makeEnv():
+def makeEnv(taskName):
     def _init():
-        return robotArmEnv()
+        return robotArmEnv(taskName=taskName)
 
     return _init
 
@@ -44,7 +44,8 @@ if __name__ == "__main__":
     logger = setupLogging()
     logger.info("Main Process Started")
 
-    venv = SubprocVecEnv([makeEnv() for _ in range(24)])
+    activeTask = "container"
+    venv = SubprocVecEnv([makeEnv(activeTask) for _ in range(24)])
     # venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
 
     policyKwargs = dict(net_arch=[128, 128, 128])
@@ -58,14 +59,14 @@ if __name__ == "__main__":
         batch_size=512,
         n_epochs=4,
         gamma=0.98,
-        tensorboard_log="./arm_morph_tb/",
+        tensorboard_log=f"./arm_morph_tb_{activeTask}/",
         device="cpu",
     )
     ppo.learn(total_timesteps=1_000_000, callback=RewardLoggerCallback())
-    ppo.save("orientationIKeverythingReduced")
+    ppo.save(f"{activeTask}ShrunkTasks0.1_100_1_0.1_0.001")
 
 # if __name__ == "__main__":
-#     env = robotArmEnv()
+#     env = robotArmEnv(taskName="container")
 #     obs, info = env.reset()
 #     for _ in range(2500):
 #         a = env.action_space.sample()

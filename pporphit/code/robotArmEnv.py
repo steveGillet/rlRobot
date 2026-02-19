@@ -6,10 +6,10 @@ from scipy.optimize import minimize
 import gymnasium as gym
 import os
 import logging
-
+import math
 
 class robotArmEnv(gym.Env):
-    def __init__(self, minNumLinks=2, maxNumLinks=7, minLength=0.05, maxLength=1.2, noise=0.05):
+    def __init__(self, taskName="container", minNumLinks=2, maxNumLinks=7, minLength=0.05, maxLength=1.2, noise=0.05):
         super().__init__()
         self.minNumLinks = minNumLinks
         self.maxNumLinks = maxNumLinks
@@ -24,21 +24,15 @@ class robotArmEnv(gym.Env):
             low=-10, high=10, shape=(1,), dtype=np.float32
         )
 
-        # # Wall Task
-        # self.startPos = [
-        #     np.array([-0.9, 1.35, 1.1], dtype=np.float32),
-        #     np.array([-1.5, -0.4, 0.1], dtype=np.float32),
-        # ]
-        # self.goalPos = [
-        #     np.array([1.5, -0.4, 0.2], dtype=np.float32),
-        #     np.array([1.75, 1.36, 1.11], dtype=np.float32),
-        # ]
-        # Container task
-        self.startPos = [np.array([-1.8, 0.3, 0.3, 0.7071, 0, -0.7071, 0], dtype=np.float32), np.array([-1.8, 0.8, 0.4, 0.7071, 0, -0.7071, 0], dtype=np.float32)] 
-        self.goalPos = [np.array([1.9, 0.9, 0.4, 0.7071, 0, 0.7071, 0], dtype=np.float32), np.array([1.8, 0.31, 0.2, 0.7071, 0, 0.7071, 0], dtype=np.float32)]
-        # Simple task
-        # self.startPos = [np.array([-.4, -0.4, 0.6], dtype=np.float32)]
-        # self.goalPos = [np.array([0.4, 0.4, 0.8], dtype=np.float32)]
+        if taskName not in TASK_REGISTRY:
+            raise ValueError(f"Task '{taskName}' not found in TASK_REGISTRY.")
+        
+        self.taskConfig = TASK_REGISTRY[taskName]
+        
+        self.startPos = [np.array(p, dtype=np.float32) for p in self.taskConfig["starts"]]
+        self.goalPos = [np.array(p, dtype=np.float32) for p in self.taskConfig["goals"]]
+
+        self.obstacleNames = ["floor"] + [obs["name"] for obs in self.taskConfig["obstacles"]]
 
         self.logger = setupLogging()
 
@@ -52,7 +46,7 @@ class robotArmEnv(gym.Env):
         )
 
         try:
-            xml = generateXML(numLinks, lengths.tolist(), jointTypes.tolist())
+            xml = generateXML(numLinks, lengths.tolist(), jointTypes.tolist(), self.taskConfig)
             model = mujoco.MjModel.from_xml_string(xml)
             data = mujoco.MjData(model)
         except Exception as e:
@@ -61,8 +55,7 @@ class robotArmEnv(gym.Env):
 
         actuatorIds = [model.actuator(f"motor{i}").id for i in range(numLinks)]
         jointIds = [model.joint(f"joint{i}").id for i in range(numLinks)]
-        obstacleNames = ["containerTop", "containerBack", "containerLeft", "containerRight", "floor"]
-        obstacleIds = set([model.geom(name).id for name in obstacleNames])
+        obstacleIds = set([model.geom(name).id for name in self.obstacleNames])
 
         isSO2 = []
 
@@ -227,84 +220,146 @@ class robotArmEnv(gym.Env):
 
         return np.array([0.0], dtype=np.float32), reward, done, done, {}
 
-def generateXML(numJoints, lengths, jointTypes):
+TASK_REGISTRY = {
+"container": {
+        "basePos": "0 0 0.06",
+        "baseEuler": "0 0 0",
+        "lightPos": "0 0 3",
+        "lightDir": "-1 -1 -2",
+        "obstacles": [
+            {"name": "backWall", "pos": "-0.6 0.2 0.4", "size": "0.01 0.4 0.4", "rgba": "0.13 0.35 0.13 1"},
+            {"name": "leftWall", "pos": "0 -0.2 0.4", "size": "0.6 0.01 0.4", "rgba": "0.13 0.35 0.13 1"},
+            {"name": "rightWall", "pos": "0 0.6 0.4", "size": "0.6 0.01 0.4", "rgba": "0.13 0.35 0.13 1"},
+            {"name": "ceiling", "pos": "0 0.2 0.8", "size": "0.6 0.4 0.01", "rgba": "0.13 0.35 0.13 1"},
+        ],
+        "starts": [
+            [-0.45, 0.0, 0.2, 0.7071, 0, -0.7071, 0],
+            [-0.45, 0.4, 0.3, 0.7071, 0, -0.7071, 0]
+        ],
+        "goals": [
+            [0.45, 0.4, 0.3, 0.7071, 0, 0.7071, 0],
+            [0.45, 0.0, 0.1, 0.7071, 0, 0.7071, 0]
+        ]
+    },
+    "wallMount": {
+        "basePos": "0 -0.2 0.6",
+        "baseEuler": "-1.5708 0 0",
+        "lightPos": "1.0 -1.0 2.0",   
+        "lightDir": "-1 1 -1",       
+        "obstacles": [
+            {"name": "mountWall", "pos": "0 -0.2 0.6", "size": "0.3 0.01 0.6", "rgba": "0.82 0.70 0.54 1"},
+            {"name": "shelfWall", "pos": "0 0.6 0.6", "size": "0.6 0.01 0.6", "rgba": "0.82 0.70 0.54 1"},  
+            {"name": "shelf", "pos": "0.0 0.5 0.6", "size": "0.6 0.1 0.01", "rgba": "0.4 0.25 0.15 1"},
+        ],
+        "starts": [
+            [-0.4, -0.2, 0.2, 0, 1, 0, 0],            
+            [-0.2, 0.4, 0.7, 0.7071, -0.7071, 0, 0]    
+        ],
+        "goals": [
+            [0.5, 0.4, 0.7, 0.7071, -0.7071, 0, 0],   
+            [0.4, -0.2, 0.2, 0, 1, 0, 0]              
+        ]
+    },
+    "shelf": {
+        "basePos": "0 0 0.06",
+        "baseEuler": "0 0 0",
+        "obstacles": [
+            {"name": "shelf", "pos": "0.4 -0.2 0.3", "size": "0.1 0.2 0.01"},
+        ],
+        "starts": [
+            [0.45, -0.1, 0.4, 0.7071, 0, 0.7071, 0],
+            [0.35, -0.1, 0.2, 0.7071, 0, 0.7071, 0]
+        ],
+        "goals": [
+            [0.35, -0.3, 0.2, 0.7071, 0, 0.7071, 0],
+            [0.45, -0.3, 0.4, 0.7071, 0, 0.7071, 0]
+        ]
+    },
+    "outreach": {
+        "basePos": "0 0 0.06",
+        "baseEuler": "0 0 0",
+        "obstacles": [], 
+        "starts": [
+            [0.2, 0.2, 0.12, 0.7071, 0, 0.7071, 0]
+        ],
+        "goals": [
+            [0.65, 0.2, 0.12, 0.7071, 0, 0.7071, 0]
+        ]
+    },
+    "sideToSide": {
+        "basePos": "0 0 0.06",
+        "baseEuler": "0 0 0",
+        "obstacles": [], 
+        "starts": [
+            [0, -0.4, 0.3, 0.7071, 0.7071, 0, 0],
+            [0, 0.4, 0.4, 0.7071, -0.7071, 0, 0]
+        ],
+        "goals": [
+            [0, 0.4, 0.3, 0.7071, -0.7071, 0, 0],
+            [0, -0.4, 0.4, 0.7071, 0.7071, 0, 0]
+        ]
+    }
+}
+
+def generateXML(numJoints, lengths, jointTypes, taskConfig):
     try:
-        xml = """
+        # Barebones XML setup optimized for fast physics/kinematics
+        xml = f"""
 <mujoco>
-    <compiler angle="radian"/>
-    <option gravity="0 0 -9.81"/>
+    <compiler angle="radian" />
+    <option gravity="0 0 -9.81" />
     <worldbody>
-        <geom name="floor" type="plane" size="2 2 0.1" rgba=".9 0.5 0 1"/>
-        <geom name="containerBack" type="box" pos="-2.0 0.6 1.0" size="0.01 1.0 1.0" rgba="0.5 0.5 0.5 1"/>
-        <geom name="containerLeft" type="box" pos="0 -0.4 1.0" size="2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
-        <geom name="containerRight" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/>
-        <geom name="containerTop" type="box" pos="0 0.6 2.0" size="2.0 1.0 0.01" rgba="0.5 0.5 0.5 1"/>
-        <!-- <geom name="mountWall" type="box" pos="0 -0.4 1.0" size="1.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/> -->
-        <!-- <geom name="shelfWall" type="box" pos="0 1.6 1.0" size=" 2.0 0.01 1.0" rgba="0.5 0.5 0.5 1"/> -->
-        <!-- <geom name="shelf" type="box" pos="0.0 1.35 1.0" size="2.0 0.25 0.01" rgba="0.5 0.5 0.5 1"/> -->
-        <!-- <body name="base" pos="0 -0.4 1.0" euler="-1.57 0 0"> -->
-        <body name="base" pos="0 0 0">
-            <geom name="baseBox" type="box" size="0.1 0.1 0.05"/>
+        <geom name="floor" type="plane" size="5 5 0.1" />
         """
-        currentPos = "0 0 0.05"
-        numCloses = 0
+
+        # Inject dynamic obstacles (Physics only, no colors)
+        for obs in taskConfig["obstacles"]:
+            xml += f'<geom name="{obs["name"]}" type="box" pos="{obs["pos"]}" size="{obs["size"]}" />\n'
+
+        # Inject Robot Base
+        xml += f"""
+        <body name="base" pos="{taskConfig['basePos']}" euler="{taskConfig['baseEuler']}">
+            <geom name="baseBox" type="box" size="0.12 0.12 0.06" />
+        """
+
+        currentPos = "0 0 0.06"
+        hingeLimit = 7 * math.pi / 8 
+        
         for i in range(numJoints):
-            if jointTypes[i] == 0:
-                xml += f"""
-                <body name="link{i}" pos="{currentPos}">
-                    <joint name="joint{i}" type="hinge" axis="1 0 0" range="-2.355 2.355" damping="1.0"/>
-                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="{lengths[i]}"/>
-                """
-                currentPos = f"0 0 {lengths[i]}"
-                numCloses += 1
-            elif jointTypes[i] == 1:
-                xml += f"""
-                <body name="link{i}" pos="{currentPos}">
-                    <joint name="joint{i}" type="hinge" axis="0 1 0" range="-2.355 2.355" damping="1.0"/>
-                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="{lengths[i]}"/>
-                """
-                currentPos = f"0 0 {lengths[i]}"
-                numCloses += 1
-            elif jointTypes[i] == 2:
-                xml += f"""
-                <body name="link{i}" pos="{currentPos}">
-                    <joint name="joint{i}" type="hinge" axis="0 0 1" damping="1.0"/>
-                    <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="{lengths[i]}"/>
-                """
-                currentPos = f"0 0 {lengths[i]}"
-                numCloses += 1
-            else:
-                xml += f"""
-                <body name="link{i}" pos="{currentPos}">
-                    <geom name="baseCapsule{i}" type="capsule" size="0.025" fromto="0 0 0 0 0 {lengths[i]}" mass="{lengths[i]/2}"/>
-                    <body name="slideChild{i}"> 
-                        <joint name="joint{i}" type="slide" axis="0 0 1" range="0 {lengths[i]}" damping="1.0"/>
-                        <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {lengths[i]}" mass="{lengths[i]/2}"/>
-                """
-                currentPos = f"0 0 {lengths[i]}"
-                numCloses += 2
-        xml += (
-            f'<site name="endEffector" pos="{currentPos}" size="0.01" rgba="0 1 0 1"/>'
-        )
-        xml += "</body>" * numCloses  # Close links
-        xml += """
-        </body>  <!-- Close base -->
-    <site name="startPos" pos="0 1 -1" size="0.02" rgba="0 0 1 1"/>
-    <site name="goalPos" pos="-2 0 -1" size="0.02" rgba="1 0 0 1"/>
-  </worldbody>
-<actuator>
-        """
+            li = lengths[i]
+            jCode = jointTypes[i]
+            
+            if jCode == 0:
+                axis, jtype, limitStr = "1 0 0", "hinge", f'limited="true" range="{-hingeLimit:.4f} {hingeLimit:.4f}"'
+            elif jCode == 1:
+                axis, jtype, limitStr = "0 1 0", "hinge", f'limited="true" range="{-hingeLimit:.4f} {hingeLimit:.4f}"'
+            elif jCode == 2:
+                axis, jtype, limitStr = "0 0 1", "hinge", 'limited="false"'
+            elif jCode == 3:
+                axis, jtype, limitStr = "0 0 1", "slide", f'limited="true" range="0 {li:.4f}"'
+            
+            xml += f"""
+            <body name="link{i}" pos="{currentPos}">
+                <joint name="joint{i}" type="{jtype}" axis="{axis}" damping="1.0" {limitStr} />
+                <geom name="capsule{i}" type="capsule" size="0.025" fromto="0 0 0 0 0 {li:.4f}" />
+            """
+            currentPos = f"0 0 {li:.4f}"
+            
+        # End Effector Site
+        xml += f'<site name="endEffector" pos="{currentPos}" size="0.015" />'
+            
+        xml += "</body>\n" * numJoints
+        xml += "</body>\n" # Close the base body
+
+        xml += "</worldbody>\n<actuator>\n"
         for i in range(numJoints):
-            xml += f'<motor name="motor{i}" joint="joint{i}" ctrlrange="-10 10"/>'
-        xml += """
-</actuator>
-</mujoco>
-        """
+            xml += f'<motor name="motor{i}" joint="joint{i}" ctrlrange="-10 10"/>\n'
+        xml += "</actuator>\n</mujoco>"
+        
         return xml
     except Exception as e:
         print(f"Mujoco XML Generation Error: {e}")
         raise
-
 
 def manipulabilityIndex(J):
     if J is None or J.shape[0] != 6 or not np.all(np.isfinite(J)):
@@ -360,7 +415,7 @@ def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize
 
         qRand = np.random.uniform(low, high)
         # Find nearest neighbor
-        nearestNeighbor = np.argmin([cDist(model, np.array(q), np.array(qRand)) for q in treeA])
+        nearestNeighbor = findNearest(model, treeA, qRand)
         qNear = treeA[nearestNeighbor]
 
         qNew = takeStep(model, qNear, qRand, stepSize)
@@ -375,7 +430,7 @@ def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize
         # Try to connect other tree
         terminated = False
         qRand = qNew.copy()
-        nearestNeighbor = np.argmin([cDist(model, np.array(q), np.array(qRand)) for q in treeB])
+        nearestNeighbor = findNearest(model, treeB, qRand)
         qNear = treeB[nearestNeighbor]
         while not terminated:
             qNew = takeStep(model, qNear, qRand, stepSize)
@@ -497,6 +552,25 @@ def interpolatePath(model, path, numNodes=100):
 
     interpolatedPath.append(path[-1])
     return interpolatedPath
+
+def findNearest(model, tree, qRand):
+    # Convert the entire tree list to a 2D NumPy array
+    treeArray = np.array(tree)
+    
+    # Broadcast subtraction: calculates difference for every node at once
+    diff = qRand - treeArray
+    
+    # Create a boolean mask for joints that don't have limits
+    unlimitedMask = ~np.array(model.jnt_limited[:len(qRand)], dtype=bool)
+    
+    # Apply angle wrapping strictly to the unlimited joints across all nodes
+    diff[:, unlimitedMask] = (diff[:, unlimitedMask] + np.pi) % (2 * np.pi) - np.pi
+    
+    # Compute the Euclidean distance across the rows (axis=1)
+    distances = np.linalg.norm(diff, axis=1)
+    
+    # Return the index of the minimum distance
+    return np.argmin(distances)
 
 # ────────────
 # IK function 
