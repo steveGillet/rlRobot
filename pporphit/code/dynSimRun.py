@@ -357,9 +357,6 @@ def robustDLSik(
 # XML generation
 # ───────────────
 
-import math
-import numpy as np
-
 # A central registry of all tasks defined in the paper
 TASK_REGISTRY = {
 "container": {

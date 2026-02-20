@@ -100,4 +100,7 @@ F.~America, ``Lr mate 200id data sheet,'' 2024. [Online]. Available: \url{https:
 {Franka Robotics GmbH}, \emph{Product Manual Franka Research 3}, release 1.0~ed., Mar 2024, document number: R02210. [Online]. Available: \url{https://franka.de/hubfs/Product%20Manual%20Franka%20Research%203_R02210_1.0_EN.pdf?hsLang=en}
 \BIBentrySTDinterwordspacing
 
+\bibitem{vahrenkamp2012manipulability}
+N.~Vahrenkamp, T.~Asfour, and R.~Dillmann, ``Manipulability analysis,'' in \emph{2012 12th IEEE-RAS International Conference on Humanoid Robots (Humanoids 2012)}.\hskip 1em plus 0.5em minus 0.4em\relax IEEE, 2012, pp. 568--573.
+
 \end{thebibliography}
