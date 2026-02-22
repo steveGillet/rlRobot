@@ -109,7 +109,7 @@ class robotArmEnv(gym.Env):
                 startQpos,
                 goalQpos,
                 obstacleIds,
-                totalTime=1.0,
+                totalTime=3.0,
                 stepSize=0.1,
                 numIsteps=5,
                 tol=0.01,
@@ -205,9 +205,9 @@ class robotArmEnv(gym.Env):
         # numLinks = 2
         # lengths = np.array([0.77285725, 1.1999999])
         # jointTypes = np.array([1, 0])
-        # # PANDA
+        # PANDA
         # numLinks = 7
-        # sizeMultiplier = 2
+        # sizeMultiplier = 1
         # lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
         # jointTypes = np.array([2, 1, 2, 0, 2, 0, 2])
 

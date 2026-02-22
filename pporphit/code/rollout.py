@@ -2,7 +2,7 @@ from stable_baselines3 import PPO
 import numpy as np
 
 # Load the trained model
-ppo = PPO.load("containerShrunkTasks0.1_100_1_0.1_0.001")
+ppo = PPO.load("containerMoreIKiter0.1_100_1_0.1_0.001")
 
 # Dummy observation from your env
 obs = np.array([0.0])

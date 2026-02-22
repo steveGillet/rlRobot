@@ -63,7 +63,7 @@ if __name__ == "__main__":
         device="cpu",
     )
     ppo.learn(total_timesteps=1_000_000, callback=RewardLoggerCallback())
-    ppo.save(f"{activeTask}MoreIKiter0.1_100_1_0.1_0.001")
+    ppo.save(f"{activeTask}3secPlan0.1_100_1_0.1_0.001")
 
 # if __name__ == "__main__":
 #     env = robotArmEnv(taskName="container")
