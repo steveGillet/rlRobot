@@ -91,7 +91,12 @@ The manipulability index is a measure of a manipulators ability to arbitrarily c
 The tasks will be kept simple but varied in ways to test different types of movements like moving near the base, moving from near to far, different elevations, more linear movements, and different obstacle contraints.
 One might imagine that a lot of pick and place tasks are mostly linear and so might largely be done by linear actuators more efficiently for example.
 
-The research questions to be answered: Can PPO be used to generate more efficient morphologies? Can morphologies be generated for tasks that generalized manipulators cannot do or cannot perform well? Can more simple morphologies (less DOF) be generated that can perform the same tasks with similar levels of accuracy?
+The research questions to be answered: 
+\begin{enumerate}
+    \item Can PPO be used to generate more efficient morphologies?
+    \item Can morphologies be generated for tasks that generalized manipulators cannot do or cannot perform well?
+    \item Can more simple morphologies (less DOF) be generated that can perform the same tasks with similar levels of accuracy?
+\end{enumerate}
 
 \section{Related Work}
 
@@ -106,6 +111,21 @@ This background motivates the approach of this paper which is going to use simpl
 FANUC 6-DOF series of manipulators are the most commonly used in industry today \cite{patentpc2025toprobotics}\cite{standardbots2025fanucprice} and so their morphology will be used as a baseline for comparison.
 The other baseline will be the 7-DOF Franka Emika Panda because it is considered a standard in research \cite{haddadin2022franka}\cite{oliva2022franksim}.
 Given the same environment, task, and controllers which morphologies will perform better?
+
+\section{Related Work}
+
+While most of the work in this area has focused on the co-optimization of morphology and control for atomic, modular robots, AI has been increasingly shown to aid in the design of efficient robotics.
+This section dives into the background research specifically pertaining to the three research questions: energy efficiency, task specialization, and simplicity in manipulator design.
+Can PPO be used to do it?
+
+\subsection{Morphological Optimization for Energy Efficiency}
+A primary motivation for morphology optimization is the reduction of energy consumption, a critical bottleneck in modern robotics. While early reinforcement learning (RL) approaches focused largely on motion control and trajectory optimization for fixed platforms, recent literature has demonstrated that co-adapting the physical structure yields substantially higher energy savings. \cite{bhatia2023reinforcement} showed that PPO can generate freeform morphologies optimized for efficient locomotion from a set of atomic modules. Similarly, \cite{luck2019data} utilized Soft Actor-Critic (SAC) to co-optimize quadruped morphology and control, drastically reducing the number of physical prototypes required to find energy-efficient gaits. While these methods have proven highly successful for mobile and soft robots—where energy cost is explicitly treated as a design constraint—there remains a significant gap in applying these same continuous RL morphological optimizations to industrial robotic manipulators to minimize their operational cost of transport.
+
+\subsection{Adapting to Constrained and Specialized Tasks}
+Standard manipulators often struggle in highly constrained or atypical environments, prompting research into task-specific adaptability. \cite{kalimuthu2023} demonstrated that PPO and A3C can successfully identify optimal configurations for reconfigurable tiling robots to maximize area coverage in specific environments. Furthermore, \cite{ding2024modular} utilized Double Deep Q-Networks (DDQN) to co-optimize morphology and control for modular robotic manipulators, proving that adapting the physical structure allows robots to perform tasks that fixed morphologies cannot physically access or execute well. More recently, \cite{spielberg2025accelerated} accelerated this process using pretrained foundation models combined with RL. PMorph builds on this philosophy by using environment-aware simulation (via RRT-Connect and DLS IK) to punish obstacle collisions, forcing the RL agent to breed task-specialists that can navigate heavily constrained spaces where generalized arms fail.
+
+\subsection{Task-Specialists vs. Generalized Overactuation}
+The modern manufacturing industry relies heavily on 6-DOF and 7-DOF generalized manipulators. The FANUC 6-DOF series is the most commonly used in industry today \cite{patentpc2025toprobotics}\cite{standardbots2025fanucprice}, and the 7-DOF Franka Emika Panda remains a standard in research \cite{haddadin2022franka}\cite{oliva2022franksim}. However, \cite{russo2021task} and \cite{he2019underactuated} highlight that these standard manipulators are heavily overactuated for the vast majority of planar and low-complexity tasks they perform, leading to parasitic mass and computational inefficiency. \cite{tjanaka2023co} showed that RL can be used on a modular robot to co-optimize morphology and outperform optimized control on a fixed, generalized morphology. By introducing a penalty for higher degrees of freedom, PMorph directly addresses this overactuation problem, seeking to answer whether simpler, lower-DOF morphologies can achieve the same accuracy as the FANUC and Panda baselines when their kinematic parameters are mathematically tailored to the workspace.
 
 \section{Problem Formulation}
 \label{sec:problem}
@@ -514,7 +534,20 @@ Entropy coefficient & 0.0 \\
 \end{tabular}
 \end{table}
 
-\section{CONCLUSIONS}
+\section{Results}
+
+Each optimized morphology \(\theta^*\) found by PMorph was compared against the baseline FANUC and Panda across 100 runs in each task.
+The average total reward and individual reward terms are reported.
+
+Main Table?
+
+\subsection{Energy Efficiency}
+
+\subsection{Task Specialization}
+
+\subsection{Simplicity}
+
+\section{Conclusion}
 
 A conclusion section is not required. Although a conclusion may review the main points of the paper, do not replicate the abstract as the conclusion. A conclusion might elaborate on the importance of the work or suggest applications and extensions. 
 

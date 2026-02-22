@@ -299,11 +299,11 @@ def robustDLSik(
     obstacleIds,
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
-    maxIter: int = 200,
+    maxIter: int = 50,
     tol: float = 0.01,
     lambda_: float = 0.01,
     alpha: float = 0.75,
-    numTries: int = 5,
+    numTries: int = 30,
     rotWeight: float = 0.2,
 ):
     bestQpos, bestJ, bestError = None, None, np.inf
@@ -595,7 +595,7 @@ sizeMultiplier = 1
 lengths = sizeMultiplier * np.array([0.165, 0.330, 0.08, 0.285, 0.05, 0.05])
 jointTypes = np.array([2, 0, 0, 2, 0, 2])
 
-taskConfig = TASK_REGISTRY["outreach"]
+taskConfig = TASK_REGISTRY["container"]
 xml = generateXML(numLinks, lengths, jointTypes, taskConfig)
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
