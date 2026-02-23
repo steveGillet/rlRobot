@@ -14,45 +14,45 @@ Database file #1: references.bib
 Warning--edition ordinal word "Release 1.0" may be too high (or improper) for conversion in franka2024research3
 
 Done.
-You've used 23 entries,
+You've used 25 entries,
             4087 wiz_defined-function locations,
-            960 strings with 11917 characters,
-and the built_in function-call counts, 14377 in all, are:
-= -- 1204
-> -- 299
-< -- 86
-+ -- 149
-- -- 58
-* -- 683
-:= -- 2343
-add.period$ -- 46
-call.type$ -- 23
-change.case$ -- 26
-chr.to.int$ -- 168
-cite$ -- 24
-duplicate$ -- 1100
-empty$ -- 1176
-format.name$ -- 73
-if$ -- 3291
+            972 strings with 12670 characters,
+and the built_in function-call counts, 17538 in all, are:
+= -- 1444
+> -- 414
+< -- 124
++ -- 221
+- -- 84
+* -- 846
+:= -- 2731
+add.period$ -- 50
+call.type$ -- 25
+change.case$ -- 28
+chr.to.int$ -- 264
+cite$ -- 26
+duplicate$ -- 1292
+empty$ -- 1381
+format.name$ -- 95
+if$ -- 4041
 int.to.chr$ -- 0
-int.to.str$ -- 23
-missing$ -- 211
-newline$ -- 106
-num.names$ -- 23
-pop$ -- 485
+int.to.str$ -- 25
+missing$ -- 245
+newline$ -- 112
+num.names$ -- 25
+pop$ -- 565
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 4
-skip$ -- 1120
+skip$ -- 1352
 stack$ -- 0
-substring$ -- 428
-swap$ -- 828
-text.length$ -- 30
+substring$ -- 670
+swap$ -- 1030
+text.length$ -- 36
 text.prefix$ -- 0
 top$ -- 5
-type$ -- 23
+type$ -- 25
 warning$ -- 1
-while$ -- 59
-width$ -- 25
-write$ -- 256
+while$ -- 71
+width$ -- 27
+write$ -- 278
 (There was 1 warning)
