@@ -49,11 +49,11 @@ T.~Yoshikawa, ``Manipulability of robotic mechanisms,'' \emph{The International 
 \bibitem{bhatia2023reinforcement}
 J.~Bhatia \emph{et~al.}, ``Reinforcement learning for freeform robot design,'' arXiv:2310.05670, 2023.
 
-\bibitem{tjanaka2023co}
-B.~Tjanaka \emph{et~al.}, ``Co-optimization of morphology and behavior of modular robots via hierarchical deep reinforcement learning,'' in \emph{Robotics: Science and Systems (RSS)}, 2023.
+\bibitem{luck2019data}
+K.~S. Luck, H.~B. Amor, R.~Calandra, and J.~Peters, ``Data-efficient co-adaptation of morphology and behaviour with deep reinforcement learning,'' in \emph{Conference on Robot Learning (CoRL)}, 2019.
 
-\bibitem{spielberg2025accelerated}
-A.~Spielberg \emph{et~al.}, ``Accelerated co-design of robots through morphological pretraining,'' arXiv:2502.10862, 2025.
+\bibitem{le2020reinforcement}
+A.~V. Le, M.~Arunmozhi, S.~Veeramani, C.~Liu, S.~Parman, and T.-F. Cheng, ``Reinforcement learning-based energy-aware area coverage for reconfigurable hrombo tiling robot,'' \emph{IEEE Access}, vol.~8, pp. 209\,594--209\,605, 2020.
 
 \bibitem{kalimuthu2023}
 M.~Kalimuthu, A.~A. Hayat, T.~Pathmakumar, M.~R. Elara, and K.~L. Wood, ``A deep reinforcement learning approach to optimal morphologies generation in reconfigurable tiling robots,'' \emph{Mathematics}, vol.~11, no.~18, p. 3893, 2023.
@@ -63,8 +63,8 @@ M.~Kalimuthu, A.~A. Hayat, T.~Pathmakumar, M.~R. Elara, and K.~L. Wood, ``A deep
 Z.~Ding, H.~Tang, H.~Wan, C.~Zhang, and R.~Sun, ``A modular robotic arm configuration design method based on double dqn with prioritized experience replay,'' \emph{Symmetry}, vol.~16, no.~6, p. 714, 2024. [Online]. Available: \url{https://www.mdpi.com/2073-8994/16/6/714}
 \BIBentrySTDinterwordspacing
 
-\bibitem{luck2019data}
-K.~S. Luck, H.~B. Amor, R.~Calandra, and J.~Peters, ``Data-efficient co-adaptation of morphology and behaviour with deep reinforcement learning,'' in \emph{Conference on Robot Learning (CoRL)}, 2019.
+\bibitem{spielberg2025accelerated}
+A.~Spielberg \emph{et~al.}, ``Accelerated co-design of robots through morphological pretraining,'' arXiv:2502.10862, 2025.
 
 \bibitem{patentpc2025toprobotics}
 \BIBentryALTinterwordspacing
@@ -81,6 +81,12 @@ S.~Haddadin \emph{et~al.}, ``The franka emika robot: A reference platform for ro
 
 \bibitem{oliva2022franksim}
 A.~A. Oliva, F.~Spindler, P.~R. Giordano, and F.~Chaumette, ``Frankasim: A dynamic simulator for the franka emika robot with visual-servoing enabled capabilities,'' in \emph{ICARCV 2022 - 17th International Conference on Control, Automation, Robotics and Vision}, Singapore, Singapore, Dec 2022, pp. 1--7.
+
+\bibitem{fasquell2020bioinspired}
+B.~Fasquelle, M.~Furet, P.~Khanna, D.~Chablat, C.~Chevallereau, and P.~Wenger, ``A bio-inspired 3-dof light-weight manipulator with tensegrity x-joints,'' in \emph{2020 IEEE International Conference on Robotics and Automation (ICRA)}, 2020, pp. 5054--5060.
+
+\bibitem{nakano2023robostrich}
+K.~Nakano, M.~Gunji, M.~Ikeda, K.~Or, M.~Ando, K.~Inoue, H.~Mochiyama, K.~Nakajima, R.~Niiyama, and Y.~Kuniyoshi, ``“robostrich” manipulator: A novel mechanical design and control based on the anatomy and behavior of an ostrich neck,'' \emph{IEEE Robotics and Automation Letters}, vol.~8, no.~5, pp. 3062--3069, 2023.
 
 \bibitem{klein1987dexterity}
 \BIBentryALTinterwordspacing
