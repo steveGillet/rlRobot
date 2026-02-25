@@ -218,8 +218,8 @@ def dlsIK(
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
     maxIter: int = 200,
-    tol: float = 0.01,
-    lambda_: float = 0.01,
+    tol: float = 0.005,
+    lambda_: float = 0.05,
     alpha: float = 0.75,
     rotWeight: float = 0.2,
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -300,10 +300,10 @@ def robustDLSik(
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
     maxIter: int = 200,
-    tol: float = 0.01,
-    lambda_: float = 0.1,
+    tol: float = 0.005,
+    lambda_: float = 0.05,
     alpha: float = 0.75,
-    numTries: int = 30,
+    numTries: int = 100,
     rotWeight: float = 0.2,
 ):
     bestQpos, bestJ, bestError = None, None, np.inf

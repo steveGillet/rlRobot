@@ -9,7 +9,7 @@ import logging
 import math
 
 class robotArmEnv(gym.Env):
-    def __init__(self, taskName="container", minNumLinks=2, maxNumLinks=7, minLength=0.05, maxLength=1.2, noise=0.05):
+    def __init__(self, taskName="container", minNumLinks=2, maxNumLinks=7, minLength=0.05, maxLength=1.2, noise=0.01):
         super().__init__()
         self.minNumLinks = minNumLinks
         self.maxNumLinks = maxNumLinks
@@ -109,7 +109,7 @@ class robotArmEnv(gym.Env):
                 startQpos,
                 goalQpos,
                 obstacleIds,
-                totalTime=3.0,
+                totalTime=1.0,
                 stepSize=0.1,
                 numIsteps=5,
                 tol=0.01,
@@ -205,7 +205,7 @@ class robotArmEnv(gym.Env):
         # numLinks = 2
         # lengths = np.array([0.77285725, 1.1999999])
         # jointTypes = np.array([1, 0])
-        # PANDA
+        # # PANDA
         # numLinks = 7
         # sizeMultiplier = 1
         # lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
@@ -582,10 +582,10 @@ def dlsIK(
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
     maxIter: int = 200,
-    tol: float = 0.01,
-    lambda_: float = 0.01,
+    tol: float = 0.005,
+    lambda_: float = 0.05,
     alpha: float = 0.75,
-    rotWeight: float = 0.1,
+    rotWeight: float = 0.2,
 ) -> tuple[np.ndarray, np.ndarray]:
     endEffectorId = model.site("endEffector").id
 
@@ -663,12 +663,12 @@ def robustDLSik(
     obstacleIds,
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
-    maxIter: int = 50,
-    tol: float = 0.01,
-    lambda_: float = 0.01,
+    maxIter: int = 100,
+    tol: float = 0.005,
+    lambda_: float = 0.05,
     alpha: float = 0.75,
-    numTries: int = 30,
-    rotWeight: float = 0.1,
+    numTries: int = 50,
+    rotWeight: float = 0.2,
 ):
     bestQpos, bestJ, bestError = None, None, np.inf
 
