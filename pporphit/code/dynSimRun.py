@@ -595,7 +595,7 @@ sizeMultiplier = 1
 lengths = sizeMultiplier * np.array([0.165, 0.330, 0.08, 0.285, 0.05, 0.05])
 jointTypes = np.array([2, 0, 0, 2, 0, 2])
 
-taskConfig = TASK_REGISTRY["container"]
+taskConfig = TASK_REGISTRY["wallMount"]
 xml = generateXML(numLinks, lengths, jointTypes, taskConfig)
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)

@@ -1,0 +1,58 @@
+This is BibTeX, Version 0.99d (TeX Live 2023/Debian)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: irosSubmission.aux
+The style file: IEEEtran.bst
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Database file #1: references.bib
+-- IEEEtran.bst version 1.14 (2015/08/26) by Michael Shell.
+-- http://www.michaelshell.org/tex/ieeetran/bibtex/
+-- See the "IEEEtran_bst_HOWTO.pdf" manual for usage information.
+Warning--edition ordinal word "Release 1.0" may be too high (or improper) for conversion in franka2024research3
+
+Done.
+You've used 25 entries,
+            4087 wiz_defined-function locations,
+            972 strings with 12670 characters,
+and the built_in function-call counts, 17538 in all, are:
+= -- 1444
+> -- 414
+< -- 124
++ -- 221
+- -- 84
+* -- 846
+:= -- 2731
+add.period$ -- 50
+call.type$ -- 25
+change.case$ -- 28
+chr.to.int$ -- 264
+cite$ -- 26
+duplicate$ -- 1292
+empty$ -- 1381
+format.name$ -- 95
+if$ -- 4041
+int.to.chr$ -- 0
+int.to.str$ -- 25
+missing$ -- 245
+newline$ -- 112
+num.names$ -- 25
+pop$ -- 565
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 4
+skip$ -- 1352
+stack$ -- 0
+substring$ -- 670
+swap$ -- 1030
+text.length$ -- 36
+text.prefix$ -- 0
+top$ -- 5
+type$ -- 25
+warning$ -- 1
+while$ -- 71
+width$ -- 27
+write$ -- 278
+(There was 1 warning)
