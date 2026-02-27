@@ -213,7 +213,7 @@ def findNearest(model, tree, qRand):
 # ────────────
 def dlsIK(
     model,
-    data,  # <--- ADDED
+    data,
     obstacleIds,
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
@@ -295,15 +295,15 @@ def dlsIK(
 
 def robustDLSik(
     model,
-    data,  # <--- ADDED
+    data,
     obstacleIds,
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
-    maxIter: int = 200,
+    maxIter: int = 100,
     tol: float = 0.005,
     lambda_: float = 0.05,
-    alpha: float = 0.75,
-    numTries: int = 100,
+    alpha: float = 1,
+    numTries: int = 50,
     rotWeight: float = 0.2,
 ):
     bestQpos, bestJ, bestError = None, None, np.inf
@@ -319,7 +319,7 @@ def robustDLSik(
     for _ in range(numTries):
         qPos, J = dlsIK(
             model,
-            data,  # <--- PASSED DOWN
+            data,
             obstacleIds,
             targetPose,
             initialQpos=initQ,
@@ -330,7 +330,6 @@ def robustDLSik(
             rotWeight=rotWeight,
         )
 
-        # Removed redundant mujoco.MjData(model) allocation here
         data.qpos[:] = qPos
         mujoco.mj_forward(model, data)
         posError = targetPose[:3] - data.site("endEffector").xpos.copy()
@@ -595,7 +594,7 @@ sizeMultiplier = 1
 lengths = sizeMultiplier * np.array([0.165, 0.330, 0.08, 0.285, 0.05, 0.05])
 jointTypes = np.array([2, 0, 0, 2, 0, 2])
 
-taskConfig = TASK_REGISTRY["wallMount"]
+taskConfig = TASK_REGISTRY["shelf"]
 xml = generateXML(numLinks, lengths, jointTypes, taskConfig)
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
@@ -724,7 +723,7 @@ for startPose, goalPose in zip(startPoses, goalPoses):
 # ───────────────────────────────────────────────
 # Static Ghost Diorama Visualization
 # ───────────────────────────────────────────────
-NUM_GHOSTS = 4  # Intermediate faded steps
+NUM_GHOSTS = 0  # Intermediate faded steps
 SOLID_START = False # Set this flag here so we can use it in both places
 
 for pathIndex, path in enumerate(pathLists):
