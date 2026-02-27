@@ -1,16 +1,23 @@
 \relax 
+\citation{staats2012specialization}
+\citation{madiedo2020capturing}
+\citation{jackson2025story}
+\citation{indeed2025pros}
 \citation{mckinsey2019industrial}
 \citation{patel2024}
 \citation{russo2021task}
 \citation{he2019underactuated}
+\citation{arany2008pgc1}
+\citation{mancuso2022effect}
+\citation{wu2020occupational}
 \citation{schulman2017proximal}
 \citation{kuffner2000rrt}
 \citation{buss2004introduction}
-\citation{yoshikawa1985manipulability}
 \@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces \textbf  {The PMorph System Architecture.} The pipeline begins with a task definition and an optimizer agent that outputs a continuous action vector. This is decoded into discrete morphology parameters ($\theta $) used to generate a MuJoCo XML model. The morphology is evaluated via IK solvers and RRT-Connect path planning. Successful paths are analyzed for energy consumption via inverse dynamics. Metrics are aggregated into a scalar reward signal, closing the feedback loop to update the optimizer.}}{1}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces System overview of the proposed morphology optimization framework. The PPO agent generates actions \( a \in [0,1]^{15} \), which are decoded into robot parameters \( \theta = (n, l, j) \) (number of links, lengths, and joint types). These are used to create an XML model evaluated in a MuJoCo simulation environment, incorporating task definitions (obstacles and start/goal poses). IK solving and RRT-Connect path planning compute trajectories \( Q \), followed by inverse dynamics for energy \( E \). Performance metrics (success, path length, manipulability, and energy) are aggregated via the reward function in Eq. (1) to yield a scalar reward \( r(\theta ) \).}}{1}{}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
 \newlabel{fig:systemDiagram}{{1}{1}{}{}{}}
+\citation{yoshikawa1985manipulability}
 \citation{bhatia2023reinforcement}
 \citation{luck2019data}
 \citation{le2020reinforcement}
@@ -35,8 +42,6 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {III-B}Task Specification}{2}{}\protected@file@percent }
 \citation{klein1987dexterity}
 \citation{kuffner2000rrt}
-\citation{schulman2017proximal}
-\citation{schulman2015high}
 \newlabel{fig:container_1}{{2a}{3}{}{}{}}
 \newlabel{sub@fig:container_1}{{a}{3}{}{}{}}
 \newlabel{fig:container_2}{{2b}{3}{}{}{}}
@@ -51,87 +56,96 @@
 \@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Morphology Decoding from PPO Action}}{3}{}\protected@file@percent }
 \newlabel{alg:decode}{{1}{3}{}{}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {IV-B}Simulation}{3}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {IV-C}Training}{3}{}\protected@file@percent }
+\citation{schulman2017proximal}
+\citation{schulman2015high}
 \citation{fanuc2024lrmate}
 \citation{franka2024research3}
 \citation{yoshikawa1985manipulability}
 \citation{vahrenkamp2012manipulability}
+\@writefile{toc}{\contentsline {subsection}{\numberline {IV-C}Training}{4}{}\protected@file@percent }
 \@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces PMorph Training}}{4}{}\protected@file@percent }
 \newlabel{alg:train}{{2}{4}{}{}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {IV-D}Evaluation}{4}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {V}Experimental Setup}{4}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {V-A}Tasks}{4}{}\protected@file@percent }
-\newlabel{fig:wallMount_1}{{3a}{4}{}{}{}}
-\newlabel{sub@fig:wallMount_1}{{a}{4}{}{}{}}
-\newlabel{fig:wallMount_2}{{3b}{4}{}{}{}}
-\newlabel{sub@fig:wallMount_2}{{b}{4}{}{}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \textbf  {Wall Mount task evaluation.} The manipulator, mounted horizontally on the near wall, must navigate to and from the opposing shelf. Faded overlays represent the RRT-generated trajectory. This configuration evaluates a morphology's ability to resist gravity in atypical base orientations while navigating constrained pick-and-place trajectories.}}{4}{}\protected@file@percent }
-\newlabel{fig:wallMountTask}{{3}{4}{}{}{}}
-\newlabel{fig:shelfTask_1}{{4a}{4}{}{}{}}
-\newlabel{sub@fig:shelfTask_1}{{a}{4}{}{}{}}
-\newlabel{fig:shelfTask_2}{{4b}{4}{}{}{}}
-\newlabel{sub@fig:shelfTask_2}{{b}{4}{}{}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \textbf  {Shelf task evaluation.} The manipulator navigates around a floating shelf obstacle, moving from a start pose (blue marker) to a goal pose (red marker). Transparent models illustrate the intermediate joint-space trajectory, concluding at the opaque target configuration. This task specifically tests the morphology's capability to maneuver through vertically constrained spaces and perform complex over-and-under reaching motions typical in industrial pick-and-place operations.}}{4}{}\protected@file@percent }
-\newlabel{fig:shelfTask}{{4}{4}{}{}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces \textbf  {Near-Base Outreach task evaluation.} The manipulator extends from a configuration near its base (blue marker) to a distant target coordinate (red marker). Transparent overlays depict the collision-free joint-space trajectory generated by RRT-Connect, terminating at the opaque goal configuration. This obstacle-free environment specifically isolates and evaluates a morphology's maximum functional reach and extension efficiency.}}{5}{}\protected@file@percent }
-\newlabel{fig:outreachTask}{{5}{5}{}{}{}}
-\newlabel{fig:sideToSide_1}{{6a}{5}{}{}{}}
-\newlabel{sub@fig:sideToSide_1}{{a}{5}{}{}{}}
-\newlabel{fig:sideToSide_2}{{6b}{5}{}{}{}}
-\newlabel{sub@fig:sideToSide_2}{{b}{5}{}{}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces \textbf  {Side-to-Side outreach evaluation.} The manipulator navigates from the start pose (blue marker) to the goal pose (red marker) across the workspace. Faded models illustrate the intermediate trajectory states discovered by RRT-Connect. This task evaluates the morphology's ability to maximize lateral reach and avoid collision with its own base.}}{5}{}\protected@file@percent }
-\newlabel{fig:sideToSideTask}{{6}{5}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {V-B}Metrics}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {V-B}Metrics}{4}{}\protected@file@percent }
+\newlabel{fig:wallMount_1}{{3a}{5}{}{}{}}
+\newlabel{sub@fig:wallMount_1}{{a}{5}{}{}{}}
+\newlabel{fig:wallMount_2}{{3b}{5}{}{}{}}
+\newlabel{sub@fig:wallMount_2}{{b}{5}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \textbf  {Wall Mount task evaluation.} The manipulator, mounted horizontally on the near wall, must navigate to and from the opposing shelf. Faded overlays represent the RRT-generated trajectory. This configuration evaluates a morphology's ability to resist gravity in atypical base orientations while navigating constrained pick-and-place trajectories.}}{5}{}\protected@file@percent }
+\newlabel{fig:wallMountTask}{{3}{5}{}{}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {V-C}Implementation and Compute}{5}{}\protected@file@percent }
+\newlabel{fig:shelfTask_1}{{4a}{5}{}{}{}}
+\newlabel{sub@fig:shelfTask_1}{{a}{5}{}{}{}}
+\newlabel{fig:shelfTask_2}{{4b}{5}{}{}{}}
+\newlabel{sub@fig:shelfTask_2}{{b}{5}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \textbf  {Shelf task evaluation.} The manipulator navigates around a floating shelf obstacle, moving from a start pose (blue marker) to a goal pose (red marker). Transparent models illustrate the intermediate joint-space trajectory, concluding at the opaque target configuration. This task specifically tests the morphology's capability to maneuver through vertically constrained spaces and perform complex over-and-under reaching motions typical in industrial pick-and-place operations.}}{5}{}\protected@file@percent }
+\newlabel{fig:shelfTask}{{4}{5}{}{}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces PPO Hyperparameters}}{5}{}\protected@file@percent }
 \newlabel{tab:hyperparams}{{I}{5}{}{}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {VI}Results}{5}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {VI-A}Energy Efficiency}{5}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {VI-B}Task Specialization}{5}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {VI-C}Simplicity}{5}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {VII}Conclusion}{5}{}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Container Task Poses}}{5}{}\protected@file@percent }
-\newlabel{tab:containerPoses}{{II}{5}{}{}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Container Task Obstacles}}{5}{}\protected@file@percent }
-\newlabel{tab:containerObstacles}{{III}{5}{}{}{}}
-\bibstyle{IEEEtran}
-\bibdata{references}
-\bibcite{mckinsey2019industrial}{1}
-\bibcite{patel2024}{2}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces \textbf  {Near-Base Outreach task evaluation.} The manipulator extends from a configuration near its base (blue marker) to a distant target coordinate (red marker). Transparent overlays depict the collision-free joint-space trajectory generated by RRT-Connect, terminating at the opaque goal configuration. This obstacle-free environment specifically isolates and evaluates a morphology's maximum functional reach and extension efficiency.}}{6}{}\protected@file@percent }
+\newlabel{fig:outreachTask}{{5}{6}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {VI-A}Energy Efficiency}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {VI-B}Task Specialization}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {VI-C}Simplicity}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {VII}Conclusion}{6}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Container Task Poses}}{6}{}\protected@file@percent }
+\newlabel{tab:containerPoses}{{II}{6}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Container Task Obstacles}}{6}{}\protected@file@percent }
+\newlabel{tab:containerObstacles}{{III}{6}{}{}{}}
+\newlabel{fig:sideToSide_1}{{6a}{6}{}{}{}}
+\newlabel{sub@fig:sideToSide_1}{{a}{6}{}{}{}}
+\newlabel{fig:sideToSide_2}{{6b}{6}{}{}{}}
+\newlabel{sub@fig:sideToSide_2}{{b}{6}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces \textbf  {Side-to-Side outreach evaluation.} The manipulator navigates from the start pose (blue marker) to the goal pose (red marker) across the workspace. Faded models illustrate the intermediate trajectory states discovered by RRT-Connect. This task evaluates the morphology's ability to maximize lateral reach and avoid collision with its own base.}}{6}{}\protected@file@percent }
+\newlabel{fig:sideToSideTask}{{6}{6}{}{}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Wall Mount Task Poses}}{6}{}\protected@file@percent }
 \newlabel{tab:wallMountPoses}{{IV}{6}{}{}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces Wall Mount Task Obstacles}}{6}{}\protected@file@percent }
 \newlabel{tab:wallMountObstacles}{{V}{6}{}{}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces Shelf Task Poses}}{6}{}\protected@file@percent }
 \newlabel{tab:simpleShelfPoses}{{VI}{6}{}{}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces Shelf Task Obstacles}}{6}{}\protected@file@percent }
-\newlabel{tab:simpleShelfObstacles}{{VII}{6}{}{}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {VIII}{\ignorespaces Near-Base Outreach Task Poses}}{6}{}\protected@file@percent }
-\newlabel{tab:outreachPoses}{{VIII}{6}{}{}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {IX}{\ignorespaces Side-to-Side Task Poses}}{6}{}\protected@file@percent }
-\newlabel{tab:sideToSidePoses}{{IX}{6}{}{}{}}
-\@writefile{toc}{\contentsline {section}{References}{6}{}\protected@file@percent }
-\bibcite{russo2021task}{3}
-\bibcite{he2019underactuated}{4}
-\bibcite{schulman2017proximal}{5}
-\bibcite{kuffner2000rrt}{6}
-\bibcite{buss2004introduction}{7}
-\bibcite{yoshikawa1985manipulability}{8}
-\bibcite{bhatia2023reinforcement}{9}
-\bibcite{luck2019data}{10}
-\bibcite{le2020reinforcement}{11}
-\bibcite{kalimuthu2023}{12}
-\bibcite{ding2024modular}{13}
-\bibcite{spielberg2025accelerated}{14}
-\bibcite{patentpc2025toprobotics}{15}
-\bibcite{standardbots2025fanucprice}{16}
-\bibcite{haddadin2022franka}{17}
-\bibcite{oliva2022franksim}{18}
-\bibcite{fasquell2020bioinspired}{19}
-\bibcite{nakano2023robostrich}{20}
-\bibcite{klein1987dexterity}{21}
-\bibcite{schulman2015high}{22}
-\bibcite{fanuc2024lrmate}{23}
-\bibcite{franka2024research3}{24}
-\bibcite{vahrenkamp2012manipulability}{25}
-\gdef \@abspage@last{8}
+\bibstyle{IEEEtran}
+\bibdata{references}
+\bibcite{staats2012specialization}{1}
+\bibcite{madiedo2020capturing}{2}
+\bibcite{jackson2025story}{3}
+\bibcite{indeed2025pros}{4}
+\bibcite{mckinsey2019industrial}{5}
+\bibcite{patel2024}{6}
+\bibcite{russo2021task}{7}
+\bibcite{he2019underactuated}{8}
+\bibcite{arany2008pgc1}{9}
+\bibcite{mancuso2022effect}{10}
+\@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces Shelf Task Obstacles}}{7}{}\protected@file@percent }
+\newlabel{tab:simpleShelfObstacles}{{VII}{7}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VIII}{\ignorespaces Near-Base Outreach Task Poses}}{7}{}\protected@file@percent }
+\newlabel{tab:outreachPoses}{{VIII}{7}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {IX}{\ignorespaces Side-to-Side Task Poses}}{7}{}\protected@file@percent }
+\newlabel{tab:sideToSidePoses}{{IX}{7}{}{}{}}
+\@writefile{toc}{\contentsline {section}{References}{7}{}\protected@file@percent }
+\bibcite{wu2020occupational}{11}
+\bibcite{schulman2017proximal}{12}
+\bibcite{kuffner2000rrt}{13}
+\bibcite{buss2004introduction}{14}
+\bibcite{yoshikawa1985manipulability}{15}
+\bibcite{bhatia2023reinforcement}{16}
+\bibcite{luck2019data}{17}
+\bibcite{le2020reinforcement}{18}
+\bibcite{kalimuthu2023}{19}
+\bibcite{ding2024modular}{20}
+\bibcite{spielberg2025accelerated}{21}
+\bibcite{patentpc2025toprobotics}{22}
+\bibcite{standardbots2025fanucprice}{23}
+\bibcite{haddadin2022franka}{24}
+\bibcite{oliva2022franksim}{25}
+\bibcite{fasquell2020bioinspired}{26}
+\bibcite{nakano2023robostrich}{27}
+\bibcite{klein1987dexterity}{28}
+\bibcite{schulman2015high}{29}
+\bibcite{fanuc2024lrmate}{30}
+\bibcite{franka2024research3}{31}
+\bibcite{vahrenkamp2012manipulability}{32}
+\gdef \@abspage@last{9}

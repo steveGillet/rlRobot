@@ -34,74 +34,23 @@
 \usepackage{graphicx}
 \usepackage{algorithm,algpseudocode}
 \usepackage{subcaption}
-\usepackage{tikz}
 \usepackage{stfloats}
-\usetikzlibrary{shapes, arrows.meta, positioning, fit, calc, backgrounds, shadows}
-
-% Define standard styles for the diagram to ensure consistency
-\tikzset{
-    process/.style={
-        rectangle, 
-        draw=black!60, 
-        fill=blue!5, 
-        thick, 
-        minimum width=2.5cm, 
-        minimum height=1.2cm, 
-        align=center, 
-        rounded corners=2pt,
-        drop shadow={opacity=0.15}
-    },
-    optimizer/.style={
-        process,
-        fill=red!5, % Highlight the optimizer in a slightly different color
-        font=\bfseries
-    },
-    data/.style={
-        rectangle, 
-        draw=black!40, 
-        fill=yellow!5, 
-        dashed,
-        minimum width=2cm, 
-        minimum height=0.8cm, 
-        align=center, 
-        font=\footnotesize\itshape
-    },
-    container/.style={
-        draw=black!30, 
-        dashed, 
-        fill=gray!5, 
-        inner sep=0.4cm, 
-        rounded corners=5pt
-    },
-    arrow/.style={
-        -{Latex[length=3mm, width=2mm]}, 
-        thick, 
-        draw=black!70
-    },
-    labeltext/.style={
-        font=\footnotesize,
-        midway,
-        above,
-        align=center,
-        color=black!80
-    }
-}
 
 \title{\LARGE \bf
 PMorph: A Task-Specialized Robot Manipulator Morphology Optimizer 
 }
 
 
-\author{Stephen Gillet$^{1}$% <-this % stops a space
-\thanks{*This work was not supported by any organization}% <-this % stops a space
-\thanks{$^{1}$Stephen Gillet is a Master's student with the Robotic Program,
-        University of Colorado Boulder, Boulder, CO 80309, U.S.A.
-        {\tt\small stgi5837@colorado.edu}}%
+\author{ Authors Anonymous
+% Stephen Gillet$^{*}$, Gilberto G.~Briscoe-Martinez, Alessandro Roncone% <-this % stops a space
+% \thanks{$^{*}$Corresponding author.}% <-this % stops a space
+% \thanks{GBM is supported by NASA Space Technology Graduate Research Opportunity Grant 80NSSC22K1211.}
+% \thanks{All Authors with Department of Computer Science, University of Colorado Boulder, CO, USA.}%
+% \thanks{Emails: {\tt\small \{firstname.lastname\}@colorado.edu}}%
 }
 
 
 \begin{document}
-
 
 
 \maketitle
@@ -110,65 +59,15 @@ PMorph: A Task-Specialized Robot Manipulator Morphology Optimizer
 
 \begin{figure*}[!b] % [!b] forces it to the bottom, stfloats allows it on page 1
     \centering
-    \resizebox{\textwidth}{!}{
-    \begin{tikzpicture}[node distance=1.2cm and 2.2cm]
-
-    % --- NODES ---
-
-    % Second Row: Main Pipeline
-    \node[optimizer] (agent) {Optimizer Agent\\(PPO)};
-    \node[process, right=of agent] (decoder) {Morphology Decoder};
-    \node[process, right=of decoder, align=center] (xml) {XML\\Generator};
-    \node[process, right=of xml, align=center] (planner) {IK Solver \&\\RRT-Connect Planner};
-    \node[process, right=of planner, align=center] (dynamics) {Inverse Dynamics\\(Energy Calc)};
-    
-    % Top Row: Inputs
-    \node[data, above=1.5cm of planner, xshift=-1.5cm] (task) {Task Definition\\(Obstacles, Poses)};
-    
-    % Reward 
-    \node[process, below=1.5cm of planner, fill=green!5] (rewardCalc) {Reward Function\\Aggregation Eq. (\ref{eq:reward})};
-
-
-    % --- DRAW CONNECTIONS ---
-
-    % Task input to environment subprocesses 
-    \draw[arrow, dashed] (task.south) -| (xml.north);
-    \draw[arrow, dashed] (task.south) -| (planner.north);
-
-    % Main flow forward 
-    \draw[arrow] (agent) -- node[above, font=\footnotesize, align=center, yshift=2pt] {Action\\$a \in [0,1]^{15}$} (decoder);
-    \draw[arrow] (decoder) -- node[above, font=\footnotesize, align=center, yshift=2pt] {Parameters\\$\theta = (n, l, j)$} (xml);
-    \draw[arrow] (xml) -- (planner);
-    \draw[arrow] (planner) -- node[above, font=\footnotesize, yshift=2pt] {Path $Q$} (dynamics);
-
-    % Data flow to reward calculator
-    \draw[arrow] (planner.south) -- node[right, font=\footnotesize, align=left, xshift=2pt] {Success, Length,\\Manipulability} (rewardCalc.north);
-    
-    % Route energy calculation 
-    \draw[arrow] (dynamics.south) |- node[above, font=\footnotesize, pos=0.75] {Energy $E$} (rewardCalc.east);
-
-    % Feedback Loop
-    \draw[arrow] (rewardCalc.south) -- ++(0, -0.8) -| node[above, font=\footnotesize, pos=0.25] {Scalar Reward $r(\theta)$} (agent.south);
-
-
-    % --- CONTAINERS AND LABELS ---
-    
-    % Group the simulation steps into one environment box
-    \begin{pgfonlayer}{background}
-        % anchor=south east and north east moves the label to the right side
-        \node[container, fit=(xml) (planner) (dynamics), inner sep=0.4cm, label={[anchor=south east, font=\bfseries\small, color=black!60, xshift=-5pt, yshift=2pt]north east:MuJoCo Simulation Environment}] (simEnv) {};
-    \end{pgfonlayer}
-
-    \end{tikzpicture}
-    } % End of resizebox
-    \caption{\textbf{The PMorph System Architecture.} The pipeline begins with a task definition and an optimizer agent that outputs a continuous action vector. This is decoded into discrete morphology parameters ($\theta$) used to generate a MuJoCo XML model. The morphology is evaluated via IK solvers and RRT-Connect path planning. Successful paths are analyzed for energy consumption via inverse dynamics. Metrics are aggregated into a scalar reward signal, closing the feedback loop to update the optimizer.}
+    \includegraphics[width=\textwidth]{systemDiagram.png}
+    \caption{System overview of the proposed morphology optimization framework. The PPO agent generates actions \( a \in [0,1]^{15} \), which are decoded into robot parameters \( \theta = (n, l, j) \) (number of links, lengths, and joint types). These are used to create an XML model evaluated in a MuJoCo simulation environment, incorporating task definitions (obstacles and start/goal poses). IK solving and RRT-Connect path planning compute trajectories \( Q \), followed by inverse dynamics for energy \( E \). Performance metrics (success, path length, manipulability, and energy) are aggregated via the reward function in Eq. (1) to yield a scalar reward \( r(\theta) \).}
     \label{fig:systemDiagram}
 \end{figure*}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
 
-This paper seeks to address the overactuation, energy-ineffiency, and lack of task specialization seen in manufacturing from the current suite of generalized robotic manipulators.
+This paper seeks to address the energy-ineffiency, lack of task specialization, and overactuation seen in manufacturing from the current suite of generalized robotic manipulators.
 The approach involves specifying a task in a MuJoCo simulated environment and then using a PPO agent to optimize the morphology for that enviroment given a reward function.
 The morphological elements to be optimized include the number of links, the lengths of each link, and the type of joints involved.
 The reward function is tuned to weigh energy cost, end effector movement, end effector accuracy, manipulability measures, number of links, and task completion.
@@ -180,12 +79,15 @@ PPO is ideal for this task because it can efficiently optimize over the continuo
 \section{Introduction}
 
 Imagine a factory where every employee has to be trained on and work every job in the plant.
-Imagine how inefficient that would be.
-Every employee would have general knowledge and ability, but no one would have a chance to specialize and become very good at any particular job.
-This is exactly the state of robotics in manufacturing today where high costs and lack of tailorability are some of the most cited problems for the adoption of robotics \cite{mckinsey2019industrial}\cite{patel2024}.
-To make matters worse \cite{russo2021task} and \cite{he2019underactuated} show that most manipulators are overactuated, inefficient, and ineffective for most tasks they are used in today.
+Research (\cite{staats2012specialization}\cite{madiedo2020capturing}) shows that approach to be inefficient because workers cannot build deep expertise and become very productive.
+The majority of factories today use specialized workers for this reason, dividing tasks boosts efficiency, reduces costs, and increases output \cite{jackson2025story}\cite{indeed2025pros}. 
+And yet, this is exactly the opposite approach of robotics in manufacturing today where high costs and lack of tailorability are some of the most cited problems for the adoption of robotics \cite{mckinsey2019industrial}\cite{patel2024}.
+To make matters worse \cite{russo2021task} and \cite{he2019underactuated} show that most robot manipulators are overactuated, inefficient, and ineffective for most tasks they are used in today.
 
-This paper seeks to address these issues by using a PPO agent to optimize the morphology of a robotic manipulator to the particular task it is being used for.
+What if, in the same way that factories do with human workers, robots were specialized in the tasks they performed?
+But, with human workers, specialization is not just a matter of knowledge, but also of physical adaptation \cite{arany2008pgc1}\cite{mancuso2022effect}\cite{wu2020occupational}.
+Why not then also adapt the physical embodiment of the robot to the task it is performing?
+This paper seeks to specialize the morphological design of robots to specific tasks by using a PPO agent to optimize the morphology based on various performance metrics and task-specific physical constraints.
 This ensures that the robot is as simple, efficient, and capable as possible for its particular job while still allowing the designer to specify the level of robustness.
 
 PPO was chosen for its ability to explore the continuous action space that is morphology and it has been shown to do so efficiently and robustly \cite{schulman2017proximal}.
@@ -264,14 +166,13 @@ The poses are modified with Gaussian noise ($\sigma=0.05$) at evaluation in orde
 
 \begin{figure}[H]
     \centering
-    \begin{subfigure}[b]{0.48\columnwidth}
+    \begin{subfigure}[b]{0.9\columnwidth}
         \centering
         \includegraphics[width=\textwidth]{containerTask1.png}
         \caption{Task 1: Deep Extraction}
         \label{fig:container_1}
     \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\columnwidth}
+    \begin{subfigure}[b]{0.9\columnwidth}
         \centering
         \includegraphics[width=\textwidth]{containerTask2.png}
         \caption{Task 2: Shallow Extraction}
@@ -407,14 +308,14 @@ The tasks are as follows:
 
     \begin{figure}[tb]
         \centering
-        \begin{subfigure}[b]{0.48\columnwidth}
+        \begin{subfigure}[b]{0.9\columnwidth}
             \centering
             \includegraphics[width=\textwidth]{wallMountTask1.png}
             \caption{Task 1: Mount Wall to Shelf}
             \label{fig:wallMount_1}
         \end{subfigure}
         \hfill
-        \begin{subfigure}[b]{0.48\columnwidth}
+        \begin{subfigure}[b]{0.9\columnwidth}
             \centering
             \includegraphics[width=\textwidth]{wallMountTask2.png}
             \caption{Task 2: Shelf to Mount Wall}
@@ -429,14 +330,14 @@ The tasks are as follows:
 
     \begin{figure}[tb]
         \centering
-        \begin{subfigure}[b]{0.48\columnwidth}
+        \begin{subfigure}[b]{0.9\columnwidth}
             \centering
             \includegraphics[width=\textwidth]{shelfTask1.png}
             \caption{Task 1: Top to Bottom}
             \label{fig:shelfTask_1}
         \end{subfigure}
         \hfill
-        \begin{subfigure}[b]{0.48\columnwidth}
+        \begin{subfigure}[b]{0.9\columnwidth}
             \centering
             \includegraphics[width=\textwidth]{shelfTask2.png}
             \caption{Task 2: Bottom to Top}
@@ -460,14 +361,14 @@ The tasks are as follows:
 
     \begin{figure}[tb]
         \centering
-        \begin{subfigure}[b]{0.48\columnwidth}
+        \begin{subfigure}[b]{0.9\columnwidth}
             \centering
             \includegraphics[width=\textwidth]{sideToSideTask1.png}
             \caption{Task 1: Left to Right}
             \label{fig:sideToSide_1}
         \end{subfigure}
         \hfill
-        \begin{subfigure}[b]{0.48\columnwidth}
+        \begin{subfigure}[b]{0.9\columnwidth}
             \centering
             \includegraphics[width=\textwidth]{sideToSideTask2.png}
             \caption{Task 2: Right to Left}
