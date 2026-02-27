@@ -663,10 +663,10 @@ def robustDLSik(
     obstacleIds,
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
-    maxIter: int = 100,
+    maxIter: int = 50,
     tol: float = 0.005,
     lambda_: float = 0.05,
-    alpha: float = 0.75,
+    alpha: float = 1.0,
     numTries: int = 50,
     rotWeight: float = 0.2,
 ):
