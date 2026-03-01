@@ -62,8 +62,8 @@ if __name__ == "__main__":
         tensorboard_log=f"./arm_morph_tb_{activeTask}/",
         device="cpu",
     )
-    ppo.learn(total_timesteps=1_000_000, callback=RewardLoggerCallback())
-    ppo.save(f"{activeTask}TweakedIK0.1_100_1_0.1_0.001")
+    ppo.learn(total_timesteps=500_000, callback=RewardLoggerCallback())
+    ppo.save(f"{activeTask}FasterIKcollisionCheck1_100_10_1_0.01")
 
 # if __name__ == "__main__":
 #     env = robotArmEnv(taskName="container")

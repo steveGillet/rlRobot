@@ -673,7 +673,7 @@ for startPose, goalPose in zip(startPoses, goalPoses):
         model, data,
         startQpos, goalQpos,
         obstacleIds,
-        totalTime=1.0,      # ← increase if needed
+        totalTime=2.0,      # ← increase if needed
         stepSize=0.1,
         numIsteps=5,
         tol=0.01
