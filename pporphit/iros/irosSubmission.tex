@@ -85,9 +85,9 @@ And yet, this is exactly the opposite approach of robotics in manufacturing toda
 To make matters worse \cite{russo2021task} and \cite{he2019underactuated} show that most robot manipulators are overactuated, inefficient, and ineffective for most tasks they are used in today.
 
 What if, in the same way that factories do with human workers, robots were specialized in the tasks they performed?
-But, with human workers, specialization is not just a matter of knowledge, but also of physical adaptation \cite{arany2008pgc1}\cite{mancuso2022effect}\cite{wu2020occupational}.
-Why not then also adapt the physical embodiment of the robot to the task it is performing?
-This paper seeks to specialize the morphological design of robots to specific tasks by using a PPO agent to optimize the morphology based on various performance metrics and task-specific physical constraints.
+Much like human workers physically and cognitively adapt to master repetitive tasks over time \cite{arany2008pgc1}\cite{mancuso2022effect}\cite{wu2020occupational}, robotic systems stand to gain significant efficiencies through morphological specialization. 
+As advancements in additive manufacturing and Industry 4.0 drive the cost of mass customization closer to that of traditional mass production \cite{wang2017industry}\cite{baumers2019economics}, it is becoming both economically feasible and operationally necessary to co-optimize a robot's physical hardware alongside its control software for specific workspaces.
+This paper seeks to optimize the morphological design of robots to specific tasks by using a PPO agent to optimize the morphology based on various performance metrics and task-specific physical constraints.
 This ensures that the robot is as simple, efficient, and capable as possible for its particular job while still allowing the designer to specify the level of robustness.
 
 PPO was chosen for its ability to explore the continuous action space that is morphology and it has been shown to do so efficiently and robustly \cite{schulman2017proximal}.

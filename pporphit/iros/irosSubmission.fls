@@ -1,9 +1,9 @@
-PWD /home/steve0gillet/Desktop/rlRobot/pporphit/iros
+PWD /home/steve-gillet/Desktop/rlRobot/pporphit/iros
 INPUT /etc/texmf/web2c/texmf.cnf
 INPUT /usr/share/texmf/web2c/texmf.cnf
 INPUT /usr/share/texlive/texmf-dist/web2c/texmf.cnf
 INPUT /var/lib/texmf/web2c/pdftex/pdflatex.fmt
-INPUT /home/steve0gillet/Desktop/rlRobot/pporphit/iros/irosSubmission.tex
+INPUT /home/steve-gillet/Desktop/rlRobot/pporphit/iros/irosSubmission.tex
 OUTPUT irosSubmission.log
 INPUT ./ieeeconf.cls
 INPUT ieeeconf.cls
