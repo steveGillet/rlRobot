@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     activeTask = "wallMount"
     venv = SubprocVecEnv([makeEnv(activeTask) for _ in range(24)])
-    # venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
+    venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
 
     policyKwargs = dict(net_arch=[128, 128, 128])
     ppo = PPO(
@@ -63,7 +63,7 @@ if __name__ == "__main__":
         device="cpu",
     )
     ppo.learn(total_timesteps=500_000, callback=RewardLoggerCallback())
-    ppo.save(f"{activeTask}FasterIKcollisionCheck1_100_10_1_0.01")
+    ppo.save(f"{activeTask}FasterIKcollisionCheckNormalized1_100_10_1_0.01")
 
 # if __name__ == "__main__":
 #     env = robotArmEnv(taskName="container")

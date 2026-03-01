@@ -87,6 +87,10 @@ class robotArmEnv(gym.Env):
             self.logger.debug(f"Goal Error: {goalError}")
             self.logger.debug(f"Start Error: {startError}")
 
+            if startError > 0.1 or goalError > 0.1:
+                reward += -10.0 * (startError + goalError)
+                continue
+
             if jStart.shape[1] == numLinks:
                 muStart = manipulabilityIndex(jStart)
             else:
@@ -733,7 +737,7 @@ def robustDLSik(
         
         # Heavily penalize colliding solutions so they are rejected
         if collision:
-            totalError += 1000.0  
+            totalError +=10.0  
 
         if totalError < bestError:
             bestError = totalError
