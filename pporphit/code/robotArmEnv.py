@@ -120,13 +120,13 @@ class robotArmEnv(gym.Env):
                 qPoses = [np.array(q) for q in path]
                 energyCost = 0.0
                 eePathLength = 0.0
-
                 totalTime = 0.0
+                
+                # --- 1. Path Length Calculation (Keep High-Res) ---
                 data.qpos[:] = qPoses[0]
                 mujoco.mj_forward(model, data)
                 prevEE = data.site("endEffector").xpos.copy()
-                minDT = 0.001
-                maxDT = 10.0
+                
                 for s in range(1, numStates):
                     data.qpos[:] = qPoses[s]
                     mujoco.mj_forward(model, data)
@@ -134,43 +134,57 @@ class robotArmEnv(gym.Env):
                     eePathLength += np.linalg.norm(currEE - prevEE)
                     prevEE = currEE
 
-                    q1 = qPoses[s - 1]
-                    q2 = qPoses[s]
-                    deltaQ = q2 - q1
+                # --- 2. Energy Calculation (Downsampled & Optimized) ---
+                # Sample every 4th node to save compute, ensuring we keep the goal node
+                energyPath = qPoses[::4]
+                if energyPath[-1] is not qPoses[-1]:
+                    energyPath.append(qPoses[-1])
+                
+                tauLimits = np.abs(model.actuator_ctrlrange[:, 1])
+                prevDT = 0.1 # Initial warm-start guess
 
-                    lowDT = minDT
-                    highDT = maxDT
+                for s in range(1, len(energyPath)):
+                    q1 = energyPath[s - 1]
+                    q2 = energyPath[s]
+                    deltaQ = q2 - q1
+                    qMid = (q1 + q2) / 2.0
+                    
+                    # Smart bounds: search around the previous time step instead of a massive range
+                    lowDT = 0.001
+                    highDT = prevDT * 5.0 
                     feasibleDT = highDT
 
-                    for _ in range(20):
+                    # 7 iterations gives ~1% accuracy. 20 is overkill for RL reward scaling.
+                    for _ in range(7):
                         midDT = (lowDT + highDT) / 2.0
                         v = deltaQ / midDT
-                        qMid = (q1 + q2) / 2
+                        
                         data.qpos[:] = qMid
                         data.qvel[:] = v
-                        data.qacc[:] = 0  # Assume constant vel for tau estimate
+                        data.qacc[:] = 0 
                         mujoco.mj_inverse(model, data)
-                        tau = data.qfrc_inverse[:numLinks].copy()
-                        if np.all(np.abs(tau) <= np.abs(model.actuator_ctrlrange[:, 1])):
+                        tau = np.abs(data.qfrc_inverse[:numLinks])
+                        
+                        if np.all(tau <= tauLimits):
                             feasibleDT = midDT  # Feasible, try smaller dt (faster)
                             highDT = midDT
                         else:
                             lowDT = midDT  # Too fast, increase dt
 
                     dt = feasibleDT
+                    prevDT = dt # Save for the next segment's warm-start
                     totalTime += dt
-                    v = deltaQ / dt  # Updated realistic velocity
-
+                    
+                    v = deltaQ / dt
                     data.qpos[:] = qMid 
                     data.qvel[:] = v
                     data.qacc[:] = 0
                     mujoco.mj_inverse(model, data)
-                    tau = data.qfrc_inverse[:numLinks].copy()
+                    tau = np.abs(data.qfrc_inverse[:numLinks])
 
-                    # Now compute power with this v
-                    power = np.sum(np.abs(tau * v))  # Reuse tau from last inverse
+                    power = np.sum(tau * np.abs(v))
                     energyCost += power * dt
-                    # print(f"Step {s}: avg |tau| = {np.mean(np.abs(tau))}, avg |dq| = {np.mean(np.abs(v))}, dt = {dt}, power = {power}")
+                    
                 self.logger.debug(f"Energy Cost: {energyCost}")
                 self.logger.debug(f"End Effector Path Length: {eePathLength}")
             
@@ -325,31 +339,48 @@ def generateXML(numJoints, lengths, jointTypes, taskConfig):
         currentPos = "0 0 0.06"
         hingeLimit = 7 * math.pi / 8 
         
+        # Track how many closing tags we need (starting with 1 for the base)
+        body_closures = 1 
+        
         for i in range(numJoints):
             li = lengths[i]
             jCode = jointTypes[i]
             
-            if jCode == 0:
-                axis, jtype, limitStr = "1 0 0", "hinge", f'limited="true" range="{-hingeLimit:.4f} {hingeLimit:.4f}"'
-            elif jCode == 1:
-                axis, jtype, limitStr = "0 1 0", "hinge", f'limited="true" range="{-hingeLimit:.4f} {hingeLimit:.4f}"'
-            elif jCode == 2:
-                axis, jtype, limitStr = "0 0 1", "hinge", 'limited="false"'
-            elif jCode == 3:
-                axis, jtype, limitStr = "0 0 1", "slide", f'limited="true" range="0 {li:.4f}"'
+            if jCode == 3:
+                # SLIDE JOINT: Double Capsule (Telescoping) Setup
+                # 1. The Stator: rigidly attached to the end of the previous link (thicker capsule)
+                xml += f"""
+        <body name="link{i}_stator" pos="{currentPos}">
+            <geom name="stator{i}" type="capsule" size="0.03" fromto="0 0 0 0 0 {li:.4f}" />
             
-            xml += f"""
-            <body name="link{i}" pos="{currentPos}">
-                <joint name="joint{i}" type="{jtype}" axis="{axis}" damping="1.0" {limitStr} />
-                <geom name="capsule{i}" type="capsule" size="0.025" fromto="0 0 0 0 0 {li:.4f}" />
-            """
+            <body name="link{i}" pos="0 0 0">
+                <joint name="joint{i}" type="slide" axis="0 0 1" damping="1.0" limited="true" range="0 {li:.4f}" />
+                <geom name="capsule{i}" type="capsule" size="0.02" fromto="0 0 0 0 0 {li:.4f}" />
+                """
+                body_closures += 2
+            else:
+                # HINGE JOINTS: Standard Setup
+                if jCode == 0:
+                    axis, jtype, limitStr = "1 0 0", "hinge", f'limited="true" range="{-hingeLimit:.4f} {hingeLimit:.4f}"'
+                elif jCode == 1:
+                    axis, jtype, limitStr = "0 1 0", "hinge", f'limited="true" range="{-hingeLimit:.4f} {hingeLimit:.4f}"'
+                elif jCode == 2:
+                    axis, jtype, limitStr = "0 0 1", "hinge", 'limited="false"'
+                
+                xml += f"""
+        <body name="link{i}" pos="{currentPos}">
+            <joint name="joint{i}" type="{jtype}" axis="{axis}" damping="1.0" {limitStr} />
+            <geom name="capsule{i}" type="capsule" size="0.025" fromto="0 0 0 0 0 {li:.4f}" />
+                """
+                body_closures += 1
+                
             currentPos = f"0 0 {li:.4f}"
             
         # End Effector Site
         xml += f'<site name="endEffector" pos="{currentPos}" size="0.015" />'
             
-        xml += "</body>\n" * numJoints
-        xml += "</body>\n" # Close the base body
+        # Close all open bodies
+        xml += "</body>\n" * body_closures
 
         xml += "</worldbody>\n<actuator>\n"
         for i in range(numJoints):
@@ -478,11 +509,30 @@ def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize
 
 def checkCollision(model, data, qPos, obstacleIds):
     data.qpos[:] = qPos
-    mujoco.mj_forward(model, data)
+    mujoco.mj_kinematics(model, data)
+    mujoco.mj_collision(model, data)
+    
     for j in range(data.ncon):
         contact = data.contact[j]
-        if contact.geom1 in obstacleIds or contact.geom2 in obstacleIds:
-            return True
+        g1, g2 = contact.geom1, contact.geom2
+        
+        # 1. OBSTACLE COLLISION CHECK
+        if g1 in obstacleIds or g2 in obstacleIds:
+            if contact.dist < 0:  # Only count actual penetrations
+                return True
+            continue
+            
+        # 2. SELF-COLLISION CHECK
+        # If we reach here, both geometries belong to the robot.
+        b1 = model.geom_bodyid[g1]
+        b2 = model.geom_bodyid[g2]
+        
+        # MuJoCo natively ignores parent-child (distance of 1).
+        # We also ignore grandparent-grandchild (distance of 2) to fix the capsule bulge.
+        if abs(b1 - b2) > 2:
+            if contact.dist < 0: 
+                return True
+                
     return False
 
 def takeStep(model, qNear, qRand, stepSize):
@@ -491,10 +541,16 @@ def takeStep(model, qNear, qRand, stepSize):
     dist = np.linalg.norm(wrappedDiff)
 
     if dist <= stepSize:
-        return qRand  # Reach exactly if close enough
+        qNew = qRand.copy()
     else:
         dir = wrappedDiff / dist
-        return qNear + dir * stepSize
+        qNew = qNear + dir * stepSize
+
+    for i in range(model.nq):
+        if model.jnt_limited[i]:
+            qNew[i] = np.clip(qNew[i], model.jnt_range[i, 0], model.jnt_range[i, 1])
+            
+    return qNew
 
 def shortenPath(model, data, path, obstacleIds, numIsteps=100, maxIter=20):
     if len(path) < 3:
@@ -581,10 +637,10 @@ def dlsIK(
     obstacleIds,
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
-    maxIter: int = 200,
+    maxIter: int = 150,
     tol: float = 0.005,
-    lambda_: float = 0.05,
-    alpha: float = 0.75,
+    lambda_: float = 0.1,
+    alpha: float = 0.5,
     rotWeight: float = 0.2,
 ) -> tuple[np.ndarray, np.ndarray]:
     endEffectorId = model.site("endEffector").id
@@ -595,19 +651,23 @@ def dlsIK(
         data.qpos[:] = np.zeros(model.nq)
 
     mujoco.mj_forward(model, data)
-    posError = targetPose[:3] - data.site(endEffectorId).xpos.copy()
-    currentQuat = np.zeros(4)
-    mujoco.mju_mat2Quat(currentQuat, data.site(endEffectorId).xmat.flatten())
-    targetQuat = targetPose[3:7]
-    rotError = np.zeros(3)
-    mujoco.mju_subQuat(rotError, targetQuat, currentQuat)
-    deltaX = np.concatenate([posError, rotError * rotWeight])
 
-    i = 0
     jacp = np.zeros((3, model.nv))
     jacr = np.zeros((3, model.nv))
 
-    while i < maxIter and np.linalg.norm(deltaX) > tol:
+    for i in range(maxIter):
+        posError = targetPose[:3] - data.site(endEffectorId).xpos.copy()
+        currentQuat = np.zeros(4)
+        mujoco.mju_mat2Quat(currentQuat, data.site(endEffectorId).xmat.flatten())
+        targetQuat = targetPose[3:7]
+        rotError = np.zeros(3)
+        mujoco.mju_subQuat(rotError, targetQuat, currentQuat)
+        
+        deltaX = np.concatenate([posError, rotError * rotWeight])
+        
+        if np.linalg.norm(deltaX) < tol:
+            break
+
         mujoco.mj_jacSite(model, data, jacp, jacr, endEffectorId)
         J = np.vstack([jacp, jacr])
 
@@ -616,42 +676,15 @@ def dlsIK(
 
         deltaTheta = VT.T @ D @ U.T @ deltaX
 
-        collision = True
-        al = alpha
-        originalQpos = data.qpos.copy()
-
-        while collision and al >= 0.01:
-            collision = False
-
-            data.qpos[:] = originalQpos + al * deltaTheta
-            for j in range(model.nq):
-                if model.jnt_limited[j]:
-                    data.qpos[j] = np.clip(data.qpos[j], model.jnt_range[j, 0], model.jnt_range[j, 1])
-            data.qpos[:] = normalizeQ(model, data.qpos)
-            mujoco.mj_forward(model, data)
-            
-            for j in range(data.ncon):
-                contact = data.contact[j]
-                if contact.geom1 in obstacleIds or contact.geom2 in obstacleIds:
-                    collision = True
-                    break
-
-            if collision:
-                al /= 2.0
-
-        if collision:
-            data.qpos[:] = originalQpos
-            mujoco.mj_forward(model, data)
-            break
-
-        posError = targetPose[:3] - data.site(endEffectorId).xpos.copy()
-        currentQuat = np.zeros(4)
-        mujoco.mju_mat2Quat(currentQuat, data.site(endEffectorId).xmat.flatten())
-        targetQuat = targetPose[3:7]
-        rotError = np.zeros(3)
-        mujoco.mju_subQuat(rotError, targetQuat, currentQuat)
-        deltaX = np.concatenate([posError, rotError * rotWeight])
-        i += 1
+        # Update pose WITHOUT checking collisions mid-step
+        data.qpos[:] = data.qpos[:] + alpha * deltaTheta
+        
+        for j in range(model.nq):
+            if model.jnt_limited[j]:
+                data.qpos[j] = np.clip(data.qpos[j], model.jnt_range[j, 0], model.jnt_range[j, 1])
+        data.qpos[:] = normalizeQ(model, data.qpos)
+        
+        mujoco.mj_forward(model, data)
 
     mujoco.mj_jacSite(model, data, jacp, jacr, endEffectorId)
     J = np.vstack([jacp, jacr])
@@ -663,56 +696,58 @@ def robustDLSik(
     obstacleIds,
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
-    maxIter: int = 50,
+    maxIter: int = 150,
     tol: float = 0.005,
-    lambda_: float = 0.05,
-    alpha: float = 1.0,
+    lambda_: float = 0.1,
+    alpha: float = 0.5,
     numTries: int = 50,
     rotWeight: float = 0.2,
 ):
     bestQpos, bestJ, bestError = None, None, np.inf
 
-    if initialQpos is not None:
-        initQ = initialQpos
-    else:
-        initQ = np.random.uniform(model.jnt_range[:, 0], model.jnt_range[:, 1])
-        for i in range(len(initQ)):
-            if not model.jnt_limited[i]:
-                initQ[i] = np.random.uniform(-np.pi, np.pi)
+    for t in range(numTries):
+        if initialQpos is not None and t == 0:
+            initQ = initialQpos
+        else:
+            initQ = np.random.uniform(model.jnt_range[:, 0], model.jnt_range[:, 1])
+            for i in range(len(initQ)):
+                if not model.jnt_limited[i]:
+                    initQ[i] = np.random.uniform(-np.pi, np.pi)
 
-    for _ in range(numTries):
         qPos, J = dlsIK(
-            model,
-            data,
-            obstacleIds,
-            targetPose,
-            initialQpos=initQ,
-            maxIter=maxIter,
-            tol=tol,
-            lambda_=lambda_,
-            alpha=alpha,
-            rotWeight=rotWeight,
+            model, data, obstacleIds, targetPose,
+            initialQpos=initQ, maxIter=maxIter, tol=tol,
+            lambda_=lambda_, alpha=alpha, rotWeight=rotWeight,
         )
 
+        # Evaluate the solved pose
         data.qpos[:] = qPos
         mujoco.mj_forward(model, data)
+        
+        # Check if the final solved pose is in collision
+        collision = checkCollision(model, data, qPos, obstacleIds)
+
         posError = targetPose[:3] - data.site("endEffector").xpos.copy()
         currentQuat = np.zeros(4)
         mujoco.mju_mat2Quat(currentQuat, data.site("endEffector").xmat.flatten())
         targetQuat = targetPose[3:7]
         rotError = np.zeros(3)
         mujoco.mju_subQuat(rotError, targetQuat, currentQuat)
+        
         totalError = np.linalg.norm(posError) + np.linalg.norm(rotError) * rotWeight
+        
+        # Heavily penalize colliding solutions so they are rejected
+        if collision:
+            totalError += 1000.0  
 
         if totalError < bestError:
             bestError = totalError
             bestQpos = qPos
             bestJ = J
-
-        initQ = np.random.uniform(model.jnt_range[:, 0], model.jnt_range[:, 1])
-        for i in range(len(initQ)):
-            if not model.jnt_limited[i]:
-                initQ[i] = np.random.uniform(-np.pi, np.pi)
+            
+        # Early exit if we hit a great, collision-free solution
+        if bestError < tol:
+            break
     
     return bestQpos, bestJ, bestError
 
