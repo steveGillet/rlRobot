@@ -1,15 +1,15 @@
 # Fdb version 4
-["bibtex irosSubmission"] 1772398558.65909 "irosSubmission.aux" "irosSubmission.bbl" "irosSubmission" 1772398651.18689 0
+["bibtex irosSubmission"] 1772421577.62552 "irosSubmission.aux" "irosSubmission.bbl" "irosSubmission" 1772422085.57702 0
   "./references.bib" 1772398488.11127 18555 31ac9b9a8cd45c097c657f54de50ecab ""
   "/usr/share/texlive/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1440712899 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "irosSubmission.aux" 1772398650.7386 11286 f16cd63dbbf2b41fbb88172f4ce08ebc "pdflatex"
+  "irosSubmission.aux" 1772422084.83737 11286 f16cd63dbbf2b41fbb88172f4ce08ebc "pdflatex"
   (generated)
   "irosSubmission.bbl"
   "irosSubmission.blg"
   (rewritten before read)
-["pdflatex"] 1772398647.17408 "/home/steve-gillet/Desktop/rlRobot/pporphit/iros/irosSubmission.tex" "irosSubmission.pdf" "irosSubmission" 1772398651.18712 0
+["pdflatex"] 1772422081.3593 "/home/steve-gillet/Desktop/rlRobot/pporphit/iros/irosSubmission.tex" "irosSubmission.pdf" "irosSubmission" 1772422085.58032 0
   "/etc/texmf/web2c/texmf.cnf" 1757467394.77312 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/steve-gillet/Desktop/rlRobot/pporphit/iros/irosSubmission.tex" 1772398646.37899 33142 41f2bda59e526df1205fcf4e6680b8b9 ""
+  "/home/steve-gillet/Desktop/rlRobot/pporphit/iros/irosSubmission.tex" 1772422080.80137 33186 3c4dfc098a14e3354fcd2178d4566103 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/courier/pcrr7t.tfm" 1136768653 960 379cc0019370a9e0208a0a3f949f847a ""
@@ -108,9 +108,9 @@
   "containerTask1.png" 1772137249.95429 324064 d30de9d87436a0aace71e4e87465dc1a ""
   "containerTask2.png" 1772137478.38366 387882 6a9527a47106be5a6371da581a24e60e ""
   "ieeeconf.cls" 1771090149.30205 202167 7b37f8353df61c9733ed46143eff807a ""
-  "irosSubmission.aux" 1772398650.7386 11286 f16cd63dbbf2b41fbb88172f4ce08ebc "pdflatex"
-  "irosSubmission.bbl" 1772398558.84051 9587 55ea7760f46128abf322699f2f1b984c "bibtex irosSubmission"
-  "irosSubmission.tex" 1772398646.37899 33142 41f2bda59e526df1205fcf4e6680b8b9 ""
+  "irosSubmission.aux" 1772422084.83737 11286 f16cd63dbbf2b41fbb88172f4ce08ebc "pdflatex"
+  "irosSubmission.bbl" 1772421577.76882 9587 55ea7760f46128abf322699f2f1b984c "bibtex irosSubmission"
+  "irosSubmission.tex" 1772422080.80137 33186 3c4dfc098a14e3354fcd2178d4566103 ""
   "outreachTask.png" 1772135032.74039 402793 1f63881791030dd1217f41de4c375ef6 ""
   "shelfTask1.png" 1772219604.46352 404458 89cb384e7a6880f5522f6c13303c2f48 ""
   "shelfTask2.png" 1772219604.46452 298357 4a4e9a8ff307ed78ed27a36342d189e5 ""

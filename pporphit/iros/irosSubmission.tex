@@ -237,8 +237,8 @@ The PPO agent selects an action $a \in [0,1]^{15}$ which is then decoded into mo
 \label{alg:decode}
 \begin{algorithmic}[1]
 \State \textbf{Input:} action \(a \in [0,1]^{15}\)
-\State \(n \gets \text{round}(a_0 \cdot (7-2) + 2)\) \Comment{links: 2--7}
-\State \({l} \gets a_{1:8} \cdot (1.2 - 0.05) + 0.05\) \Comment{lengths (m)}
+\State \(n \gets \text{round}(a_0 \cdot (n_{max}-n_{min}) + n_{min})\) \Comment{links: 2--7}
+\State \({l} \gets a_{1:8} \cdot (l_{max} - l_{min}) + l_{min}\) \Comment{lengths: 0.05--1.2m}
 \State \({j} \gets \text{round}(a_{8:15} \cdot 3)\) \Comment{types: 0--3 (hinge X/Y/Z, slide Z)}
 \State \textbf{Return:} \(\theta = (n, {l}_{:n}, {j}_{:n})\)
 \end{algorithmic}
@@ -272,7 +272,7 @@ Training follows the standard PPO loop over 1M timesteps (single-step episodes):
     \begin{aligned}
     \mathcal{L}(\phi) &= \hat{\mathbb{E}}_t \Bigl[ 
         \min\bigl( r_t(\phi) \hat{A}_t,\; \\
-        &\quad \text{clip}\bigl(r_t(\phi), 1-\epsilon, 1+\epsilon\bigr) \hat{A}_t \bigr) \Bigr] \\
+        &\quad \operatorname{clip}\bigl(r_t(\phi), 1-\epsilon, 1+\epsilon\bigr) \hat{A}_t \bigr) \Bigr] \\
         &\quad + S[\pi_\phi](s_t) - \beta \cdot \mathbb{E}_t \bigl[ (\hat{V}_\phi(s_t) - V_t^{\text{targ}})^2 \bigr]
     \end{aligned}
     \]
