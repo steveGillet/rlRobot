@@ -87,10 +87,6 @@ class robotArmEnv(gym.Env):
             self.logger.debug(f"Goal Error: {goalError}")
             self.logger.debug(f"Start Error: {startError}")
 
-            if startError > 0.5 or goalError > 0.5:
-                reward += -10.0 * (startError + goalError)
-                continue
-
             if jStart.shape[1] == numLinks:
                 muStart = manipulabilityIndex(jStart)
             else:
@@ -101,6 +97,10 @@ class robotArmEnv(gym.Env):
             else:
                 muGoal = 0.0
             self.logger.debug(f"Mu Goal: {muGoal}")
+
+            if startError > 0.1 or goalError > 0.1:
+                reward += 30 - 100 * (startError + goalError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks)
+                continue
            
             foundSolution, path = rrtConnect(
                 model,

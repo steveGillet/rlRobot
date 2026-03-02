@@ -44,7 +44,7 @@ if __name__ == "__main__":
     logger = setupLogging()
     logger.info("Main Process Started")
 
-    activeTask = "wallMount"
+    activeTask = "container"
     venv = SubprocVecEnv([makeEnv(activeTask) for _ in range(24)])
     venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
 
@@ -63,7 +63,7 @@ if __name__ == "__main__":
         device="cpu",
     )
     ppo.learn(total_timesteps=500_000, callback=RewardLoggerCallback())
-    ppo.save(f"{activeTask}FasterLargerError1_100_10_1_0.01")
+    ppo.save(f"{activeTask}NoExit1_100_10_1_0.001")
 
 # if __name__ == "__main__":
 #     env = robotArmEnv(taskName="container")
