@@ -87,7 +87,7 @@ class robotArmEnv(gym.Env):
             self.logger.debug(f"Goal Error: {goalError}")
             self.logger.debug(f"Start Error: {startError}")
 
-            if startError > 0.1 or goalError > 0.1:
+            if startError > 0.5 or goalError > 0.5:
                 reward += -10.0 * (startError + goalError)
                 continue
 
@@ -108,7 +108,7 @@ class robotArmEnv(gym.Env):
                 startQpos,
                 goalQpos,
                 obstacleIds,
-                totalTime=2.0,
+                totalTime=1.0,
                 stepSize=0.1,
                 numIsteps=5,
                 tol=0.01,
@@ -191,8 +191,8 @@ class robotArmEnv(gym.Env):
                 # print(f"Accuracy Penalty: {-100 * (startError + goalError)}")
                 # print(f"Manipulability Bonus: {10 * (muStart + muGoal)}")
                 # print(f"Link Number Penalty: {-1 * (numLinks - self.minNumLinks)}")
-                # print(f"Energy Cost Penalty: {-0.01 * energyCost}")
-                reward += 100 - 1 * eePathLength - 100 * (startError + goalError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks) - 0.01 * energyCost
+                # print(f"Energy Cost Penalty: {-0.001 * energyCost}")
+                reward += 100 - 1 * eePathLength - 100 * (startError + goalError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks) - 0.001 * energyCost
             else:
                 # print(f"Accuracy Penalty: {-100 * (startError + goalError)}")
                 # print(f"Manipulability Bonus: {10 * (muStart + muGoal)}")
@@ -695,12 +695,12 @@ def robustDLSik(
     obstacleIds,
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
-    maxIter: int = 100,
+    maxIter: int = 50,
     tol: float = 0.005,
     lambda_: float = 0.1,
     alpha: float = 0.5,
     numTries: int = 25,
-    rotWeight: float = 0.2,
+    rotWeight: float = 0.1,
 ):
     bestQpos, bestJ, bestError = None, None, np.inf
 
