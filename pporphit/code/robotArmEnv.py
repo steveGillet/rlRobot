@@ -57,14 +57,6 @@ class robotArmEnv(gym.Env):
         jointIds = [model.joint(f"joint{i}").id for i in range(numLinks)]
         obstacleIds = set([model.geom(name).id for name in self.obstacleNames])
 
-        isSO2 = []
-
-        for link in range(numLinks):
-            if jointTypes[link] == 2:
-                isSO2.append(True)
-            else:
-                isSO2.append(False)
-
         reward = 0
         for startPos, goalPos in zip(self.startPos, self.goalPos):
             noisyStartPos = startPos[:3] + np.random.normal(0, self.noise, size=3)
@@ -76,10 +68,10 @@ class robotArmEnv(gym.Env):
             noisyGoalQuat /= np.linalg.norm(noisyGoalQuat)
             goalPos = np.concatenate([noisyGoalPos, noisyGoalQuat])
             self.logger.debug(f"Pre-IK: startPos={startPos}")
-            startQpos, jStart, startError = robustDLSik(model, data, obstacleIds, startPos)
+            startQpos, jStart, startError, _, _ = robustDLSik(model, data, obstacleIds, startPos)
             self.logger.debug(f"Post Start IK: startQpos={startQpos}, jStart={jStart}")
 
-            goalQpos, jGoal, goalError = robustDLSik(model, data, obstacleIds, goalPos, initialQpos=startQpos)
+            goalQpos, jGoal, goalError, _, _ = robustDLSik(model, data, obstacleIds, goalPos, initialQpos=startQpos)
             self.logger.debug(f"Post Goal IK: goalQpos={goalQpos}, jGoal={jGoal}")
             # startQpos = np.array([0.2, -0.8, -0.3, 0.9])
             # goalQpos = np.array([-0.4, 0.7, 0.5, -1.0])
@@ -191,8 +183,8 @@ class robotArmEnv(gym.Env):
                 # print(f"Accuracy Penalty: {-100 * (startError + goalError)}")
                 # print(f"Manipulability Bonus: {10 * (muStart + muGoal)}")
                 # print(f"Link Number Penalty: {-1 * (numLinks - self.minNumLinks)}")
-                # print(f"Energy Cost Penalty: {-0.001 * energyCost}")
-                reward += 100 - 1 * eePathLength - 100 * (startError + goalError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks) - 0.001 * energyCost
+                # print(f"Energy Cost Penalty: {-0.0001 * energyCost}")
+                reward += 100 - 1 * eePathLength - 100 * (startError + goalError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks) - 0.0001 * energyCost
             else:
                 # print(f"Accuracy Penalty: {-100 * (startError + goalError)}")
                 # print(f"Manipulability Bonus: {10 * (muStart + muGoal)}")
@@ -396,6 +388,10 @@ def manipulabilityIndex(J):
         return 0.0
 
     Sigma = np.linalg.svd(J, compute_uv=False)
+    
+    if len(Sigma) < 6:
+        return 0.0
+
     return np.min(Sigma)
 
 # ─────────────
@@ -699,10 +695,11 @@ def robustDLSik(
     tol: float = 0.005,
     lambda_: float = 0.1,
     alpha: float = 0.5,
-    numTries: int = 25,
+    numTries: int = 5,
     rotWeight: float = 0.1,
 ):
     bestQpos, bestJ, bestError = None, None, np.inf
+    bestPosError, bestRotError = np.inf, np.inf
 
     for t in range(numTries):
         if initialQpos is not None and t == 0:
@@ -719,36 +716,37 @@ def robustDLSik(
             lambda_=lambda_, alpha=alpha, rotWeight=rotWeight,
         )
 
-        # Evaluate the solved pose
         data.qpos[:] = qPos
         mujoco.mj_forward(model, data)
         
-        # Check if the final solved pose is in collision
         collision = checkCollision(model, data, qPos, obstacleIds)
 
-        posError = targetPose[:3] - data.site("endEffector").xpos.copy()
+        posErrorVec = targetPose[:3] - data.site("endEffector").xpos.copy()
         currentQuat = np.zeros(4)
         mujoco.mju_mat2Quat(currentQuat, data.site("endEffector").xmat.flatten())
         targetQuat = targetPose[3:7]
-        rotError = np.zeros(3)
-        mujoco.mju_subQuat(rotError, targetQuat, currentQuat)
+        rotErrorVec = np.zeros(3)
+        mujoco.mju_subQuat(rotErrorVec, targetQuat, currentQuat)
         
-        totalError = np.linalg.norm(posError) + np.linalg.norm(rotError) * rotWeight
+        posErrorMag = np.linalg.norm(posErrorVec)
+        rotErrorMag = np.linalg.norm(rotErrorVec)
         
-        # Heavily penalize colliding solutions so they are rejected
+        totalError = posErrorMag + rotErrorMag * rotWeight
+        
         if collision:
-            totalError +=10.0  
+            totalError += 10.0  
 
         if totalError < bestError:
             bestError = totalError
+            bestPosError = posErrorMag
+            bestRotError = rotErrorMag
             bestQpos = qPos
             bestJ = J
             
-        # Early exit if we hit a great, collision-free solution
         if bestError < tol:
             break
     
-    return bestQpos, bestJ, bestError
+    return bestQpos, bestJ, bestError, bestPosError, bestRotError
 
 def setupLogging():
     pid = os.getpid()

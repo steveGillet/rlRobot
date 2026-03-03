@@ -584,21 +584,21 @@ def generateXML(numJoints, lengths, jointTypes, taskConfig, numGhosts=0, activeP
 # ─────────────
 # Main script
 # ─────────────
-# numLinks = 2
-# lengths = np.array([0.28, 0.05])
-# jointTypes = np.array([0, 0])
+numLinks = 2
+lengths = np.array([0.05, 0.05])
+jointTypes = np.array([1, 0])
 # # PANDA
 # numLinks = 7
 # sizeMultiplier = 1
 # lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
 # jointTypes = np.array([2, 1, 2, 0, 2, 0, 2])
-# FANUC
-numLinks = 6
-sizeMultiplier = 1
-lengths = sizeMultiplier * np.array([0.165, 0.330, 0.08, 0.285, 0.05, 0.05])
-jointTypes = np.array([2, 0, 0, 2, 0, 2])
+# # FANUC
+# numLinks = 6
+# sizeMultiplier = 1
+# lengths = sizeMultiplier * np.array([0.165, 0.330, 0.08, 0.285, 0.05, 0.05])
+# jointTypes = np.array([2, 0, 0, 2, 0, 2])
 
-taskConfig = TASK_REGISTRY["wallMount"]
+taskConfig = TASK_REGISTRY["sideToSide"]
 xml = generateXML(numLinks, lengths, jointTypes, taskConfig)
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
@@ -606,37 +606,6 @@ data = mujoco.MjData(model)
 jointIds = [model.joint(f"joint{i}").id for i in range(numLinks)]
 obstacleNames = ["floor"] + [obs["name"] for obs in taskConfig["obstacles"]]
 obstacleIds = set(model.geom(name).id for name in obstacleNames)
-
-# # wall mount task
-# startPoses = [
-#     np.array([-1.4, -0.4, 0.1, -0.7071, -0.7071, 0, 0], dtype=np.float32),
-#     np.array([-0.9, 1.35, 1.1, 1, 0, 0, 0], dtype=np.float32)  
-# ]
-# goalPoses = [
-#     np.array([1.75, 1.36, 1.11, 1, 0, 0, 0], dtype=np.float32),
-#     np.array([1.5, -0.4, 0.2, -0.7071, -0.7071, 0, 0], dtype=np.float32)
-# ]
-
-# startPoses = [np.array([-1.8, 0.3, 0.3, 0.7071, 0, -0.7071, 0], dtype=np.float32), np.array([-1.8, 0.8, 0.4, 0.7071, 0, -0.7071, 0], dtype=np.float32)] 
-# goalPoses = [np.array([1.9, 0.9, 0.4, 0.7071, 0, 0.7071, 0], dtype=np.float32), np.array([1.8, 0.31, 0.2, 0.7071, 0, 0.7071, 0], dtype=np.float32)]
-
-# # Simple Shelf Task
-# startPoses = [
-#     np.array([1.1, -0.31, 0.6, 0.7071, 0, 0.7071, 0], dtype=np.float32),
-#     np.array([0.95, -0.29, 0.4, 0.7071, 0, 0.7071, 0], dtype=np.float32),
-# ]
-# goalPoses = [
-#     np.array([0.9, -0.71, 0.4, 0.7071, 0, 0.7071, 0], dtype=np.float32),
-#     np.array([1.05, -0.69, 0.6, 0.7071, 0, 0.7071, 0], dtype=np.float32),
-# ]
-
-# # Outreach Task
-# startPoses = [
-#     np.array([0.25, -0.25, 0.1, 0.7071, 0.0, 0.7071, 0.0], dtype=np.float32)
-# ]
-# goalPoses = [
-#     np.array([1.0, -0.25, 0.1, 0.7071, 0.0, 0.7071, 0.0], dtype=np.float32)
-# ]
 
 startPoses = [np.array(p, dtype=np.float32) for p in taskConfig["starts"]]
 goalPoses = [np.array(p, dtype=np.float32) for p in taskConfig["goals"]]
