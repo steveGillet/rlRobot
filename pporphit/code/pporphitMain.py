@@ -63,7 +63,7 @@ if __name__ == "__main__":
         device="cpu",
     )
     ppo.learn(total_timesteps=500_000, callback=RewardLoggerCallback())
-    ppo.save(f"{activeTask}NoExit1_100_10_1_0.0001")
+    ppo.save(f"{activeTask}BetterManLessEnergy1_100_10_1_0.0001")
 
 # if __name__ == "__main__":
 #     env = robotArmEnv(taskName="container")
