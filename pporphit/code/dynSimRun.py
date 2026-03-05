@@ -246,7 +246,9 @@ def dlsIK(
     tol: float = 0.005,
     lambda_: float = 0.1,
     alpha: float = 0.5,
-    rotWeight: float = 0.2,
+    rotWeight: float = 0.1,
+    avoidance_gain: float = 1.0,      # ← NEW: 0.0 disables, 0.5-2.0 is good
+    repulsion_range: float = 0.15
 ) -> tuple[np.ndarray, np.ndarray]:
     endEffectorId = model.site("endEffector").id
 
@@ -280,6 +282,51 @@ def dlsIK(
         D = np.diag(Sigma / (Sigma**2 + lambda_**2))
 
         deltaTheta = VT.T @ D @ U.T @ deltaX
+
+        # ──────── NULLSPACE OBSTACLE REPULSION (NEW) ────────
+        if avoidance_gain > 0.0:
+            repulsion = np.zeros(model.nv)
+            jacp_contact = np.zeros((3, model.nv))
+            jacr_contact = np.zeros((3, model.nv))
+            
+            # Loop through MuJoCo's native surface-to-surface contacts
+            for j in range(data.ncon):
+                contact = data.contact[j]
+                g1, g2 = contact.geom1, contact.geom2
+                
+                is_g1_obs = g1 in obstacleIds
+                is_g2_obs = g2 in obstacleIds
+                
+                # Identify which is the robot and which is the obstacle
+                if is_g1_obs and not is_g2_obs:
+                    robot_geom, sign = g2, 1.0  # Normal points away from wall
+                elif is_g2_obs and not is_g1_obs:
+                    robot_geom, sign = g1, -1.0 # Normal points toward wall, so flip it
+                else:
+                    continue
+                    
+                dist = contact.dist
+                
+                # contact.dist is the exact surface-to-surface distance!
+                if dist < repulsion_range:
+                    safe_dist = max(dist, 0.001)
+                    
+                    # Your APF magnitude formula
+                    magnitude = avoidance_gain / (safe_dist ** 2 + 0.001)
+                    
+                    # The exact 3D direction pushing away from the surface
+                    direction = contact.frame[:3] * sign
+                    
+                    # Get Jacobian at the EXACT contact point on the robot's surface
+                    robot_body = model.geom_bodyid[robot_geom]
+                    mujoco.mj_jac(model, data, jacp_contact, jacr_contact, contact.pos, robot_body)
+                    
+                    repulsion += magnitude * (jacp_contact.T @ direction)
+
+            # Project repulsion into the nullspace so it NEVER disturbs the EE task
+            J_pinv = VT.T @ D @ U.T   
+            nullspace_proj = np.eye(model.nv) - J_pinv @ J
+            deltaTheta += nullspace_proj @ repulsion
 
         # Update pose WITHOUT checking collisions mid-step
         data.qpos[:] = data.qpos[:] + alpha * deltaTheta
@@ -584,21 +631,21 @@ def generateXML(numJoints, lengths, jointTypes, taskConfig, numGhosts=0, activeP
 # ─────────────
 # Main script
 # ─────────────
-numLinks = 2
-lengths = np.array([0.05, 0.05])
-jointTypes = np.array([1, 0])
-# # PANDA
-# numLinks = 7
-# sizeMultiplier = 1
-# lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
-# jointTypes = np.array([2, 1, 2, 0, 2, 0, 2])
+# numLinks = 2
+# lengths = np.array([0.05, 0.05])
+# jointTypes = np.array([1, 0])
+# PANDA
+numLinks = 7
+sizeMultiplier = 1
+lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
+jointTypes = np.array([2, 1, 2, 0, 2, 0, 2])
 # # FANUC
 # numLinks = 6
 # sizeMultiplier = 1
 # lengths = sizeMultiplier * np.array([0.165, 0.330, 0.08, 0.285, 0.05, 0.05])
 # jointTypes = np.array([2, 0, 0, 2, 0, 2])
 
-taskConfig = TASK_REGISTRY["sideToSide"]
+taskConfig = TASK_REGISTRY["wallMount"]
 xml = generateXML(numLinks, lengths, jointTypes, taskConfig)
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)

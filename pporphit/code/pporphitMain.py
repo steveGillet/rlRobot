@@ -44,7 +44,7 @@ if __name__ == "__main__":
     logger = setupLogging()
     logger.info("Main Process Started")
 
-    activeTask = "sideToSide"
+    activeTask = "wallMount"
     venv = SubprocVecEnv([makeEnv(activeTask) for _ in range(24)])
     venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
 
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         tensorboard_log=f"./arm_morph_tb_{activeTask}/",
         device="cpu",
     )
-    ppo.learn(total_timesteps=500_000, callback=RewardLoggerCallback())
+    ppo.learn(total_timesteps=1_000_000, callback=RewardLoggerCallback())
     ppo.save(f"{activeTask}BetterManLessEnergy1_100_10_1_0.0001")
 
 # if __name__ == "__main__":
