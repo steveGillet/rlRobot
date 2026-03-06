@@ -49,7 +49,11 @@ def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize
             treeB = treeStart
             parentsB = parentsTreeStart
 
-        qRand = np.random.uniform(low, high)
+        if np.random.rand() < 0.1:
+            qRand = treeB[-1].copy() 
+        else:
+            qRand = np.random.uniform(low, high)
+
         # Find nearest neighbor
         nearestNeighbor = findNearest(model, treeA, qRand)
         qNear = treeA[nearestNeighbor]
@@ -348,7 +352,7 @@ def robustDLSik(
     obstacleIds,
     targetPose: np.ndarray,
     initialQpos: np.ndarray | None = None,
-    maxIter: int = 150,
+    maxIter: int = 50,
     tol: float = 0.005,
     lambda_: float = 0.1,
     alpha: float = 0.5,
@@ -747,21 +751,33 @@ NUM_GHOSTS = 4  # Intermediate faded steps
 SOLID_START = False # Set this flag here so we can use it in both places
 
 for pathIndex, path in enumerate(pathLists):
-    if not path:
-        print(f"Skipping visualization for Task {pathIndex + 1} (No path found).")
-        continue
-
     print(f"\n--- Generating Diorama for Task {pathIndex + 1} ---")
     
-    # 1. Sample evenly spaced indices (excluding start and end)
-    if len(path) > 2:
-        indices = np.linspace(1, len(path)-2, NUM_GHOSTS, dtype=int)
-        sampledGhostStates = [path[i] for i in indices]
-    else:
+    # --- NEW LOGIC: Handle failed paths ---
+    if not path:
+        print(f"No RRT path found for Task {pathIndex + 1}. Visualizing IK Start and Goal poses only.")
         sampledGhostStates = []
+        actualGhosts = 0
+        # Grab the raw IK solutions instead of relying on the RRT path
+        finalQpos = goalQposes[pathIndex]
+        startQpos = startQposes[pathIndex]
+        
+        # Force a solid start robot to be built so we can see both poses
+        render_solid_start = True 
+    else:
+        # 1. Sample evenly spaced indices (excluding start and end)
+        if len(path) > 2:
+            indices = np.linspace(1, len(path)-2, NUM_GHOSTS, dtype=int)
+            sampledGhostStates = [path[i] for i in indices]
+        else:
+            sampledGhostStates = []
+            
+        actualGhosts = len(sampledGhostStates)
+        finalQpos = path[-1]
+        startQpos = path[0]
+        render_solid_start = SOLID_START
 
     # 2. Generate Diorama XML
-    actualGhosts = len(sampledGhostStates)
     dioramaXml = generateXML(
         numLinks, 
         lengths, 
@@ -769,21 +785,19 @@ for pathIndex, path in enumerate(pathLists):
         taskConfig, 
         numGhosts=actualGhosts, 
         activePathIndex=pathIndex,
-        solidStart=SOLID_START # Pass the flag here
+        solidStart=render_solid_start # Pass the dynamic flag here
     )
     
     dioModel = mujoco.MjModel.from_xml_string(dioramaXml)
     dioData = mujoco.MjData(dioModel)
 
     # 3. Apply coordinates to the Main Robot (Goal state)
-    finalQpos = path[-1]
     for i in range(numLinks):
         jointId = dioModel.joint(f"joint{i}").id
         dioData.qpos[jointId] = finalQpos[i]
 
     # 4. Apply coordinates to the Solid Start Robot (ONLY if it exists)
-    if SOLID_START:
-        startQpos = path[0]
+    if render_solid_start:
         for i in range(numLinks):
             jointId = dioModel.joint(f"startJoint{i}").id
             dioData.qpos[jointId] = startQpos[i]

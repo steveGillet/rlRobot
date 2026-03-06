@@ -100,7 +100,7 @@ class robotArmEnv(gym.Env):
                 startQpos,
                 goalQpos,
                 obstacleIds,
-                totalTime=1.0,
+                totalTime=3.0,
                 stepSize=0.1,
                 numIsteps=5,
                 tol=0.01,
@@ -439,7 +439,11 @@ def rrtConnect(model, data, qStart, qGoal, obstacleIds, totalTime=10.0, stepSize
             treeB = treeStart
             parentsB = parentsTreeStart
 
-        qRand = np.random.uniform(low, high)
+        if np.random.rand() < 0.1:
+            qRand = treeB[-1].copy()
+        else:
+            qRand = np.random.uniform(low, high)
+
         # Find nearest neighbor
         nearestNeighbor = findNearest(model, treeA, qRand)
         qNear = treeA[nearestNeighbor]
