@@ -52,6 +52,7 @@ if __name__ == "__main__":
     ppo = PPO(
         "MlpPolicy",
         venv,
+        ent_coef=0.01,
         verbose=1,
         policy_kwargs=policyKwargs,
         learning_rate=0.001,
@@ -63,7 +64,7 @@ if __name__ == "__main__":
         device="cpu",
     )
     ppo.learn(total_timesteps=1_000_000, callback=RewardLoggerCallback())
-    ppo.save(f"{activeTask}GoalBiasing1_100_10_1_0.0001")
+    ppo.save(f"{activeTask}EntCoeff1_100_10_1_0.0001")
 
 # if __name__ == "__main__":
 #     env = robotArmEnv(taskName="container")
