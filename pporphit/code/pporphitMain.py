@@ -18,19 +18,32 @@ from stable_baselines3.common.logger import configure
 
 
 class RewardLoggerCallback(BaseCallback):
-    def __init__(self, verbose=0):
+    def __init__(self, verbose=0, log_freq=100):
         super().__init__(verbose)
-        self.rewards = []  # Buffer recent rewards
+        self.log_freq = log_freq
+        self.rewards = []
 
     def _on_step(self) -> bool:
-        # Collect reward from the latest step (across vec envs)
+        # PPO path
         if "rewards" in self.locals:
             self.rewards.extend(self.locals["rewards"])
-        # Log mean every 100 steps (adjust as needed)
-        if self.num_timesteps % 100 == 0 and self.rewards:
-            mean_reward = sum(self.rewards) / len(self.rewards)
+
+        # SAC / off-policy path
+        else:
+            infos = self.locals.get("infos") or self.locals.get("new_infos", [])
+            for info in infos:
+                if isinstance(info, dict) and "episode" in info:
+                    self.rewards.append(info["episode"]["r"])
+
+        # Log every N steps
+        if self.num_timesteps % self.log_freq == 0 and self.rewards:
+            mean_reward = np.mean(self.rewards)
             self.logger.record("custom/mean_reward", mean_reward)
-            self.rewards = []  # Reset buffer
+
+            print(f"[Step {self.num_timesteps:7d}]  Mean Reward: {mean_reward:8.2f}   "
+                  f"({len(self.rewards)} episodes)")
+
+            self.rewards = []
         return True
 
 
@@ -55,7 +68,7 @@ if __name__ == "__main__":
         "MlpPolicy",
         venv,
         ent_coef="auto",                 
-        verbose=1,
+        verbose=0,
         policy_kwargs=policyKwargs,
         learning_rate=3e-4,       
         buffer_size=100_000,
@@ -72,7 +85,7 @@ if __name__ == "__main__":
     model.learn(
         total_timesteps=1_000_000,
         callback=RewardLoggerCallback(),
-        log_interval=10
+        # log_interval=10
     )
     model.save(f"{activeTask}_SAC_1_100_10_1_0.0001")
 
