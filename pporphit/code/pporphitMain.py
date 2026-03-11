@@ -1,4 +1,5 @@
 from stable_baselines3 import PPO
+from stable_baselines3 import SAC
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import VecNormalize
@@ -43,28 +44,37 @@ def makeEnv(taskName):
 if __name__ == "__main__":
     logger = setupLogging()
     logger.info("Main Process Started")
-
     activeTask = "wallMount"
+
     venv = SubprocVecEnv([makeEnv(activeTask) for _ in range(24)])
     venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
 
-    policyKwargs = dict(net_arch=[128, 128, 128])
-    ppo = PPO(
+    policyKwargs = dict(net_arch=[256, 256, 256])   
+
+    model = SAC(         
         "MlpPolicy",
         venv,
-        ent_coef=0.01,
+        ent_coef="auto",                 
         verbose=1,
         policy_kwargs=policyKwargs,
-        learning_rate=0.001,
-        n_steps=1024,
+        learning_rate=3e-4,       
+        buffer_size=100_000,
+        learning_starts=1000,
         batch_size=256,
-        n_epochs=4,
         gamma=0.98,
-        tensorboard_log=f"./arm_morph_tb_{activeTask}/",
+        tau=0.005,
+        train_freq=1,
+        gradient_steps=1,
+        tensorboard_log=f"./arm_morph_tb_{activeTask}_SAC/",
         device="cpu",
     )
-    ppo.learn(total_timesteps=1_000_000, callback=RewardLoggerCallback())
-    ppo.save(f"{activeTask}EntCoeff1_100_10_1_0.0001")
+
+    model.learn(
+        total_timesteps=1_000_000,
+        callback=RewardLoggerCallback(),
+        log_interval=10
+    )
+    model.save(f"{activeTask}_SAC_1_100_10_1_0.0001")
 
 # if __name__ == "__main__":
 #     env = robotArmEnv(taskName="container")
