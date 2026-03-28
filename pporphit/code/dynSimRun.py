@@ -123,25 +123,32 @@ def checkCollision(model, data, qPos, obstacleIds):
     
     for j in range(data.ncon):
         contact = data.contact[j]
-        g1, g2 = contact.geom1, contact.geom2
+        if contact.dist >= 0:
+            continue  # only real penetrations
         
-        # 1. OBSTACLE COLLISION CHECK
-        if g1 in obstacleIds or g2 in obstacleIds:
-            if contact.dist < 0:  # Only count actual penetrations
-                return True
-            continue
-            
-        # 2. SELF-COLLISION CHECK
-        # If we reach here, both geometries belong to the robot.
+        g1, g2 = contact.geom1, contact.geom2
         b1 = model.geom_bodyid[g1]
         b2 = model.geom_bodyid[g2]
         
-        # MuJoCo natively ignores parent-child (distance of 1).
-        # We also ignore grandparent-grandchild (distance of 2) to fix the capsule bulge.
-        if abs(b1 - b2) > 2:
-            if contact.dist < 0: 
-                return True
-                
+        # === 1. OBSTACLE COLLISION (walls, floor, shelf, mountWall, etc.) ===
+        # BUT EXCLUDE baseBox → it is NOT an obstacle for the robot itself
+        if (g1 in obstacleIds or g2 in obstacleIds):
+            # Ignore baseBox <-> first capsule (intended attachment)
+            if (g1 == 4 or g2 == 4) and (g1 == 5 or g2 == 5):   # geom 4 = baseBox, geom 5 = capsule0
+                continue
+            # print(f"   → REAL COLLISION WITH OBSTACLE (geom {g1} ↔ geom {g2}) | dist={contact.dist:.4f}")
+            return True
+        
+        # === 2. SELF-COLLISION (robot vs robot) ===
+        # Ignore:
+        #   - direct parent-child (distance 1) → joint contacts
+        #   - base (body 2) vs first link (body 3) → same as above
+        if abs(b1 - b2) > 1 and not (b1 == 2 and b2 == 3) and not (b1 == 3 and b2 == 2):
+            # print(f"   → REAL SELF COLLISION (body {b1} ↔ body {b2}) | dist={contact.dist:.4f}")
+            return True
+        # else:
+        #     print(f"   → ignored joint contact (body {b1} ↔ body {b2})")
+    
     return False
 
 def takeStep(model, qNear, qRand, stepSize):
@@ -394,7 +401,7 @@ def robustDLSik(
         
         # Heavily penalize colliding solutions so they are rejected
         if collision:
-            totalError += 1000.0  
+            totalError += 10.0  
 
         if totalError < bestError:
             bestError = totalError
@@ -635,9 +642,9 @@ def generateXML(numJoints, lengths, jointTypes, taskConfig, numGhosts=0, activeP
 # ─────────────
 # Main script
 # ─────────────
-# numLinks = 2
-# lengths = np.array([0.05, 0.05])
-# jointTypes = np.array([1, 0])
+# numLinks = 6
+# lengths = np.array([1.156, 0.1264, 0.711, 0.7654, 0.7583, 0.0834])
+# jointTypes = np.array([1, 2, 1, 2, 1, 2])
 # PANDA
 numLinks = 7
 sizeMultiplier = 1
@@ -655,7 +662,7 @@ model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
 
 jointIds = [model.joint(f"joint{i}").id for i in range(numLinks)]
-obstacleNames = ["floor"] + [obs["name"] for obs in taskConfig["obstacles"]]
+obstacleNames = ["floor"]+ [obs["name"] for obs in taskConfig["obstacles"]]
 obstacleIds = set(model.geom(name).id for name in obstacleNames)
 
 startPoses = [np.array(p, dtype=np.float32) for p in taskConfig["starts"]]

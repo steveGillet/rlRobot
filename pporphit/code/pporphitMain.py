@@ -15,35 +15,23 @@ import faulthandler
 faulthandler.enable(file=open(f"logs/faulthandler{os.getpid()}.log", "w"))
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.logger import configure
+import numpy as np
 
 
 class RewardLoggerCallback(BaseCallback):
-    def __init__(self, verbose=0, log_freq=100):
+    def __init__(self, verbose=0):
         super().__init__(verbose)
-        self.log_freq = log_freq
-        self.rewards = []
+        self.rewards = []  # Buffer recent rewards
 
     def _on_step(self) -> bool:
-        # PPO path
+        # Collect reward from the latest step (across vec envs)
         if "rewards" in self.locals:
             self.rewards.extend(self.locals["rewards"])
-
-        # SAC / off-policy path
-        else:
-            infos = self.locals.get("infos") or self.locals.get("new_infos", [])
-            for info in infos:
-                if isinstance(info, dict) and "episode" in info:
-                    self.rewards.append(info["episode"]["r"])
-
-        # Log every N steps
-        if self.num_timesteps % self.log_freq == 0 and self.rewards:
-            mean_reward = np.mean(self.rewards)
+        # Log mean every 100 steps (adjust as needed)
+        if self.num_timesteps % 100 == 0 and self.rewards:
+            mean_reward = sum(self.rewards) / len(self.rewards)
             self.logger.record("custom/mean_reward", mean_reward)
-
-            print(f"[Step {self.num_timesteps:7d}]  Mean Reward: {mean_reward:8.2f}   "
-                  f"({len(self.rewards)} episodes)")
-
-            self.rewards = []
+            self.rewards = []  # Reset buffer
         return True
 
 
@@ -87,7 +75,8 @@ if __name__ == "__main__":
         callback=RewardLoggerCallback(),
         # log_interval=10
     )
-    model.save(f"{activeTask}_SAC_1_100_10_1_0.0001")
+    venv.save(f"{activeTask}_SACbetterCollision_vecnormalize.pkl")
+    model.save(f"{activeTask}_SACbetterCollision_1_100_10_1_0.0001")
 
 # if __name__ == "__main__":
 #     env = robotArmEnv(taskName="container")
