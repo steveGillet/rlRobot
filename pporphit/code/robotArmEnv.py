@@ -7,6 +7,10 @@ import gymnasium as gym
 import os
 import logging
 import math
+import ompl.base as ob
+import ompl.geometric as og
+from ompl import util as ou
+ou.setLogLevel(ou.LOG_NONE)
 
 class robotArmEnv(gym.Env):
     def __init__(self, taskName="container", minNumLinks=2, maxNumLinks=7, minLength=0.05, maxLength=1.2, noise=0.01):
@@ -97,16 +101,20 @@ class robotArmEnv(gym.Env):
                 reward += 30 - 100 * (startError + goalError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks)
                 continue
            
-            foundSolution, path = rrtConnect(
-                model,
-                data,
-                startQpos,
-                goalQpos,
-                obstacleIds,
-                totalTime=2.0,
-                stepSize=0.1,
-                numIsteps=5,
-                tol=0.01,
+            # foundSolution, path = rrtConnect(
+            #     model,
+            #     data,
+            #     startQpos,
+            #     goalQpos,
+            #     obstacleIds,
+            #     totalTime=2.0,
+            #     stepSize=0.1,
+            #     numIsteps=5,
+            #     tol=0.01,
+            # )
+
+            foundSolution, path = omplRRTConnect(
+                model, data, startQpos, goalQpos, obstacleIds, totalTime=2.0
             )
 
             if foundSolution:
@@ -817,3 +825,103 @@ def setupLogging():
     handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
     logger.addHandler(handler)
     return logger
+
+def omplRRTConnect(model, data, qStart, qGoal, obstacleIds, totalTime=2.0, numInterpolatedStates=100, maxGoalDist=0.1):
+    nq = model.nq
+    space = ob.CompoundStateSpace()
+    isSO2 = []
+
+    for i in range(nq):
+        if model.jnt_type[i] == mujoco.mjtJoint.mjJNT_SLIDE:
+            # Prismatic (slide) joint
+            subspace = ob.RealVectorStateSpace(1)
+            bounds = ob.RealVectorBounds(1)
+            bounds.setLow(0, model.jnt_range[i, 0])
+            bounds.setHigh(0, model.jnt_range[i, 1])
+            subspace.setBounds(bounds)
+            space.addSubspace(subspace, 1.0)
+            isSO2.append(False)
+        else:
+            # Hinge joint
+            if model.jnt_limited[i]:
+                # Bounded hinge
+                subspace = ob.RealVectorStateSpace(1)
+                bounds = ob.RealVectorBounds(1)
+                bounds.setLow(0, model.jnt_range[i, 0])
+                bounds.setHigh(0, model.jnt_range[i, 1])
+                subspace.setBounds(bounds)
+                space.addSubspace(subspace, 1.0)
+                isSO2.append(False)
+            else:
+                # Unlimited rotation → SO2 (handles wrapping automatically)
+                space.addSubspace(ob.SO2StateSpace(), 1.0)
+                isSO2.append(True)
+
+    def isStateValid(state):
+        qpos = np.zeros(nq)
+        for i in range(nq):
+            if isSO2[i]:
+                qpos[i] = state[i].value
+            else:
+                qpos[i] = state[i][0]
+        if not np.all(np.isfinite(qpos)):
+            return False
+        # Use your modern collision checker (distinguishes real obstacles vs. joint contacts)
+        return not checkCollision(model, data, qpos, obstacleIds)
+
+    validityChecker = ob.StateValidityCheckerFn(isStateValid)
+    si = ob.SpaceInformation(space)
+    si.setStateValidityChecker(validityChecker)
+
+    # Normalize angles for SO2 joints (same safety step you used in the old code)
+    qStart = qStart.copy()
+    qGoal = qGoal.copy()
+    for i in range(nq):
+        if isSO2[i]:
+            qStart[i] = np.arctan2(np.sin(qStart[i]), np.cos(qStart[i]))
+            qGoal[i] = np.arctan2(np.sin(qGoal[i]), np.cos(qGoal[i]))
+
+    # Build start / goal states (exact syntax from your original OMPL code)
+    start = ob.State(space)
+    goal = ob.State(space)
+    for i in range(nq):
+        if isSO2[i]:
+            start()[i].value = float(qStart[i])
+            goal()[i].value = float(qGoal[i])
+        else:
+            start()[i][0] = float(qStart[i])
+            goal()[i][0] = float(qGoal[i])
+
+    simpleSetup = og.SimpleSetup(si)
+    simpleSetup.setStartAndGoalStates(start, goal, 0.05)
+
+    planner = og.RRTConnect(si)
+    simpleSetup.setPlanner(planner)
+
+    solved = simpleSetup.solve(totalTime)
+    if solved:
+        simpleSetup.simplifySolution()
+        path = simpleSetup.getSolutionPath()
+        path.interpolate(numInterpolatedStates)
+
+        # Convert OMPL path back to list of numpy qpos arrays (exactly what your reward code expects)
+        qpath = []
+        for k in range(path.getStateCount()):
+            state = path.getState(k)
+            q = np.zeros(nq)
+            for i in range(nq):
+                if isSO2[i]:
+                    q[i] = state[i].value
+                else:
+                    q[i] = state[i][0]
+            qpath.append(q)
+
+        finalDist = cDist(model, qpath[-1], qGoal)   # your existing cDist function
+
+        if finalDist < maxGoalDist:
+            return True, qpath
+        else:
+            return False, []
+
+    else:
+        return False, []
