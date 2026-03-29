@@ -4,7 +4,7 @@ from robotArmEnv import robotArmEnv   # your env class
 
 if __name__ == "__main__":
     activeTask = "wallMount"                     # change if you used a different task
-    model_path = f"{activeTask}_SAC_1_100_10_1_0.0001"   # ← your saved model name
+    model_path = f"{activeTask}_SACbetterCollision_1_100_10_1_0.0001"   # ← your saved model name
 
     print("Loading SAC model (no VecNormalize needed)...")
     model = SAC.load(model_path)                 # no env= argument

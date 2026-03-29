@@ -75,8 +75,9 @@ if __name__ == "__main__":
         callback=RewardLoggerCallback(),
         # log_interval=10
     )
-    venv.save(f"{activeTask}_SACbetterCollision_vecnormalize.pkl")
-    model.save(f"{activeTask}_SACbetterCollision_1_100_10_1_0.0001")
+    modelName = "SACbaseJointLimit"
+    venv.save(f"{activeTask}_{modelName}_vecnormalize.pkl")
+    model.save(f"{activeTask}_{modelName}_1_100_10_1_0.0001")
 
 # if __name__ == "__main__":
 #     env = robotArmEnv(taskName="container")

@@ -339,7 +339,8 @@ def generateXML(numJoints, lengths, jointTypes, taskConfig):
         """
 
         currentPos = "0 0 0.06"
-        hingeLimit = 7 * math.pi / 8 
+        standardLimit = 7 * math.pi / 8 
+        baseLimit = math.pi / 2  # The 90-degree hard stop for the base
         
         # Track how many closing tags we need (starting with 1 for the base)
         body_closures = 1 
@@ -347,6 +348,9 @@ def generateXML(numJoints, lengths, jointTypes, taskConfig):
         for i in range(numJoints):
             li = lengths[i]
             jCode = jointTypes[i]
+            
+            # Apply the strict 90-degree limit only to the first joint
+            currentLimit = baseLimit if i == 0 else standardLimit
             
             if jCode == 3:
                 # SLIDE JOINT: Double Capsule (Telescoping) Setup
@@ -363,9 +367,9 @@ def generateXML(numJoints, lengths, jointTypes, taskConfig):
             else:
                 # HINGE JOINTS: Standard Setup
                 if jCode == 0:
-                    axis, jtype, limitStr = "1 0 0", "hinge", f'limited="true" range="{-hingeLimit:.4f} {hingeLimit:.4f}"'
+                    axis, jtype, limitStr = "1 0 0", "hinge", f'limited="true" range="{-currentLimit:.4f} {currentLimit:.4f}"'
                 elif jCode == 1:
-                    axis, jtype, limitStr = "0 1 0", "hinge", f'limited="true" range="{-hingeLimit:.4f} {hingeLimit:.4f}"'
+                    axis, jtype, limitStr = "0 1 0", "hinge", f'limited="true" range="{-currentLimit:.4f} {currentLimit:.4f}"'
                 elif jCode == 2:
                     axis, jtype, limitStr = "0 0 1", "hinge", 'limited="false"'
                 
@@ -524,32 +528,20 @@ def checkCollision(model, data, qPos, obstacleIds):
     
     for j in range(data.ncon):
         contact = data.contact[j]
-        if contact.dist >= 0:
-            continue  # only real penetrations
+        if contact.dist >= 0:          # only real penetrations
+            continue
         
         g1, g2 = contact.geom1, contact.geom2
+        
+        if g1 in obstacleIds or g2 in obstacleIds:
+            return True
+        
+        # Self-collision between non-adjacent robot bodies
         b1 = model.geom_bodyid[g1]
         b2 = model.geom_bodyid[g2]
-        
-        # === 1. OBSTACLE COLLISION (walls, floor, shelf, mountWall, etc.) ===
-        # BUT EXCLUDE baseBox → it is NOT an obstacle for the robot itself
-        if (g1 in obstacleIds or g2 in obstacleIds):
-            # Ignore baseBox <-> first capsule (intended attachment)
-            if (g1 == 4 or g2 == 4) and (g1 == 5 or g2 == 5):   # geom 4 = baseBox, geom 5 = capsule0
-                continue
-            # print(f"   → REAL COLLISION WITH OBSTACLE (geom {g1} ↔ geom {g2}) | dist={contact.dist:.4f}")
+        if abs(b1 - b2) > 1:
             return True
-        
-        # === 2. SELF-COLLISION (robot vs robot) ===
-        # Ignore:
-        #   - direct parent-child (distance 1) → joint contacts
-        #   - base (body 2) vs first link (body 3) → same as above
-        if abs(b1 - b2) > 1 and not (b1 == 2 and b2 == 3) and not (b1 == 3 and b2 == 2):
-            # print(f"   → REAL SELF COLLISION (body {b1} ↔ body {b2}) | dist={contact.dist:.4f}")
-            return True
-        # else:
-        #     print(f"   → ignored joint contact (body {b1} ↔ body {b2})")
-    
+            
     return False
 
 def takeStep(model, qNear, qRand, stepSize):
