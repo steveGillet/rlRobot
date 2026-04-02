@@ -744,8 +744,8 @@ def generateXML(numJoints, lengths, jointTypes, taskConfig, numGhosts=0, activeP
 # Main script
 # ─────────────
 numLinks = 2
-lengths = np.array([0.2443, 0.4749])
-jointTypes = np.array([0, 1])
+lengths = np.array([0.3593, 0.376])
+jointTypes = np.array([1, 0])
 # PANDA
 # numLinks = 7
 # sizeMultiplier = 1

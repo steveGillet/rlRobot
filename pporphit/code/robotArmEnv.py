@@ -756,7 +756,7 @@ def robustDLSik(
     tol: float = 0.005,
     lambda_: float = 0.1,
     alpha: float = 0.75,
-    numTries: int = 25,
+    numTries: int = 10,
     rotWeight: float = 0.1,
 ):
     bestQpos, bestJ, bestError = None, None, np.inf

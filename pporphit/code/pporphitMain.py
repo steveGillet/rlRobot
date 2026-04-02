@@ -45,7 +45,7 @@ def makeEnv(taskName):
 if __name__ == "__main__":
     logger = setupLogging()
     logger.info("Main Process Started")
-    activeTask = "wallMount"
+    activeTask = "shelf"
 
     venv = SubprocVecEnv([makeEnv(activeTask) for _ in range(24)])
     venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
@@ -56,7 +56,7 @@ if __name__ == "__main__":
         "MlpPolicy",
         venv,
         ent_coef="auto",                 
-        verbose=0,
+        verbose=1,
         policy_kwargs=policyKwargs,
         learning_rate=3e-4,       
         buffer_size=100_000,
