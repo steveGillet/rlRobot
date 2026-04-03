@@ -1,0 +1,48 @@
+This is BibTeX, Version 0.99d (TeX Live 2023/Debian)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: thesisSubmission.aux
+The style file: plain.bst
+Database file #1: references.bib
+Warning--empty journal in abourachid2019modelling
+You've used 57 entries,
+            2118 wiz_defined-function locations,
+            814 strings with 14949 characters,
+and the built_in function-call counts, 19467 in all, are:
+= -- 1857
+> -- 1099
+< -- 6
++ -- 441
+- -- 376
+* -- 1435
+:= -- 3317
+add.period$ -- 173
+call.type$ -- 57
+change.case$ -- 354
+chr.to.int$ -- 0
+cite$ -- 58
+duplicate$ -- 633
+empty$ -- 1432
+format.name$ -- 376
+if$ -- 3962
+int.to.chr$ -- 0
+int.to.str$ -- 57
+missing$ -- 44
+newline$ -- 289
+num.names$ -- 114
+pop$ -- 361
+preamble$ -- 1
+purify$ -- 296
+quote$ -- 0
+skip$ -- 468
+stack$ -- 0
+substring$ -- 1072
+swap$ -- 102
+text.length$ -- 6
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 228
+warning$ -- 1
+while$ -- 179
+width$ -- 59
+write$ -- 614
+(There was 1 warning)

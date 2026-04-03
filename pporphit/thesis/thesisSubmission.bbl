@@ -1,0 +1,289 @@
+\begin{thebibliography}{10}
+
+\bibitem{abourachid2019modelling}
+Anick Abourachid, Damien Chablat, Maxime Furet, and Philippe Wenger.
+\newblock Modelling, design and control of a bird neck using tensegrity mechanisms.
+\newblock pages 1--7, 2019.
+
+\bibitem{fanuc2024lrmate}
+FANUC America.
+\newblock Lr mate 200id data sheet, 2024.
+
+\bibitem{arany2008pgc1}
+Zoltan Arany.
+\newblock Pgc-1 coactivators and skeletal muscle adaptations in health and disease.
+\newblock {\em Current Opinion in Genetics \& Development}, 18(5):426--434, 2008.
+
+\bibitem{baumers2019economics}
+Martin Baumers and Matthias Holweg.
+\newblock On the economics of additive manufacturing: Experimental findings.
+\newblock {\em Journal of Operations Management}, 65(8):794--809, 2019.
+
+\bibitem{bhatia2023reinforcement}
+Jagdeep Bhatia et~al.
+\newblock Reinforcement learning for freeform robot design.
+\newblock arXiv:2310.05670, 2023.
+
+\bibitem{buss2004introduction}
+Samuel~R. Buss.
+\newblock Introduction to inverse kinematics with jacobian transpose, pseudoinverse and damped least squares methods.
+\newblock {\em IEEE Journal of Robotics and Automation}, 17(1-19):16, 2004.
+
+\bibitem{delgado2022robotics}
+Juan Manuel~Davila Delgado and Lukumon Oyedele.
+\newblock Robotics in construction: A critical review of the reinforcement learning and imitation learning paradigms.
+\newblock {\em Advanced Engineering Informatics}, 54:101787, 2022.
+
+\bibitem{ding2024modular}
+Ziyan Ding, Haijun Tang, Haiying Wan, Chengxi Zhang, and Ran Sun.
+\newblock A modular robotic arm configuration design method based on double dqn with prioritized experience replay.
+\newblock {\em Symmetry}, 16(6):714, 2024.
+
+\bibitem{fasquell2020bioinspired}
+Benjamin Fasquelle, Matthieu Furet, Parag Khanna, Damien Chablat, Christine Chevallereau, and Philippe Wenger.
+\newblock A bio-inspired 3-dof light-weight manipulator with tensegrity x-joints.
+\newblock In {\em 2020 IEEE International Conference on Robotics and Automation (ICRA)}, pages 5054--5060, 2020.
+
+\bibitem{franka2024research3}
+{Franka Robotics GmbH}.
+\newblock {\em Product Manual Franka Research 3}, release 1.0 edition, Mar 2024.
+\newblock Document number: R02210.
+
+\bibitem{haarnoja2018soft}
+Tuomas Haarnoja, Aurick Zhou, Pieter Abbeel, and Sergey Levine.
+\newblock Soft actor-critic: Off-policy maximum entropy deep reinforcement learning with a stochastic actor.
+\newblock In {\em Proceedings of the 35th International Conference on Machine Learning}, 2018.
+
+\bibitem{haddadin2022franka}
+Sami Haddadin et~al.
+\newblock The franka emika robot: A reference platform for robotics research and education.
+\newblock {\em IEEE Robotics \& Automation Magazine}, 29(2):46--64, 2022.
+
+\bibitem{hafner2019dream}
+Danijar Hafner, Timothy Lillicrap, Ian Fischer, Ruben Villegas, David Ha, Honglak Lee, and James Davidson.
+\newblock Dream to control: Learning behaviors by latent imagination.
+\newblock arXiv:1912.01603, 2019.
+
+\bibitem{hansen2019pycma}
+Nikolaus Hansen, Youhei Akimoto, and Petr Baudis.
+\newblock Cma-es/pycma, 2019.
+\newblock \url{https://github.com/CMA-ES/pycma}.
+
+\bibitem{hansen2001completely}
+Nikolaus Hansen and Andreas Ostermeier.
+\newblock Completely derandomized self-adaptation in evolution strategies.
+\newblock {\em Evolutionary Computation}, 9(2):159--195, 2001.
+
+\bibitem{hase2020ultrasound}
+Hannes Hase, Mohammad~Farid Azampour, Maria Tirindelli, Justin Opfermann, Yeongjin Kim, Martin Kriegsmann, and Axel Krieger.
+\newblock Ultrasound-guided robotic navigation with deep reinforcement learning.
+\newblock {\em arXiv preprint}, 2020.
+
+\bibitem{he2019underactuated}
+Bin He, Shuai Wang, and Yong Liu.
+\newblock Underactuated robotics: A review.
+\newblock {\em International Journal of Advanced Robotic Systems}, 16(4):1--14, 2019.
+
+\bibitem{homsi2025comparative}
+Mohammad~Al Homsi et~al.
+\newblock Comparative analysis of deep q-learning algorithms for object throwing using a robot manipulator.
+\newblock {\em Frontiers in Robotics and AI}, 12:1567211, 2025.
+
+\bibitem{huang2025dadu}
+Yiyang Huang et~al.
+\newblock Dadu-corki: Algorithm-architecture co-design for embodied ai-powered robotic manipulation.
+\newblock {\em ACM Transactions on Embedded Computing Systems}, 2025.
+
+\bibitem{indeed2025pros}
+{Indeed Editorial Team}.
+\newblock The pros and cons of specialized labor.
+\newblock \url{https://www.indeed.com/career-advice/career-development/specialized-labor}, dec 2025.
+\newblock Indeed Career Advice article.
+
+\bibitem{jackson2025story}
+Michelle Jackson.
+\newblock The story of labor specialization is a bit more complicated.
+\newblock \url{https://www.promarket.org/2025/12/06/the-story-of-labor-specialization-labor-is-a-bit-more-complex}, dec 2025.
+\newblock ProMarket (Chicago Booth Stigler Center publication).
+
+\bibitem{kalimuthu2023deep}
+Manimuthu Kalimuthu, Manimuthu Arunmozhi, Setyamartana Parman, Ghulam E~Mustafa Abro, Chang~Seok Ko, and Hyun~Ho Park.
+\newblock A deep reinforcement learning approach to optimal morphologies generation in reconfigurable tiling robots.
+\newblock {\em Mathematics}, 11(18):3893, 2023.
+
+\bibitem{kalimuthu2023}
+Manivannan Kalimuthu, Abdullah~Aamir Hayat, Thejus Pathmakumar, Mohan~Rajesh Elara, and Kristin~Lee Wood.
+\newblock A deep reinforcement learning approach to optimal morphologies generation in reconfigurable tiling robots.
+\newblock {\em Mathematics}, 11(18):3893, 2023.
+
+\bibitem{klein1987dexterity}
+Charles~A. Klein and Bruce~E. Blaho.
+\newblock Dexterity measures for the design and control of kinematically redundant manipulators.
+\newblock {\em The International Journal of Robotics Research}, 6(2):72--83, June 1987.
+
+\bibitem{kober2013reinforcement}
+Jens Kober, J.~Andrew Bagnell, and Jan Peters.
+\newblock Reinforcement learning in robotics: A survey.
+\newblock {\em The International Journal of Robotics Research}, 32(11):1238--1274, 2013.
+
+\bibitem{kuffner2000rrt}
+J.~J. Kuffner and S.~M. LaValle.
+\newblock Rrt-connect: An efficient approach to single-query path planning.
+\newblock In {\em Proceedings 2000 ICRA. Millennium Conference. IEEE International Conference on Robotics and Automation. Symposia Proceedings (Cat. No.00CH37065)}, volume~2, pages 995--1001 vol.2, 2000.
+
+\bibitem{kumar2019sensorless}
+Ashish Kumar, Simon Pfreundschuh, and Zhuming Bi.
+\newblock Sensorless full body active compliance in a 6 dof parallel manipulator.
+\newblock {\em Robotics and Computer-Integrated Manufacturing}, 60:45--56, 2019.
+
+\bibitem{le2020reinforcement}
+Anh~Vu Le, Manimuthu Arunmozhi, Senthilkumar Veeramani, Chenglong Liu, Setyamartana Parman, and Teng-Fong Cheng.
+\newblock Reinforcement learning-based energy-aware area coverage for reconfigurable hrombo tiling robot.
+\newblock {\em IEEE Access}, 8:209594--209605, 2020.
+
+\bibitem{luck2019data}
+Kevin~Sebastian Luck, Heni~Ben Amor, Roberto Calandra, and Jan Peters.
+\newblock Data-efficient co-adaptation of morphology and behaviour with deep reinforcement learning.
+\newblock In {\em Conference on Robot Learning (CoRL)}, 2019.
+
+\bibitem{madiedo2020capturing}
+Juan~Pablo Madiedo, Aravind Chandrasekaran, and Fabrizio Salvador.
+\newblock Capturing the benefits of worker specialization: Effects of managerial and organizational task experience.
+\newblock {\em Production and Operations Management}, 29(4):973--994, 2020.
+
+\bibitem{mancuso2022effect}
+Mary~E Mancuso, Ariela~R Wilzman, Katelyn~E Murdock, and Karen~L Troy.
+\newblock Effect of external mechanical stimuli on human bone: a narrative review.
+\newblock {\em Progress in Biomedical Engineering}, 4(1):012006, 2022.
+
+\bibitem{mckinsey2019industrial}
+{McKinsey and Company}.
+\newblock Industrial robotics: Insights into the sector's future growth dynamics.
+\newblock Technical report, McKinsey and Company, 2019.
+
+\bibitem{mertan2023modular}
+Alican Mertan, Andrew Spielberg, and Daniela Rus.
+\newblock Modular controllers facilitate the co-optimization of morphology and control in soft robots.
+\newblock {\em arXiv preprint}, 2023.
+
+\bibitem{nakano2023robostrich}
+Kazashi Nakano, Megu Gunji, Masahiro Ikeda, Keung Or, Mitsuhito Ando, Katsuma Inoue, Hiromi Mochiyama, Kohei Nakajima, Ryuma Niiyama, and Yasuo Kuniyoshi.
+\newblock “robostrich” manipulator: A novel mechanical design and control based on the anatomy and behavior of an ostrich neck.
+\newblock {\em IEEE Robotics and Automation Letters}, 8(5):3062--3069, 2023.
+
+\bibitem{oliva2022franksim}
+Alexander~Antonio Oliva, Fabien Spindler, Paolo~Robuffo Giordano, and François Chaumette.
+\newblock Frankasim: A dynamic simulator for the franka emika robot with visual-servoing enabled capabilities.
+\newblock In {\em ICARCV 2022 - 17th International Conference on Control, Automation, Robotics and Vision}, pages 1--7, Singapore, Singapore, Dec 2022.
+
+\bibitem{patel2024}
+Riyan~Vikas Patel.
+\newblock Opportunities and challenges for adoption of robotics in packaging industry: A review.
+\newblock {\em IOSR Journal of Engineering}, 14(1):32--38, jan 2024.
+\newblock Available: \url{https://www.iosrjen.org/Papers/vol14_issue1/E1401013238.pdf}.
+
+\bibitem{patentpc2025toprobotics}
+{PatentPC}.
+\newblock Top robotics vendors by market share and installations, sep 2025.
+
+\bibitem{raffin2021stable}
+Antonin Raffin, Ashley Hill, Adam Gleave, Anssi Kanervisto, Maximilian Ernestus, and Noah Dormann.
+\newblock Stable-baselines3: Reliable reinforcement learning implementations.
+\newblock {\em Journal of Machine Learning Research}, 22(268):1--8, 2021.
+
+\bibitem{russo2021task}
+M.~Russo, L.~Raimondi, X.~Dong, and D.~Axinte.
+\newblock Task-oriented optimal dimensional synthesis of robotic manipulators with limited mobility.
+\newblock {\em Robotics and Computer-Integrated Manufacturing}, 69:102098, 2021.
+
+\bibitem{saini2026spiking}
+Ashok~Kumar Saini, Pankaj Kumar, Ashish Kumar, and Vijay~Kumar Singh.
+\newblock Spiking neural network-based energy-efficient framework for real-time robotic arm manipulation.
+\newblock {\em Engineering Applications of Artificial Intelligence}, 50:1--12, 2016.
+\newblock Note: The year in the citation appears as 2026, but the actual publication is from 2016 based on content.
+
+\bibitem{schaff2023sim}
+Charles Schaff, Andrew Spielberg, and Daniela Rus.
+\newblock Sim-to-real transfer of co-optimized soft robot crawlers.
+\newblock {\em Autonomous Robots}, 47(7):885--901, 2023.
+
+\bibitem{schulman2015high}
+John Schulman, Philipp Moritz, Sergey Levine, Michael~I. Jordan, and Pieter Abbeel.
+\newblock High-dimensional continuous control using generalized advantage estimation.
+\newblock {\em arXiv preprint arXiv:1506.02438}, 2015.
+
+\bibitem{schulman2017proximal}
+John Schulman, Felipe Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov.
+\newblock Proximal policy optimization algorithms.
+\newblock arXiv:1707.06347, 2017.
+
+\bibitem{singh2021modeling}
+Abhaya~Pal Singh, Dipankar Deb, Harsh Agrawal, Kishore Bingi, and Stepan Ozana.
+\newblock Modeling and control of robotic manipulators: A fractional calculus point of view.
+\newblock {\em Arabian Journal for Science and Engineering}, 46(10):9547--9564, 2021.
+
+\bibitem{spielberg2025accelerated}
+Andrew Spielberg et~al.
+\newblock Accelerated co-design of robots through morphological pretraining.
+\newblock arXiv:2502.10862, 2025.
+
+\bibitem{staats2012specialization}
+Bradley~R. Staats and Francesca Gino.
+\newblock Specialization and variety in repetitive tasks: Evidence from a japanese bank.
+\newblock {\em Management Science}, 58(6):1141--1159, 2012.
+
+\bibitem{standardbots2025fanucprice}
+{Standard Bots}.
+\newblock Fanuc robot prices: Cost, models, and buying insights in 2025, 2025.
+
+\bibitem{sucan2012ompl}
+Ioan~A. Sucan, Mark Moll, and Lydia~E. Kavraki.
+\newblock The open motion planning library, 2012.
+\newblock \url{https://ompl.kavrakilab.org/}.
+
+\bibitem{sun2023co}
+Jieqiang Sun, Meibao Yao, Xueming Xiao, Zhibing Xie, and Bo~Zheng.
+\newblock Co-optimization of morphology and behavior of modular robots via hierarchical deep reinforcement learning.
+\newblock {\em Robotics: Science and Systems}, 2023.
+
+\bibitem{sutton1988learning}
+Richard~S. Sutton.
+\newblock Learning to predict by the methods of temporal differences.
+\newblock {\em Machine Learning}, 3(1):9--44, 1988.
+
+\bibitem{tjanaka2023co}
+Bryon Tjanaka et~al.
+\newblock Co-optimization of morphology and behavior of modular robots via hierarchical deep reinforcement learning.
+\newblock In {\em Robotics: Science and Systems (RSS)}, 2023.
+
+\bibitem{vahrenkamp2012manipulability}
+Nikolaus Vahrenkamp, Tamim Asfour, and R{\"u}diger Dillmann.
+\newblock Manipulability analysis.
+\newblock In {\em 2012 12th IEEE-RAS International Conference on Humanoid Robots (Humanoids 2012)}, pages 568--573. IEEE, 2012.
+
+\bibitem{wang2017industry}
+Yue Wang, Hsien-Sheng Ma, Jianhua Yang, and Kesheng Wang.
+\newblock Industry 4.0: a way from mass customization to mass personalization production.
+\newblock {\em Advances in manufacturing}, 5(4):311--320, 2017.
+
+\bibitem{wu2020occupational}
+Wu, Yan, Yang, Xu, Shi, Zeng, Li, Zhang, Chang, and Wang.
+\newblock Occupational neuroplasticity in the human brain: A critical review and meta-analysis of neuroimaging studies.
+\newblock {\em Frontiers in Human Neuroscience}, 14:215, 2020.
+
+\bibitem{xiong2016adaptive}
+Xiaofeng Xiong, Florentin Wörgötter, and Poramate Manoonpong.
+\newblock Adaptive and energy efficient walking in a hexapod robot under neuromechanical control and sensorimotor learning.
+\newblock {\em IEEE Transactions on Cybernetics}, 46(11):2521--2534, 2016.
+
+\bibitem{yoshikawa1985manipulability}
+Tsuneo Yoshikawa.
+\newblock Manipulability of robotic mechanisms.
+\newblock {\em The International Journal of Robotics Research}, 4(2):3--9, 1985.
+
+\bibitem{zhu2022psto}
+Wangshu Zhu and Andre Rosendo.
+\newblock Psto: Learning energy-efficient locomotion for quadruped robots.
+\newblock {\em Machines}, 10(3):185, 2022.
+
+\end{thebibliography}

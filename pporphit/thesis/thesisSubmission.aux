@@ -1,0 +1,206 @@
+\relax 
+\@writefile{lof}{\contentsline {part} {\figurenameToC }{\relax }{}}
+\@writefile{lot}{\contentsline {part} {\tablenameToC }{\relax }{}}
+\@writefile{toc}{\contentsline {part} {\chapternameToC }{\relax }{}}
+\citation{staats2012specialization}
+\citation{madiedo2020capturing}
+\citation{jackson2025story}
+\citation{indeed2025pros}
+\citation{mckinsey2019industrial}
+\citation{patel2024}
+\citation{russo2021task}
+\citation{he2019underactuated}
+\citation{arany2008pgc1}
+\citation{mancuso2022effect}
+\citation{wu2020occupational}
+\citation{wang2017industry}
+\citation{baumers2019economics}
+\@writefile{toc}{\contentsline {chapter}{\numberline {\th@ChapterStyle  1}\normalsize  \normalfont  Introduction}{1}{}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.1}{\ignorespaces System overview of the proposed morphology optimization framework. The optimizer agent generates actions \( a \in [0,1]^{15} \), which are decoded into robot parameters \( \theta = (n, l, j) \) (number of links, lengths, and joint types). These are used to create an XML model evaluated in a MuJoCo simulation environment, incorporating task definitions (obstacles and start/goal poses). IK solving and RRT-Connect path planning compute trajectories \( Q \), followed by inverse dynamics for energy \( E \). Performance metrics (success, path length, manipulability, and energy) are aggregated via the reward function in Eq. (1) to yield a scalar reward \( r(\theta ) \).}}{1}{}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:systemDiagram}{{1.1}{1}{}{}{}}
+\citation{schulman2017proximal}
+\citation{kuffner2000rrt}
+\citation{sucan2012ompl}
+\citation{buss2004introduction}
+\citation{yoshikawa1985manipulability}
+\citation{bhatia2023reinforcement}
+\citation{luck2019data}
+\citation{le2020reinforcement}
+\citation{kalimuthu2023}
+\citation{ding2024modular}
+\citation{spielberg2025accelerated}
+\@writefile{toc}{\contentsline {chapter}{\numberline {\th@ChapterStyle  2}\normalsize  \normalfont  Related Work}{4}{}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  2.1}\normalsize  \normalfont  Energy Efficiency}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  2.2}\normalsize  \normalfont  Task Specialization}{4}{}\protected@file@percent }
+\citation{patentpc2025toprobotics}
+\citation{standardbots2025fanucprice}
+\citation{haddadin2022franka}
+\citation{oliva2022franksim}
+\citation{russo2021task}
+\citation{he2019underactuated}
+\citation{fasquell2020bioinspired}
+\citation{nakano2023robostrich}
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  2.3}\normalsize  \normalfont  Simplicity}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {\th@ChapterStyle  3}\normalsize  \normalfont  Problem Formulation}{6}{}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{sec:problem}{{\th@ChapterStyle  3}{6}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  3.1}\normalsize  \normalfont  Morphology Parameterization}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  3.2}\normalsize  \normalfont  Task Specification}{7}{}\protected@file@percent }
+\newlabel{fig:container_1}{{3.1a}{7}{}{}{}}
+\newlabel{sub@fig:container_1}{{a}{7}{}{}{}}
+\newlabel{fig:container_2}{{3.1b}{7}{}{}{}}
+\newlabel{sub@fig:container_2}{{b}{7}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.1}{\ignorespaces \textbf  {Container task evaluation.} The manipulator is tasked with reaching deep into a constrained, container-like environment (start poses in blue) and extracting to an open area (goal poses in red). This highly constrained task tests the morphology's compactness and ability to perform high-reach tasks without colliding with ceiling or wall constraints.}}{7}{}\protected@file@percent }
+\newlabel{fig:containerTask}{{3.1}{7}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  3.3}\normalsize  \normalfont  Evaluation Pipeline}{7}{}\protected@file@percent }
+\citation{klein1987dexterity}
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  3.4}\normalsize  \normalfont  Reward Function}{8}{}\protected@file@percent }
+\newlabel{eq:reward}{{3.1}{8}{}{}{}}
+\citation{kuffner2000rrt}
+\@writefile{toc}{\contentsline {chapter}{\numberline {\th@ChapterStyle  4}\normalsize  \normalfont  Method}{10}{}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  4.1}\normalsize  \normalfont  PPO Action Decoding}{10}{}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Morphology Decoding from PPO Action}}{10}{}\protected@file@percent }
+\newlabel{alg:decode}{{1}{10}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  4.2}\normalsize  \normalfont  Simulation}{10}{}\protected@file@percent }
+\citation{schulman2017proximal}
+\citation{schulman2015high}
+\citation{raffin2021stable}
+\citation{hansen2001completely}
+\citation{hansen2019pycma}
+\citation{fanuc2024lrmate}
+\citation{franka2024research3}
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  4.3}\normalsize  \normalfont  Training}{11}{}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces PMorph Training}}{11}{}\protected@file@percent }
+\newlabel{alg:train}{{2}{11}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  4.4}\normalsize  \normalfont  Evaluation}{11}{}\protected@file@percent }
+\citation{yoshikawa1985manipulability}
+\citation{vahrenkamp2012manipulability}
+\@writefile{toc}{\contentsline {chapter}{\numberline {\th@ChapterStyle  5}\normalsize  \normalfont  Experimental Setup}{13}{}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  5.1}\normalsize  \normalfont  Tasks}{13}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  5.2}\normalsize  \normalfont  Metrics}{14}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  5.3}\normalsize  \normalfont  Implementation and Compute}{15}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {5.1}{\ignorespaces PPO Hyperparameters}}{15}{}\protected@file@percent }
+\newlabel{tab:hyperparams}{{5.1}{15}{}{}{}}
+\newlabel{fig:wallMount_1}{{5.1a}{16}{}{}{}}
+\newlabel{sub@fig:wallMount_1}{{a}{16}{}{}{}}
+\newlabel{fig:wallMount_2}{{5.1b}{16}{}{}{}}
+\newlabel{sub@fig:wallMount_2}{{b}{16}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.1}{\ignorespaces \textbf  {Wall Mount task evaluation.} The manipulator, mounted horizontally on the near wall, must navigate to and from the opposing shelf. Faded overlays represent the RRT-generated trajectory. This configuration evaluates a morphology's ability to resist gravity in atypical base orientations while navigating constrained pick-and-place trajectories.}}{16}{}\protected@file@percent }
+\newlabel{fig:wallMountTask}{{5.1}{16}{}{}{}}
+\newlabel{fig:shelfTask_1}{{5.2a}{16}{}{}{}}
+\newlabel{sub@fig:shelfTask_1}{{a}{16}{}{}{}}
+\newlabel{fig:shelfTask_2}{{5.2b}{16}{}{}{}}
+\newlabel{sub@fig:shelfTask_2}{{b}{16}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.2}{\ignorespaces \textbf  {Shelf task evaluation.} The manipulator navigates around a floating shelf obstacle, moving from a start pose (blue marker) to a goal pose (red marker). Transparent models illustrate the intermediate joint-space trajectory, concluding at the opaque target configuration. This task specifically tests the morphology's capability to maneuver through vertically constrained spaces and perform complex over-and-under reaching motions typical in industrial pick-and-place operations.}}{16}{}\protected@file@percent }
+\newlabel{fig:shelfTask}{{5.2}{16}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.3}{\ignorespaces \textbf  {Near-Base Outreach task evaluation.} The manipulator extends from a configuration near its base (blue marker) to a distant target coordinate (red marker). Transparent overlays depict the collision-free joint-space trajectory generated by RRT-Connect, terminating at the opaque goal configuration. This obstacle-free environment specifically isolates and evaluates a morphology's maximum functional reach and extension efficiency.}}{17}{}\protected@file@percent }
+\newlabel{fig:outreachTask}{{5.3}{17}{}{}{}}
+\newlabel{fig:sideToSide_1}{{5.4a}{17}{}{}{}}
+\newlabel{sub@fig:sideToSide_1}{{a}{17}{}{}{}}
+\newlabel{fig:sideToSide_2}{{5.4b}{17}{}{}{}}
+\newlabel{sub@fig:sideToSide_2}{{b}{17}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.4}{\ignorespaces \textbf  {Side-to-Side outreach evaluation.} The manipulator navigates from the start pose (blue marker) to the goal pose (red marker) across the workspace. Faded models illustrate the intermediate trajectory states discovered by RRT-Connect. This task evaluates the morphology's ability to maximize lateral reach and avoid collision with its own base.}}{17}{}\protected@file@percent }
+\newlabel{fig:sideToSideTask}{{5.4}{17}{}{}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {\th@ChapterStyle  6}\normalsize  \normalfont  Results}{18}{}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  6.1}\normalsize  \normalfont  Energy Efficiency}{18}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  6.2}\normalsize  \normalfont  Task Specialization}{18}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {\th@SectionStyle  6.3}\normalsize  \normalfont  Simplicity}{18}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.1}{\ignorespaces \textbf  {SAC-generated Container Task Morphology.} The SAC-generated morphology is shown with a trajectory in the container task. The morphology is simple with 2 links, one z-hinge that's 0.1179m and one y-hinge that's 0.5151m. The manipulator is not quite long enough to reach the start position and significantly off the orientation, but appears right on the goal pose. }}{19}{}\protected@file@percent }
+\newlabel{fig:sacContainerArm}{{6.1}{19}{}{}{}}
+\bibstyle{plain}
+\citation{*}
+\bibdata{references}
+\@writefile{toc}{\contentsline {chapter}{\numberline {\th@ChapterStyle  7}\normalsize  \normalfont  Conclusion}{20}{}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\bibcite{abourachid2019modelling}{1}
+\bibcite{fanuc2024lrmate}{2}
+\bibcite{arany2008pgc1}{3}
+\bibcite{baumers2019economics}{4}
+\bibcite{bhatia2023reinforcement}{5}
+\bibcite{buss2004introduction}{6}
+\bibcite{delgado2022robotics}{7}
+\bibcite{ding2024modular}{8}
+\bibcite{fasquell2020bioinspired}{9}
+\bibcite{franka2024research3}{10}
+\bibcite{haarnoja2018soft}{11}
+\bibcite{haddadin2022franka}{12}
+\bibcite{hafner2019dream}{13}
+\@writefile{toc}{\contentsline {part}{ \normalsize  \normalfont  \bfseries  Bibliography\normalfont  }{21}{}\protected@file@percent }
+\bibcite{hansen2019pycma}{14}
+\bibcite{hansen2001completely}{15}
+\bibcite{hase2020ultrasound}{16}
+\bibcite{he2019underactuated}{17}
+\bibcite{homsi2025comparative}{18}
+\bibcite{huang2025dadu}{19}
+\bibcite{indeed2025pros}{20}
+\bibcite{jackson2025story}{21}
+\bibcite{kalimuthu2023deep}{22}
+\bibcite{kalimuthu2023}{23}
+\bibcite{klein1987dexterity}{24}
+\bibcite{kober2013reinforcement}{25}
+\bibcite{kuffner2000rrt}{26}
+\bibcite{kumar2019sensorless}{27}
+\bibcite{le2020reinforcement}{28}
+\bibcite{luck2019data}{29}
+\bibcite{madiedo2020capturing}{30}
+\bibcite{mancuso2022effect}{31}
+\bibcite{mckinsey2019industrial}{32}
+\bibcite{mertan2023modular}{33}
+\bibcite{nakano2023robostrich}{34}
+\bibcite{oliva2022franksim}{35}
+\bibcite{patel2024}{36}
+\bibcite{patentpc2025toprobotics}{37}
+\bibcite{raffin2021stable}{38}
+\bibcite{russo2021task}{39}
+\bibcite{saini2026spiking}{40}
+\bibcite{schaff2023sim}{41}
+\bibcite{schulman2015high}{42}
+\bibcite{schulman2017proximal}{43}
+\bibcite{singh2021modeling}{44}
+\bibcite{spielberg2025accelerated}{45}
+\bibcite{staats2012specialization}{46}
+\bibcite{standardbots2025fanucprice}{47}
+\bibcite{sucan2012ompl}{48}
+\bibcite{sun2023co}{49}
+\bibcite{sutton1988learning}{50}
+\bibcite{tjanaka2023co}{51}
+\bibcite{vahrenkamp2012manipulability}{52}
+\bibcite{wang2017industry}{53}
+\bibcite{wu2020occupational}{54}
+\bibcite{xiong2016adaptive}{55}
+\bibcite{yoshikawa1985manipulability}{56}
+\bibcite{zhu2022psto}{57}
+\@writefile{toc}{\contentsline {part} {\appendixnameToC }{\relax }{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {\th@ChapterStyle  A}\normalsize  \normalfont  Task Specifications}{26}{}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{lot}{\contentsline {table}{\numberline {A.1}{\ignorespaces Container Task Poses}}{26}{}\protected@file@percent }
+\newlabel{tab:containerPoses}{{A.1}{26}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {A.2}{\ignorespaces Container Task Obstacles}}{26}{}\protected@file@percent }
+\newlabel{tab:containerObstacles}{{A.2}{26}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {A.3}{\ignorespaces Wall Mount Task Poses}}{27}{}\protected@file@percent }
+\newlabel{tab:wallMountPoses}{{A.3}{27}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {A.4}{\ignorespaces Wall Mount Task Obstacles}}{27}{}\protected@file@percent }
+\newlabel{tab:wallMountObstacles}{{A.4}{27}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {A.5}{\ignorespaces Shelf Task Poses}}{27}{}\protected@file@percent }
+\newlabel{tab:simpleShelfPoses}{{A.5}{27}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {A.6}{\ignorespaces Shelf Task Obstacles}}{27}{}\protected@file@percent }
+\newlabel{tab:simpleShelfObstacles}{{A.6}{27}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {A.7}{\ignorespaces Near-Base Outreach Task Poses}}{28}{}\protected@file@percent }
+\newlabel{tab:outreachPoses}{{A.7}{28}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {A.8}{\ignorespaces Side-to-Side Task Poses}}{28}{}\protected@file@percent }
+\newlabel{tab:sideToSidePoses}{{A.8}{28}{}{}{}}
+\gdef \@abspage@last{36}

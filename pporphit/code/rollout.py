@@ -2,7 +2,7 @@ from stable_baselines3 import PPO
 import numpy as np
 
 # Load the trained model
-ppo = PPO.load("wallMountGoalBiasing1_100_10_1_0.0001")
+ppo = PPO.load("wallMountEntCoeff1_100_10_1_0.0001")
 
 # Dummy observation from your env
 obs = np.array([0.0])

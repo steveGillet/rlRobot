@@ -72,16 +72,18 @@ class robotArmEnv(gym.Env):
             noisyGoalQuat /= np.linalg.norm(noisyGoalQuat)
             goalPos = np.concatenate([noisyGoalPos, noisyGoalQuat])
             self.logger.debug(f"Pre-IK: startPos={startPos}")
-            startQpos, jStart, startError, _, _ = robustDLSik(model, data, obstacleIds, startPos)
+            startQpos, jStart, startError, startPosError, startRotError = robustDLSik(model, data, obstacleIds, startPos)
             self.logger.debug(f"Post Start IK: startQpos={startQpos}, jStart={jStart}")
 
-            goalQpos, jGoal, goalError, _, _ = robustDLSik(model, data, obstacleIds, goalPos, initialQpos=startQpos)
+            goalQpos, jGoal, goalError, goalPosError, goalRotError = robustDLSik(model, data, obstacleIds, goalPos, initialQpos=startQpos)
             self.logger.debug(f"Post Goal IK: goalQpos={goalQpos}, jGoal={jGoal}")
             # startQpos = np.array([0.2, -0.8, -0.3, 0.9])
             # goalQpos = np.array([-0.4, 0.7, 0.5, -1.0])
 
-            self.logger.debug(f"Goal Error: {goalError}")
-            self.logger.debug(f"Start Error: {startError}")
+            self.logger.debug(f"Goal Pos Error: {goalPosError}")
+            self.logger.debug(f"Start Pos Error: {startPosError}")
+            self.logger.debug(f"Start Rot Error: {startRotError}")
+            self.logger.debug(f"Goal Rot Error: {goalRotError}")
 
             if jStart.shape[1] == numLinks:
                 muStart = manipulabilityIndex(jStart)
@@ -94,11 +96,12 @@ class robotArmEnv(gym.Env):
                 muGoal = 0.0
             self.logger.debug(f"Mu Goal: {muGoal}")
 
-            if startError > 0.1 or goalError > 0.1:
-                # print(f"Accuracy Penalty: {-100 * (startError + goalError)}")
+            if startPosError > 0.1 or goalPosError > 0.1:
+                # print(f"Position Penalty: {-80 * (startPosError + goalPosError)}")
+                # print(f"Rotation Penalty: {-20 * (startRotError + goalRotError)}")
                 # print(f"Manipulability Bonus: {10 * (muStart + muGoal)}")
                 # print(f"Link Number Penalty: {-1 * (numLinks - self.minNumLinks)}")
-                reward += 30 - 100 * (startError + goalError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks)
+                reward += 30 - 80 * (startPosError + goalPosError) - 20 * (startRotError + goalRotError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks)
                 continue
            
             # foundSolution, path = rrtConnect(
@@ -191,16 +194,17 @@ class robotArmEnv(gym.Env):
                 self.logger.debug(f"End Effector Path Length: {eePathLength}")
             
                 # print(f"Path Length Penalty: {-1 * eePathLength}")
-                # print(f"Accuracy Penalty: {-100 * (startError + goalError)}")
-                # print(f"Manipulability Bonus: {10 * (muStart + muGoal)}")
+                # print(f"Position Penalty: {-80 * (startPosError + goalPosError)}")
+                # print(f"Rotation Penalty: {-20 * (startRotError + goalRotError)}")                # print(f"Manipulability Bonus: {10 * (muStart + muGoal)}")
                 # print(f"Link Number Penalty: {-1 * (numLinks - self.minNumLinks)}")
                 # print(f"Energy Cost Penalty: {-0.0001 * energyCost}")
-                reward += 100 - 1 * eePathLength - 100 * (startError + goalError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks) - 0.0001 * energyCost
+                reward += 100 - 1 * eePathLength - 80 * (startPosError + goalPosError) - 20 * (startRotError + goalRotError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks) - 0.0001 * energyCost
             else:
-                # print(f"Accuracy Penalty: {-100 * (startError + goalError)}")
+                # print(f"Position Penalty: {-80 * (startPosError + goalPosError)}")
+                # print(f"Rotation Penalty: {-20 * (startRotError + goalRotError)}")
                 # print(f"Manipulability Bonus: {10 * (muStart + muGoal)}")
                 # print(f"Link Number Penalty: {-1 * (numLinks - self.minNumLinks)}")
-                reward += 30 - 100 * (startError + goalError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks)
+                reward += 30 - 80 * (startPosError + goalPosError) - 20 * (startRotError + goalRotError) + 10 * (muStart + muGoal) - 1 * (numLinks - self.minNumLinks)
                 # reward += (
                 #     30
                 #     - 200 * (startError + goalError)
@@ -756,7 +760,7 @@ def robustDLSik(
     tol: float = 0.005,
     lambda_: float = 0.1,
     alpha: float = 0.75,
-    numTries: int = 10,
+    numTries: int = 5,
     rotWeight: float = 0.1,
 ):
     bestQpos, bestJ, bestError = None, None, np.inf

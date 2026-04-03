@@ -1,0 +1,28 @@
+\contentsline {part} {\chapternameToC }{\relax }{}
+\contentsline {chapter}{\numberline {\th@ChapterStyle 1}\normalsize \normalfont Introduction}{1}{}%
+\contentsline {chapter}{\numberline {\th@ChapterStyle 2}\normalsize \normalfont Related Work}{4}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 2.1}\normalsize \normalfont Energy Efficiency}{4}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 2.2}\normalsize \normalfont Task Specialization}{4}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 2.3}\normalsize \normalfont Simplicity}{5}{}%
+\contentsline {chapter}{\numberline {\th@ChapterStyle 3}\normalsize \normalfont Problem Formulation}{6}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 3.1}\normalsize \normalfont Morphology Parameterization}{6}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 3.2}\normalsize \normalfont Task Specification}{7}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 3.3}\normalsize \normalfont Evaluation Pipeline}{7}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 3.4}\normalsize \normalfont Reward Function}{8}{}%
+\contentsline {chapter}{\numberline {\th@ChapterStyle 4}\normalsize \normalfont Method}{10}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 4.1}\normalsize \normalfont PPO Action Decoding}{10}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 4.2}\normalsize \normalfont Simulation}{10}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 4.3}\normalsize \normalfont Training}{11}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 4.4}\normalsize \normalfont Evaluation}{11}{}%
+\contentsline {chapter}{\numberline {\th@ChapterStyle 5}\normalsize \normalfont Experimental Setup}{13}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 5.1}\normalsize \normalfont Tasks}{13}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 5.2}\normalsize \normalfont Metrics}{14}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 5.3}\normalsize \normalfont Implementation and Compute}{15}{}%
+\contentsline {chapter}{\numberline {\th@ChapterStyle 6}\normalsize \normalfont Results}{18}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 6.1}\normalsize \normalfont Energy Efficiency}{18}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 6.2}\normalsize \normalfont Task Specialization}{18}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 6.3}\normalsize \normalfont Simplicity}{18}{}%
+\contentsline {chapter}{\numberline {\th@ChapterStyle 7}\normalsize \normalfont Conclusion}{20}{}%
+\contentsline {part}{ \normalsize \normalfont \bfseries Bibliography\normalfont }{21}{}%
+\contentsline {part} {\appendixnameToC }{\relax }{}
+\contentsline {chapter}{\numberline {\th@ChapterStyle A}\normalsize \normalfont Task Specifications}{26}{}%

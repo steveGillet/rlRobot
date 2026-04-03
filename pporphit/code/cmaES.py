@@ -2,8 +2,29 @@ import cma          # pip install cma   (only new dependency)
 import numpy as np
 from multiprocessing import Pool
 from robotArmEnv import robotArmEnv   # or just import the class if it's all in one file
+import numpy as np
 
-activeTask = "wallMount"
+def decode_morphology(action: np.ndarray):
+    """Decode CMA-ES / PPO / SAC action → readable morphology
+    (exact same logic as in your thesis Algorithm 1)"""
+    action = np.asarray(action).flatten()
+    action = np.clip(action, 0.0, 1.0)          # CMA-ES can go outside [0,1]
+
+    # Number of links
+    n = int(round(action[0] * (7 - 2) + 2))
+    n = max(2, min(7, n))
+
+    # Link lengths [0.05, 1.2] m
+    lengths = action[1:8] * (1.2 - 0.05) + 0.05
+    lengths = np.clip(lengths, 0.05, 1.2)
+
+    # Joint types 0..3
+    joint_types = np.round(action[8:15] * 3).astype(int)
+    joint_types = np.clip(joint_types, 0, 3)
+
+    return n, lengths[:n], joint_types[:n]
+
+activeTask = "container"
 DIM = 1 + 7 * 2                       # 15-D action space
 
 def evaluate_design(x: np.ndarray) -> float:
@@ -25,6 +46,7 @@ if __name__ == "__main__":
     sigma0 = 0.35
 
     es = cma.CMAEvolutionStrategy(x0, sigma0, {
+        'bounds': [0.0, 1.0],    # keep all parameters in [0,1]
         'popsize': 32,          # 2–4× dimension works great
         'maxiter': 2000,
         'verb_disp': 1,
@@ -47,8 +69,16 @@ if __name__ == "__main__":
     best_f = es.result.fbest
 
     print("\n=== BEST DESIGN FOUND ===")
-    print("Action vector:", best_x)
+    print("Raw action vector:", best_x)
     print("Reward:", -best_f)
+
+    # Decode into human-readable morphology
+    n, lengths, joints = decode_morphology(best_x)
+    print("\n=== DECODED MORPHOLOGY ===")
+    print(f"Links:          {n}")
+    print(f"Lengths (m):    {np.round(lengths, 4)}")
+    print(f"Joint types:    {joints}   "
+          f"(0=X-hinge, 1=Y-hinge, 2=Z-hinge, 3=Z-slide)")
 
     # Quick final evaluation with the best design
     env = robotArmEnv(taskName=activeTask)
