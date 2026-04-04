@@ -1,0 +1,2 @@
+model_name,n_links,success_rate,avg_pos_error,avg_rot_error,avg_path_length,avg_energy,avg_manipulability,task,num_runs
+SAC,2,5.0,0.11313356770354524,0.5858117030393575,0.8401467793469605,100.3585270269287,0.0,shelf,100

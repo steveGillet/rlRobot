@@ -24,7 +24,7 @@ def decode_morphology(action: np.ndarray):
 
     return n, lengths[:n], joint_types[:n]
 
-activeTask = "container"
+activeTask = "outreach"
 DIM = 1 + 7 * 2                       # 15-D action space
 
 def evaluate_design(x: np.ndarray) -> float:

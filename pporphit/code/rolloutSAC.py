@@ -3,8 +3,8 @@ from stable_baselines3 import SAC
 from robotArmEnv import robotArmEnv   # your env class
 
 if __name__ == "__main__":
-    activeTask = "container"                     # change if you used a different task
-    model_path = f"container_SACbaseJointLimit_1_100_10_1_0.0001"
+    activeTask = "outreach"                     # change if you used a different task
+    model_path = f"outreach_SACbaseJointLimit_1_100_10_1_0.0001"
 
     print("Loading SAC model (no VecNormalize needed)...")
     model = SAC.load(model_path)                 # no env= argument

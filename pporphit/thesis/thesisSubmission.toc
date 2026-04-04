@@ -20,9 +20,9 @@
 \contentsline {section}{\numberline {\th@SectionStyle 5.3}\normalsize \normalfont Implementation and Compute}{15}{}%
 \contentsline {chapter}{\numberline {\th@ChapterStyle 6}\normalsize \normalfont Results}{18}{}%
 \contentsline {section}{\numberline {\th@SectionStyle 6.1}\normalsize \normalfont Energy Efficiency}{18}{}%
-\contentsline {section}{\numberline {\th@SectionStyle 6.2}\normalsize \normalfont Task Specialization}{18}{}%
-\contentsline {section}{\numberline {\th@SectionStyle 6.3}\normalsize \normalfont Simplicity}{18}{}%
-\contentsline {chapter}{\numberline {\th@ChapterStyle 7}\normalsize \normalfont Conclusion}{20}{}%
-\contentsline {part}{ \normalsize \normalfont \bfseries Bibliography\normalfont }{21}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 6.2}\normalsize \normalfont Task Specialization}{20}{}%
+\contentsline {section}{\numberline {\th@SectionStyle 6.3}\normalsize \normalfont Simplicity}{20}{}%
+\contentsline {chapter}{\numberline {\th@ChapterStyle 7}\normalsize \normalfont Conclusion}{23}{}%
+\contentsline {part}{ \normalsize \normalfont \bfseries Bibliography\normalfont }{25}{}%
 \contentsline {part} {\appendixnameToC }{\relax }{}
-\contentsline {chapter}{\numberline {\th@ChapterStyle A}\normalsize \normalfont Task Specifications}{26}{}%
+\contentsline {chapter}{\numberline {\th@ChapterStyle A}\normalsize \normalfont Task Specifications}{30}{}%

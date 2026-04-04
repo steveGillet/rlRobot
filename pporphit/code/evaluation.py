@@ -162,31 +162,31 @@ def evaluate_morphology(name, numLinks, lengths, jointTypes,
 
 if __name__ == "__main__":
     # CHANGE THIS TO TEST DIFFERENT TASKS
-    task_to_test = "wallMount"   # try "container" to see if it works better
-    num_runs = 20                # keep low while debugging
+    task_to_test = "outreach"   # try "container" to see if it works better
+    num_runs = 100                # keep low while debugging
 
     all_results = []
 
-    # CMA-ES example (already decoded)
+    # Morphology
     custom_n = 2
-    custom_lengths = np.array([0.3548, 0.3867])
-    custom_joints = np.array([1, 0])
+    custom_lengths = np.array([0.05,0.27123675])
+    custom_joints = np.array([1,3])
 
-    stats = evaluate_morphology("CMA-ES Best (wallMount)", 
+    stats = evaluate_morphology("PPO", 
                                 custom_n, custom_lengths, custom_joints,
                                 task_name=task_to_test, num_runs=num_runs)
     all_results.append(stats)
 
-    # Baselines
-    baselines = [
-        ("Baseline_FANUC", 6, np.array([0.165, 0.330, 0.08, 0.285, 0.05, 0.05]), np.array([2, 0, 0, 2, 0, 2])),
-        ("Baseline_PANDA", 7, np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.107, 0.05]), np.array([2, 0, 2, 0, 2, 0, 2])),
-    ]
+    # # Baselines
+    # baselines = [
+    #     ("Baseline_FANUC", 6, np.array([0.165, 0.330, 0.08, 0.285, 0.05, 0.05]), np.array([2, 0, 0, 2, 0, 2])),
+    #     ("Baseline_PANDA", 7, np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.107, 0.05]), np.array([2, 0, 2, 0, 2, 0, 2])),
+    # ]
 
-    for bname, n, lengths, joints in baselines:
-        stats = evaluate_morphology(bname, n, lengths, joints,
-                                    task_name=task_to_test, num_runs=num_runs)
-        all_results.append(stats)
+    # for bname, n, lengths, joints in baselines:
+    #     stats = evaluate_morphology(bname, n, lengths, joints,
+    #                                 task_name=task_to_test, num_runs=num_runs)
+    #     all_results.append(stats)
 
     df = pd.DataFrame(all_results)
     timestamp = time.strftime("%Y%m%d-%H%M%S")

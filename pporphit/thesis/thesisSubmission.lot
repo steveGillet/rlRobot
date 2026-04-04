@@ -6,13 +6,14 @@
 \addvspace {10\p@ }
 \contentsline {table}{\numberline {5.1}{\ignorespaces PPO Hyperparameters}}{15}{}%
 \addvspace {10\p@ }
+\contentsline {table}{\numberline {6.1}{\ignorespaces Performance Metrics Across All Tasks and Morphologies (Averaged over 100 runs)}}{19}{}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {A.1}{\ignorespaces Container Task Poses}}{26}{}%
-\contentsline {table}{\numberline {A.2}{\ignorespaces Container Task Obstacles}}{26}{}%
-\contentsline {table}{\numberline {A.3}{\ignorespaces Wall Mount Task Poses}}{27}{}%
-\contentsline {table}{\numberline {A.4}{\ignorespaces Wall Mount Task Obstacles}}{27}{}%
-\contentsline {table}{\numberline {A.5}{\ignorespaces Shelf Task Poses}}{27}{}%
-\contentsline {table}{\numberline {A.6}{\ignorespaces Shelf Task Obstacles}}{27}{}%
-\contentsline {table}{\numberline {A.7}{\ignorespaces Near-Base Outreach Task Poses}}{28}{}%
-\contentsline {table}{\numberline {A.8}{\ignorespaces Side-to-Side Task Poses}}{28}{}%
+\contentsline {table}{\numberline {A.1}{\ignorespaces Container Task Poses}}{30}{}%
+\contentsline {table}{\numberline {A.2}{\ignorespaces Container Task Obstacles}}{30}{}%
+\contentsline {table}{\numberline {A.3}{\ignorespaces Wall Mount Task Poses}}{31}{}%
+\contentsline {table}{\numberline {A.4}{\ignorespaces Wall Mount Task Obstacles}}{31}{}%
+\contentsline {table}{\numberline {A.5}{\ignorespaces Shelf Task Poses}}{31}{}%
+\contentsline {table}{\numberline {A.6}{\ignorespaces Shelf Task Obstacles}}{31}{}%
+\contentsline {table}{\numberline {A.7}{\ignorespaces Near-Base Outreach Task Poses}}{32}{}%
+\contentsline {table}{\numberline {A.8}{\ignorespaces Side-to-Side Task Poses}}{32}{}%

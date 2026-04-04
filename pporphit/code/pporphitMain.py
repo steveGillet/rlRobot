@@ -45,37 +45,54 @@ def makeEnv(taskName):
 if __name__ == "__main__":
     logger = setupLogging()
     logger.info("Main Process Started")
-    activeTask = "sideToSide"
+    activeTask = "wallMount"
 
     venv = SubprocVecEnv([makeEnv(activeTask) for _ in range(24)])
     venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
 
     policyKwargs = dict(net_arch=[256, 256, 256])   
 
-    model = SAC(         
+    model = PPO(
         "MlpPolicy",
         venv,
-        ent_coef="auto",                 
         verbose=1,
         policy_kwargs=policyKwargs,
-        learning_rate=3e-4,       
-        buffer_size=100_000,
-        learning_starts=1000,
-        batch_size=256,
+        learning_rate=0.001,           # from your thesis
+        n_steps=256,
+        batch_size=512,
+        n_epochs=4,
         gamma=0.98,
-        tau=0.005,
-        train_freq=1,
-        gradient_steps=1,
-        tensorboard_log=f"./arm_morph_tb_{activeTask}_SAC/",
+        clip_range=0.2,
+        vf_coef=0.5,
+        ent_coef=0.0,
+        tensorboard_log=f"./arm_morph_tb_{activeTask}_PPO/",
         device="cpu",
     )
+
+    # model = SAC(         
+    #     "MlpPolicy",
+    #     venv,
+    #     ent_coef="auto",                 
+    #     verbose=1,
+    #     policy_kwargs=policyKwargs,
+    #     learning_rate=3e-4,       
+    #     buffer_size=100_000,
+    #     learning_starts=1000,
+    #     batch_size=256,
+    #     gamma=0.98,
+    #     tau=0.005,
+    #     train_freq=1,
+    #     gradient_steps=1,
+    #     tensorboard_log=f"./arm_morph_tb_{activeTask}_SAC/",
+    #     device="cpu",
+    # )
 
     model.learn(
         total_timesteps=1_000_000,
         callback=RewardLoggerCallback(),
         # log_interval=10
     )
-    modelName = "SACbaseJointLimit"
+    modelName = "PPOaccuracyPosOnlyCheck"
     venv.save(f"{activeTask}_{modelName}_vecnormalize.pkl")
     model.save(f"{activeTask}_{modelName}_1_100_10_1_0.0001")
 
