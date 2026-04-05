@@ -162,15 +162,15 @@ def evaluate_morphology(name, numLinks, lengths, jointTypes,
 
 if __name__ == "__main__":
     # CHANGE THIS TO TEST DIFFERENT TASKS
-    task_to_test = "outreach"   # try "container" to see if it works better
+    task_to_test = "container"   # try "container" to see if it works better
     num_runs = 100                # keep low while debugging
 
     all_results = []
 
     # Morphology
-    custom_n = 2
-    custom_lengths = np.array([0.05,0.27123675])
-    custom_joints = np.array([1,3])
+    custom_n = 7
+    custom_lengths = np.array([0.05,0.4074371,0.05,0.05,0.05,0.05,0.05])
+    custom_joints = np.array([1,0,0,0,0,0,0])
 
     stats = evaluate_morphology("PPO", 
                                 custom_n, custom_lengths, custom_joints,

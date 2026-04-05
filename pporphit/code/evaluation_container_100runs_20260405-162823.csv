@@ -1,0 +1,2 @@
+model_name,n_links,success_rate,avg_pos_error,avg_rot_error,avg_path_length,avg_energy,avg_manipulability,task,num_runs
+PPO,7,0.0,0.03870607250389445,0.2787141824420487,inf,inf,4.840612229710046e-17,container,100

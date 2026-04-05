@@ -45,7 +45,7 @@ def makeEnv(taskName):
 if __name__ == "__main__":
     logger = setupLogging()
     logger.info("Main Process Started")
-    activeTask = "wallMount"
+    activeTask = "container"
 
     venv = SubprocVecEnv([makeEnv(activeTask) for _ in range(24)])
     venv = VecNormalize(venv, norm_obs=True, norm_reward=True)
