@@ -743,10 +743,10 @@ def generateXML(numJoints, lengths, jointTypes, taskConfig, numGhosts=0, activeP
 # ─────────────
 # Main script
 # ─────────────
-numLinks = 7
-lengths = np.array([0.05,0.4074371,0.05,0.05,0.05,0.05,0.05])
-jointTypes = np.array([1,0,0,0,0,0,0])
-# PANDA
+numLinks = 4
+lengths = np.array([1.1971,0.8574,0.4089,1.0618])
+jointTypes = np.array([1,1,2,1])
+# # PANDA
 # numLinks = 7
 # sizeMultiplier = 1
 # lengths = sizeMultiplier * np.array([0.333, 0.316, 0.0825, 0.0825, 0.384, 0.088, 0.01])
@@ -757,7 +757,7 @@ jointTypes = np.array([1,0,0,0,0,0,0])
 # lengths = sizeMultiplier * np.array([0.165, 0.330, 0.08, 0.285, 0.05, 0.05])
 # jointTypes = np.array([2, 0, 0, 2, 0, 2])
 
-taskConfig = TASK_REGISTRY["container"]
+taskConfig = TASK_REGISTRY["shelf"]
 xml = generateXML(numLinks, lengths, jointTypes, taskConfig)
 model = mujoco.MjModel.from_xml_string(xml)
 data = mujoco.MjData(model)
